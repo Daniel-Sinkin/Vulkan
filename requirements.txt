@@ -1,0 +1,9 @@
+certifi==2024.8.30
+charset-normalizer==3.3.2
+idna==3.8
+pyperclip==1.9.0
+regex==2024.7.24
+requests==2.32.3
+termcolor==2.4.0
+tiktoken==0.7.0
+urllib3==2.2.2
