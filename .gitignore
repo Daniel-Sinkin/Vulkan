@@ -30,3 +30,31 @@
 *.exe
 *.out
 *.app
+
+# Ignore CMake build directories
+/build/
+/CMakeFiles/
+/CMakeCache.txt
+/cmake_install.cmake
+/Makefile
+/progress.make
+
+# Ignore Visual Studio Code settings and files
+.vscode/
+/*.code-workspace
+
+# Ignore CMake-specific generated files
+*.cmake
+
+# Ignore additional generated files
+*.log
+*.dir
+*.json
+
+# Ignore all files in build/ or similar directories
+build/
+/out/
+/Debug/
+/Release/
+/x64/
+/x86/
