@@ -35,12 +35,24 @@ def run_command(command: str, error_message: str) -> None:
         sys.exit(f"Error: {error_message}")
 
 
+def list_shader_files() -> None:
+    shader_dir = Path("shaders")
+    if not shader_dir.exists():
+        print("No shaders directory found.")
+        return
+
+    print("Listing shader files in the shaders directory:")
+    for item in shader_dir.iterdir():
+        if item.is_file():
+            print(f"  {item.name}")
+
+
 def compile_shaders() -> None:
     shader_dir = Path("shaders")
     compiled_dir = shader_dir / "compiled"
     compiled_dir.mkdir(parents=True, exist_ok=True)
 
-    shaders = list(shader_dir.rglob("*.vert")) + list(shader_dir.rglob("*.frag"))
+    shaders = list(shader_dir.glob("*.vert")) + list(shader_dir.glob("*.frag"))
 
     for shader in shaders:
         name = shader.stem
@@ -54,11 +66,14 @@ def compile_shaders() -> None:
     print("All shaders compiled successfully!")
 
 
-def main(run_after_build: bool) -> None:
+def main(run_after_build: bool, list_shaders: bool) -> None:
     if platform.system() != "Darwin":
         print("Warning: This project is only tested on macOS.")
 
     check_required_tools()
+
+    if list_shaders:
+        list_shader_files()
 
     build_dir = Path("build")
     build_dir.mkdir(exist_ok=True)
@@ -85,6 +100,11 @@ if __name__ == "__main__":
     parser.add_argument(
         "--run", action="store_true", help="Run the program after building"
     )
+    parser.add_argument(
+        "--shaders",
+        action="store_true",
+        help="List shader files in the shaders directory",
+    )
     args = parser.parse_args()
 
-    main(args.run)
+    main(args.run, args.shaders)
