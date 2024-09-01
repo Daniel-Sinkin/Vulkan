@@ -1,30 +1,18 @@
-# opengl-in-cpp
+# Vulcan 3D Engine from scratch
 
 # Setup Tutorial
-Setup support is only offered for MacOS with ARM64 chips.
-
-While in the root directory of this project run
+Add the following to your RC file (I'm using the ZSH shell so it's at `~/.zshrc` for me).
 ```
-chmod +x setup.sh
-chmod +x build.sh
-chmod +x compile_and_run.sh
-```
-in the terminal and then run the setup script which will install all necessary tools:
-```
-./setup.sh
+# Vulkan
+export VULKAN_SDK=/Users/danielsinkin/VulkanSDK/1.3.290.0/macOS
+export PATH=$VULKAN_SDK/bin:$PATH
+export DYLD_LIBRARY_PATH=$VULKAN_SDK/lib
+export VK_LAYER_PATH=$VULKAN_SDK/etc/vulkan/explicit_layer.d
 ```
 
-Then you can compile the project by calling
-```
-./build.sh
-```
-and then running it via
-```
-./build/OpenGLProject
-```
 
-Alternatively you can execute
-```
-compile_and_run.sh
-```
-to execute it in one step.
+# References
+* Apple is Incompatbile with OpenGL and Vulcan
+    * [1] https://developer.apple.com/documentation/apple-silicon/porting-your-macos-apps-to-apple-silicon
+    * List of versions supported by device version.
+        [2] https://support.apple.com/en-ca/101525
