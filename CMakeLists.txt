@@ -19,7 +19,6 @@ find_package(glfw3 3.3 REQUIRED)
 
 set(SOURCES
     src/main.cpp
-    src/VulkanEngine.cpp 
 )
 
 include_directories(include)
