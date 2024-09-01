@@ -11,6 +11,7 @@ This is closely related to some CLI tools I've developed for exploring and parsi
 https://github.com/Daniel-Sinkin/ds_util/
 """
 
+import argparse
 import os
 import subprocess
 
@@ -24,7 +25,7 @@ def get_project_structure() -> str:
         result = subprocess.run(["tree", "."], capture_output=True, text=True)
         return result.stdout
     except FileNotFoundError:
-        # If `tree` command is not available, fallback to using os.walk for structure
+        # If tree command is not available, fallback to using os.walk for structure
         structure = ""
         for root, dirs, files in os.walk("."):
             level = root.replace(".", "").count(os.sep)
@@ -49,9 +50,32 @@ def serialize_files(directory, extension) -> str:
     return serialized_content
 
 
+def list_shaders_and_content(folder) -> str:
+    serialized_content = f"###\n# {folder.upper()} FOLDER\n###\n\n"
+    for file in os.listdir(folder):
+        filepath = os.path.join(folder, file)
+        if os.path.isfile(filepath):
+            serialized_content += f"###\n# {file}\n###\n"
+            with open(filepath, "r") as f:
+                content = f.read()
+                serialized_content += content + "\n\n"
+    return serialized_content
+
+
 def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Serialize project files and optionally list shader files."
+    )
+    parser.add_argument(
+        "--shaders",
+        action="store_true",
+        help="Append shader files' contents to the serialized output",
+    )
+    args = parser.parse_args()
+
     src_dir = "src"
     include_dir = "include"
+    shaders_dir = "shaders"
 
     project_structure = get_project_structure()
 
@@ -60,6 +84,9 @@ def main() -> None:
 
     serialized_string += serialize_files(src_dir, ".cpp")
     serialized_string += serialize_files(include_dir, ".h")
+
+    if args.shaders:
+        serialized_string += list_shaders_and_content(shaders_dir)
 
     pyperclip.copy(serialized_string)
 
