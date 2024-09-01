@@ -12,10 +12,28 @@ https://github.com/Daniel-Sinkin/ds_util/
 """
 
 import os
+import subprocess
 
 import pyperclip
 import tiktoken
 from termcolor import colored
+
+
+def get_project_structure() -> str:
+    try:
+        result = subprocess.run(["tree", "."], capture_output=True, text=True)
+        return result.stdout
+    except FileNotFoundError:
+        # If `tree` command is not available, fallback to using os.walk for structure
+        structure = ""
+        for root, dirs, files in os.walk("."):
+            level = root.replace(".", "").count(os.sep)
+            indent = " " * 4 * level
+            structure += f"{indent}{os.path.basename(root)}/\n"
+            sub_indent = " " * 4 * (level + 1)
+            for file in files:
+                structure += f"{sub_indent}{file}\n"
+        return structure
 
 
 def serialize_files(directory, extension) -> str:
@@ -35,7 +53,12 @@ def main() -> None:
     src_dir = "src"
     include_dir = "include"
 
-    serialized_string = serialize_files(src_dir, ".cpp")
+    project_structure = get_project_structure()
+
+    serialized_string = "###\n# Project structure\n###\n"
+    serialized_string += project_structure + "\n\n"
+
+    serialized_string += serialize_files(src_dir, ".cpp")
     serialized_string += serialize_files(include_dir, ".h")
 
     pyperclip.copy(serialized_string)
