@@ -58,3 +58,6 @@ build/
 /Release/
 /x64/
 /x86/
+
+# Python Virtual Environment
+.venv
