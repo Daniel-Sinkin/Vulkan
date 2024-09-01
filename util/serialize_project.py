@@ -18,7 +18,7 @@ import tiktoken
 from termcolor import colored
 
 
-def serialize_files(directory, extension):
+def serialize_files(directory, extension) -> str:
     serialized_content = f"###\n# {directory.upper()} FOLDER\n###\n\n"
     for root, _, files in os.walk(directory):
         for file in files:
@@ -31,27 +31,21 @@ def serialize_files(directory, extension):
     return serialized_content
 
 
-def main():
-    # Directories to serialize
+def main() -> None:
     src_dir = "src"
     include_dir = "include"
 
-    # Serialize .cpp files in src and .h files in include
     serialized_string = serialize_files(src_dir, ".cpp")
     serialized_string += serialize_files(include_dir, ".h")
 
-    # Copy to clipboard
     pyperclip.copy(serialized_string)
 
-    # Count number of lines
     num_lines = len(serialized_string.splitlines())
 
-    # Tokenization using tiktoken
-    encoding = tiktoken.encoding_for_model("gpt-4")  # Use the GPT-4 tokenizer
+    encoding = tiktoken.encoding_for_model("gpt-4")
     num_tokens = len(encoding.encode(serialized_string))
 
-    # Check if more than 50% of the token limit is reached
-    token_limit = 8192  # Assuming GPT-4 Standard with 8k tokens
+    token_limit = 8192
     if num_tokens > token_limit / 2:
         print(
             colored(
@@ -62,7 +56,6 @@ def main():
     else:
         print(f"Number of tokens: {num_tokens}")
 
-    # Print the number of lines copied to the clipboard
     print(f"Number of lines copied to clipboard: {num_lines}")
 
 
