@@ -30,3 +30,12 @@ target_link_libraries(VulkanEngine
     Vulkan::Vulkan 
     ${VULKAN_LIBRARY_DIR}/libMoltenVK.dylib
 )
+
+# Set the default build type to Debug if not specified
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type" FORCE)
+endif()
+
+# Set flags for different build types
+set(CMAKE_CXX_FLAGS_DEBUG "-g")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3")
