@@ -37,6 +37,7 @@ private:
         window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Vulkan", nullptr, nullptr);
     }
 
+    // TODO: This is quite bad, should make the req extensions into something like a vector of string views or something like that instead of using C style pointer of pointers.
     bool const validateExtensions(const std::vector<VkExtensionProperties> &supported_extensions, const char **required_extensions, const uint32_t required_extensions_count) {
         for (uint32_t i = 0; i < required_extensions_count; i++) {
             bool is_included = false;
