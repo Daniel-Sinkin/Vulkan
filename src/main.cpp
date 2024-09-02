@@ -67,15 +67,6 @@ private:
         uint32_t glfwExtensionCount = 0;
         const char **glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
-        if (glfwExtensions) {
-            for (uint32_t i = 0; i < glfwExtensionCount; ++i) {
-                std::cout << glfwExtensions[i] << std::endl;
-            }
-        } else {
-            std::cout << "No required extensions found." << std::endl;
-        }
-        std::cout << "\n";
-
         // Fix for VK_ERROR_INCOMPATIBLE_DRIVER that appears in MacOS
         std::vector<const char *> requiredExtensions;
         for (uint32_t i = 0; i < glfwExtensionCount; i++) {
@@ -103,14 +94,8 @@ private:
 
         vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
 
-        std::cout << "available extensions:\n";
-
-        for (const auto &extension : extensions) {
-            std::cout << '\t' << extension.extensionName << '\n';
-        }
-
         if (!validateExtensions(extensions, glfwExtensions, glfwExtensionCount)) {
-            std::cout << "Not Supported!\n";
+            throw std::runtime_error("Required extensions are not supported!");
         }
     }
 
