@@ -2,6 +2,7 @@
 #include <GLFW/glfw3.h> // Implicitly imports vulcan
 
 #include <cstdlib>
+#include <cstring>
 #include <iostream>
 #include <stdexcept>
 #include <vector>
@@ -36,6 +37,22 @@ private:
         window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Vulkan", nullptr, nullptr);
     }
 
+    bool const validateExtensions(const std::vector<VkExtensionProperties> &supported_extensions, const char **required_extensions, const uint32_t required_extensions_count) {
+        for (uint32_t i = 0; i < required_extensions_count; i++) {
+            bool is_included = false;
+            for (const auto &required_extension : supported_extensions) {
+                if (std::strcmp(required_extensions[i], required_extension.extensionName)) {
+                    is_included = true;
+                    break;
+                }
+            }
+            if (!is_included) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     void createInstance() {
         VkApplicationInfo appInfo = {};
         appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -49,6 +66,15 @@ private:
         uint32_t glfwExtensionCount = 0;
         const char **glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
+        if (glfwExtensions) {
+            for (uint32_t i = 0; i < glfwExtensionCount; ++i) {
+                std::cout << glfwExtensions[i] << std::endl;
+            }
+        } else {
+            std::cout << "No required extensions found." << std::endl;
+        }
+        std::cout << "\n";
+
         // Fix for VK_ERROR_INCOMPATIBLE_DRIVER that appears in MacOS
         std::vector<const char *> requiredExtensions;
         for (uint32_t i = 0; i < glfwExtensionCount; i++) {
@@ -58,8 +84,8 @@ private:
 
         VkInstanceCreateInfo createInfo = {};
         createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-        createInfo.pNext = nullptr;
         createInfo.pApplicationInfo = &appInfo;
+        createInfo.pNext = nullptr;
         createInfo.enabledExtensionCount = static_cast<uint32_t>(requiredExtensions.size());
         createInfo.ppEnabledExtensionNames = requiredExtensions.data();
         createInfo.enabledLayerCount = 0;
@@ -69,7 +95,24 @@ private:
         if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
             throw std::runtime_error("failed to create instance!");
         }
+
+        uint32_t extensionCount = 0;
+        vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
+        std::vector<VkExtensionProperties> extensions(extensionCount);
+
+        vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
+
+        std::cout << "available extensions:\n";
+
+        for (const auto &extension : extensions) {
+            std::cout << '\t' << extension.extensionName << '\n';
+        }
+
+        if (!validateExtensions(extensions, glfwExtensions, glfwExtensionCount)) {
+            std::cout << "Not Supported!\n";
+        }
     }
+
     void initVulkan() {
         createInstance();
     }
@@ -81,6 +124,8 @@ private:
     }
 
     void cleanup() {
+        vkDestroyInstance(instance, nullptr);
+
         glfwDestroyWindow(window);
         glfwTerminate();
     }
