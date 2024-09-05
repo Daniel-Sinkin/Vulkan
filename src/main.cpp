@@ -1,12 +1,14 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h> // Implicitly imports vulkan
 
+#include "Settings.h"
 #include "util.h"
 
 #include <cstdlib>
 #include <cstring>
 #include <format>
 #include <iostream>
+#include <optional>
 #include <stdexcept>
 #include <vector>
 
@@ -44,6 +46,9 @@ public:
     void run() {
         initWindow();
         initVulkan();
+
+        // Force the buffer to flush once before the infinite loop so all logging statements gets processd properly
+        std::cout << std::endl;
         mainLoop();
         cleanup();
     }
@@ -142,6 +147,99 @@ private:
     }
 
     void pickPhysicalDevice() {
+        VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+
+        uint32_t deviceCount = 0;
+        vkEnumeratePhysicalDevices(m_Instance, &deviceCount, nullptr);
+        if (deviceCount == 0) {
+            throw std::runtime_error("failed to find GPUs with Vulkan support!");
+        }
+        std::vector<VkPhysicalDevice> devices(deviceCount);
+        vkEnumeratePhysicalDevices(m_Instance, &deviceCount, devices.data());
+
+        for (const auto &device : devices) {
+            if (isDeviceSuitable(device)) {
+                physicalDevice = device;
+                break;
+            }
+        }
+
+        if (physicalDevice == VK_NULL_HANDLE) {
+            throw std::runtime_error("failed to find a suitable GPU!");
+        }
+    }
+
+    bool isDeviceSuitable(VkPhysicalDevice device) {
+        fprintf(stdout, "\nChecking out device for suitability.");
+        VkPhysicalDeviceProperties deviceProperties;
+        VkPhysicalDeviceFeatures deviceFeatures;
+        vkGetPhysicalDeviceProperties(device, &deviceProperties);
+        vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+
+        fprintf(stdout, "\n");
+        fprintf(stdout, "apiVersion = %u\n", deviceProperties.apiVersion);
+        fprintf(stdout, "driverVersion = %u\n", deviceProperties.driverVersion);
+        fprintf(stdout, "vendorID = %u\n", deviceProperties.vendorID);
+        fprintf(stdout, "deviceID = %u\n", deviceProperties.deviceID);
+        fprintf(stdout, "deviceType = %u\n", deviceProperties.deviceType);
+        fprintf(stdout, "deviceName = %s\n", deviceProperties.deviceName);
+        fprintf(stdout, "pipelineCacheUUID = ");
+        for (auto hex_code : deviceProperties.pipelineCacheUUID) {
+            fprintf(stdout, "%02x:", hex_code);
+        }
+        fprintf(stdout, "\n");
+
+        bool is_discrete_gpu = deviceProperties.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
+        if (!Settings::ALLOW_DEVICE_WITHOUT_INTEGRATED_GPU && is_discrete_gpu) {
+            fprintf(stdout, "Device is unsuitable because it's not a discrete GPU!.\n");
+            return false;
+        }
+        if (deviceFeatures.geometryShader) {
+            fprintf(stdout, "Device is unsuitable because it does not support Geometry Shaders!.\n");
+            return false;
+        }
+
+        QueueFamilyIndices indices = findQueueFamilies(device);
+        if (!indices.isComplete()) {
+            fprintf(stdout, "Device is suitable because it has no QueueFamily!");
+            return false;
+        }
+
+        fprintf(stdout, "Device is suitable.");
+        return true;
+    }
+    struct QueueFamilyIndices {
+        std::optional<uint32_t> graphicsFamily;
+
+        bool isComplete() {
+            return graphicsFamily.has_value();
+        }
+    };
+
+    QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) {
+        QueueFamilyIndices indices;
+
+        uint32_t queueFamilyCount = 0;
+        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+
+        std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+
+        int i = 0;
+        for (const auto &queueFamily : queueFamilies) {
+            if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+                indices.graphicsFamily = i;
+            }
+            if (indices.isComplete()) {
+                break;
+            }
+            i++;
+        }
+        return indices;
+    }
+
+    bool isDeviceSuitable(VkPhysicalDevice device) {
+        QueueFamilyIndices indices = findQueueFamilies(device);
     }
 
     void mainLoop() {
