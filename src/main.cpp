@@ -64,6 +64,8 @@ private:
 
     VkQueue m_GraphicsQueue;
 
+    VkSurfaceKHR m_Surface;
+
     void initWindow() {
         if (glfwInit() == GLFW_FALSE) {
             throw std::runtime_error("Failed to instantiate GLFW window!");
@@ -107,19 +109,21 @@ private:
         appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
         appInfo.apiVersion = VK_API_VERSION_1_0;
 
-        // Get the required extensions and add the portability-related extensions
-        std::vector<const char *> requiredExtensions = getRequiredExtensions();
-        requiredExtensions.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);          // Add portability enumeration extension
-        requiredExtensions.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME); // Add get physical device properties 2 extension
-
         VkInstanceCreateInfo createInfo = {};
+
+#if defined(__APPLE__) && defined(__arm64__) // MacOS specific workarounds
+        std::vector<const char *> requiredExtensions = getRequiredExtensions();
+        requiredExtensions.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+        requiredExtensions.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        createInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+#endif
+
         createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
         createInfo.pApplicationInfo = &appInfo;
         createInfo.enabledExtensionCount = static_cast<uint32_t>(requiredExtensions.size());
         createInfo.ppEnabledExtensionNames = requiredExtensions.data();
         createInfo.enabledLayerCount = 0;
         createInfo.ppEnabledLayerNames = nullptr;
-        createInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR; // Add the portability bit to instance creation
 
         VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
         if (enableValidationLayers) {
