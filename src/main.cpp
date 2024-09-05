@@ -59,7 +59,7 @@ private:
     VkInstance m_Instance;
     VkDebugUtilsMessengerEXT m_DebugMessenger;
 
-    VkPhysicalDevice m_PhysicalDevice;
+    VkPhysicalDevice m_PhysicalDevice = VK_NULL_HANDLE;
     VkDevice m_Device;
 
     VkQueue m_GraphicsQueue;
@@ -107,11 +107,10 @@ private:
         appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
         appInfo.apiVersion = VK_API_VERSION_1_0;
 
-#if defined __APPLE__ && defined __arm64__
+        // Get the required extensions and add the portability-related extensions
         std::vector<const char *> requiredExtensions = getRequiredExtensions();
-        requiredExtensions.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
-        requiredExtensions.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-#endif
+        requiredExtensions.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);          // Add portability enumeration extension
+        requiredExtensions.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME); // Add get physical device properties 2 extension
 
         VkInstanceCreateInfo createInfo = {};
         createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -120,7 +119,7 @@ private:
         createInfo.ppEnabledExtensionNames = requiredExtensions.data();
         createInfo.enabledLayerCount = 0;
         createInfo.ppEnabledLayerNames = nullptr;
-        createInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+        createInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR; // Add the portability bit to instance creation
 
         VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
         if (enableValidationLayers) {
@@ -156,6 +155,8 @@ private:
     }
 
     void createLogicalDevice() {
+        (void)fprintf(stdout, "\nTrying to create Logical Device\n");
+
         QueueFamilyIndices indices = findQueueFamilies(m_PhysicalDevice);
 
         VkDeviceQueueCreateInfo queueCreateInfo{};
@@ -170,14 +171,17 @@ private:
         // For now every feature is disabled
         VkPhysicalDeviceFeatures deviceFeatures{};
 
+        std::vector<const char *> requiredDeviceExtensions = getRequiredDeviceExtensions(m_PhysicalDevice);
+        // requiredDeviceExtensions.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+
         VkDeviceCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
         createInfo.pQueueCreateInfos = &queueCreateInfo;
         createInfo.queueCreateInfoCount = 1;
 
         createInfo.pEnabledFeatures = &deviceFeatures;
-
-        createInfo.enabledExtensionCount = 0;
+        createInfo.enabledExtensionCount = static_cast<uint32_t>(requiredDeviceExtensions.size());
+        createInfo.ppEnabledExtensionNames = requiredDeviceExtensions.data();
 
         if (enableValidationLayers) {
             createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
@@ -194,8 +198,6 @@ private:
     }
 
     void pickPhysicalDevice() {
-        VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-
         uint32_t deviceCount = 0;
         vkEnumeratePhysicalDevices(m_Instance, &deviceCount, nullptr);
         if (deviceCount == 0) {
@@ -206,12 +208,12 @@ private:
 
         for (const auto &device : devices) {
             if (isDeviceSuitable(device)) {
-                physicalDevice = device;
+                m_PhysicalDevice = device;
                 break;
             }
         }
 
-        if (physicalDevice == VK_NULL_HANDLE) {
+        if (m_PhysicalDevice == VK_NULL_HANDLE) {
             throw std::runtime_error("failed to find a suitable GPU!");
         }
     }
@@ -333,6 +335,22 @@ private:
             extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
         }
 
+        return extensions;
+    }
+
+    std::vector<const char *> getRequiredDeviceExtensions(VkPhysicalDevice device) {
+        uint32_t deviceExtensionPropertyCount = 0;
+        vkEnumerateDeviceExtensionProperties(device, nullptr, &deviceExtensionPropertyCount, nullptr);
+
+        std::vector<VkExtensionProperties> deviceExtensionProperties(deviceExtensionPropertyCount);
+        vkEnumerateDeviceExtensionProperties(device, nullptr, &deviceExtensionPropertyCount, deviceExtensionProperties.data());
+
+        std::vector<const char *> extensions;
+        for (const auto &property : deviceExtensionProperties) {
+            if (strcmp(property.extensionName, VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME) == 0) {
+                extensions.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+            }
+        }
         return extensions;
     }
 

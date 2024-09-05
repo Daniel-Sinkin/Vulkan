@@ -7,6 +7,12 @@
 # Reminders and things to look out for
 * (Currently not implemented) Be careful whether you are compiling with DEBUG flag set or not
 * (Currently always on) The runtime sanitizers in compilation settings are VERY slow, active during debug, if things are slow should try to disable those first.
+* Regarding MacOS Specific Workarounds
+    * https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VK_KHR_portability_enumeration.html
+    * https://github.com/ocornut/imgui/issues/6101#issuecomment-1398223233
+    * https://stackoverflow.com/questions/72374316/validation-error-on-device-extension-on-m1-mac
+    * https://stackoverflow.com/questions/66659907/vulkan-validation-warning-catch-22-about-vk-khr-portability-subset-on-moltenvk/66660106#66660106
+    * https://www.youtube.com/watch?v=7Sp7waWUXOc
 
 # Setup
 I'm using AppleClang 15.0.0.15000309 as my compiler and CMake to generate my make files. The project can be rebuild by using the `clean_and_recompile.sh` script (Warning: This wipes all build information and so can be quite slow. Although I don't build my dependencies from scratch so it shouldn't be too bad. Might build vulcan from source later on, but currently I just use the SDK directly.)
