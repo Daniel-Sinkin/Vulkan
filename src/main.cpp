@@ -1,6 +1,8 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h> // Implicitly imports vulkan
 
+#include "util.h"
+
 #include <cstdlib>
 #include <cstring>
 #include <format>
