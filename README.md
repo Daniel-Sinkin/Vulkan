@@ -2,7 +2,34 @@
 
 # Notes
 * As this is supposed to be a portfolio project it is vital to put in effort into presentation
-    * Should look into CodeSnap
+    * Could look into CodeSnap and its alternatives
+* I'm at Swap Chains right now
+
+# Vulkan Tutorial Roadmap
+* [x] Development Environment
+* [x] Drawing a Triangle
+    * [x] Setup
+        * [x] Base Code
+        * [x] Instance
+        * [x] Validation Layers
+        * [x] Physical Devices and queue families
+        * [x] Logical Devices and queues
+    * [x] Presentation
+        * [x] Window Surface
+        * [ ] Swap Chain
+        * [ ] Image Views
+    * [ ] Graphics pipeline basics
+    * [ ] Drawing
+    * [ ] Swap chain recreation
+* [ ] Vertex Buffers
+* [ ] Texture Mapping
+* [ ] Depth Buffering
+* [ ] Loading Models
+* [ ] Generating Mipmaps
+* [ ] Multisampling
+* [ ] Compute Shader
+
+
 
 # Reminders and things to look out for
 * (Currently not implemented) Be careful whether you are compiling with DEBUG flag set or not
