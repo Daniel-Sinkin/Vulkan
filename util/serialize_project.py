@@ -1,4 +1,10 @@
-import os
+"""
+This script generates a serialized content output from a project's `src`, `include`, and
+CMakeLists.txt files. It counts the lines, generates a tree structure of the project,
+copies the serialized output to the clipboard, and calculates the number of tokens for
+use with OpenAI models.
+"""
+
 import subprocess
 from pathlib import Path
 
@@ -7,19 +13,20 @@ import tiktoken
 
 TOKENLIMIT = 6000
 
+# Global project root as pathlib object
+project_root = Path("..").resolve()
+
 
 def get_file_content(filepath):
-    """Read the content of a file and return it as a string."""
     with open(filepath, "r") as file:
         return file.read()
 
 
 def count_lines(content):
-    """Count the number of lines in the content."""
     return len(content.splitlines())
 
 
-def generate_serialized_content(project_root):
+def generate_serialized_content():
     """Generate the serialized content from the source and header files."""
     output = []
     file_list = []
@@ -79,11 +86,7 @@ def count_tokens(text):
 
 
 def main():
-    project_root = Path(__file__).parent
-
-    serialized_content, file_list, total_lines = generate_serialized_content(
-        project_root
-    )
+    serialized_content, file_list, total_lines = generate_serialized_content()
 
     # Copy to clipboard
     pyperclip.copy(serialized_content)
