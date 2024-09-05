@@ -1,112 +1,110 @@
-"""
-Utility that serializes the entire project (all .cpp in src and .h in include) as one large string
-with filenames included.
-
-Intention is to allow for faster turnaround speed when using LLMs, at least once the project is small,
-once it gets bigger I'd need some kind of filtering mechanism, maybe only including function names,
-filtering for specific regex matching names and the like.
-
-This is closely related to some CLI tools I've developed for exploring and parsing the AST of python projects
-
-https://github.com/Daniel-Sinkin/ds_util/
-"""
-
-import argparse
 import os
 import subprocess
+from pathlib import Path
 
 import pyperclip
 import tiktoken
-from termcolor import colored
+
+TOKENLIMIT = 6000
 
 
-def get_project_structure() -> str:
-    try:
-        result = subprocess.run(["tree", "."], capture_output=True, text=True)
-        return result.stdout
-    except FileNotFoundError:
-        # If tree command is not available, fallback to using os.walk for structure
-        structure = ""
-        for root, dirs, files in os.walk("."):
-            level = root.replace(".", "").count(os.sep)
-            indent = " " * 4 * level
-            structure += f"{indent}{os.path.basename(root)}/\n"
-            sub_indent = " " * 4 * (level + 1)
-            for file in files:
-                structure += f"{sub_indent}{file}\n"
-        return structure
+def get_file_content(filepath):
+    """Read the content of a file and return it as a string."""
+    with open(filepath, "r") as file:
+        return file.read()
 
 
-def serialize_files(directory, extension) -> str:
-    serialized_content = f"###\n# {directory.upper()} FOLDER\n###\n\n"
-    for root, _, files in os.walk(directory):
-        for file in files:
-            if file.endswith(extension):
-                filepath = os.path.join(root, file)
-                with open(filepath, "r") as f:
-                    content = f.read()
-                    serialized_content += f"###\n# {file}\n###\n"
-                    serialized_content += content + "\n\n"
-    return serialized_content
+def count_lines(content):
+    """Count the number of lines in the content."""
+    return len(content.splitlines())
 
 
-def list_shaders_and_content(folder) -> str:
-    serialized_content = f"###\n# {folder.upper()} FOLDER\n###\n\n"
-    for file in os.listdir(folder):
-        filepath = os.path.join(folder, file)
-        if os.path.isfile(filepath):
-            serialized_content += f"###\n# {file}\n###\n"
-            with open(filepath, "r") as f:
-                content = f.read()
-                serialized_content += content + "\n\n"
-    return serialized_content
+def generate_serialized_content(project_root):
+    """Generate the serialized content from the source and header files."""
+    output = []
+    file_list = []
+    total_lines = 0
+
+    # Process src folder
+    src_path = project_root.joinpath("src")
+    if src_path.exists() and src_path.is_dir():
+        file_list.append("src/")
+        output.append("###\n# SRC\n###\n")
+        for cpp_file in src_path.glob("*.cpp"):
+            file_list.append(f"    {cpp_file.name}")
+            content = get_file_content(cpp_file)
+            total_lines += count_lines(content)
+            output.append(f"# {cpp_file.name}\n")
+            output.append(content)
+            output.append("\n")
+
+    # Process include folder
+    include_path = project_root.joinpath("include")
+    if include_path.exists() and include_path.is_dir():
+        file_list.append("include/")
+        output.append("###\n# INCLUDE\n###\n")
+        for h_file in include_path.glob("*.h"):
+            file_list.append(f"    {h_file.name}")
+            content = get_file_content(h_file)
+            total_lines += count_lines(content)
+            output.append(f"# {h_file.name}\n")
+            output.append(content)
+            output.append("\n")
+
+    # Process CMakeLists.txt
+    cmake_file = project_root.joinpath("CMakeLists.txt")
+    if cmake_file.exists():
+        file_list.append("CMakeLists.txt")
+        output.append("###\n# CMakeLists.txt\n###\n")
+        content = get_file_content(cmake_file)
+        total_lines += count_lines(content)
+        output.append(content)
+        output.append("\n")
+
+    # Generate project tree
+    output.append("###\n# Project Tree\n###\n")
+    tree_command = ["tree", str(project_root)]
+    project_tree = subprocess.run(tree_command, stdout=subprocess.PIPE, text=True)
+    output.append(project_tree.stdout)
+
+    return "\n".join(output), file_list, total_lines
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Serialize project files and optionally list shader files."
+def count_tokens(text):
+    """Count the number of tokens in the text using tiktoken."""
+    # Use 'cl100k_base' for GPT-4 encoding or 'p50k_base' for GPT-3.5
+    encoding = tiktoken.get_encoding("cl100k_base")
+    tokens = encoding.encode(text)
+    return len(tokens)
+
+
+def main():
+    project_root = Path(__file__).parent
+
+    serialized_content, file_list, total_lines = generate_serialized_content(
+        project_root
     )
-    parser.add_argument(
-        "--shaders",
-        action="store_true",
-        help="Append shader files' contents to the serialized output",
-    )
-    args = parser.parse_args()
 
-    src_dir = "src"
-    include_dir = "include"
-    shaders_dir = "shaders"
+    # Copy to clipboard
+    pyperclip.copy(serialized_content)
+    print("Serialized content copied to clipboard.")
 
-    project_structure = get_project_structure()
+    # Print the list of files considered
+    print("\nFiles Considered:")
+    for file in file_list:
+        print(file)
 
-    serialized_string = "###\n# Project structure\n###\n"
-    serialized_string += project_structure + "\n\n"
+    # Print the total number of lines copied
+    print(f"\nTotal lines copied: {total_lines}")
 
-    serialized_string += serialize_files(src_dir, ".cpp")
-    serialized_string += serialize_files(include_dir, ".h")
+    # Calculate and print the number of tokens
+    token_count = count_tokens(serialized_content)
+    print(f"Total tokens: {token_count}")
 
-    if args.shaders:
-        serialized_string += list_shaders_and_content(shaders_dir)
-
-    pyperclip.copy(serialized_string)
-
-    num_lines = len(serialized_string.splitlines())
-
-    encoding = tiktoken.encoding_for_model("gpt-4")
-    num_tokens = len(encoding.encode(serialized_string))
-
-    token_limit = 8192
-    if num_tokens > token_limit / 2:
+    if token_count > TOKENLIMIT:
         print(
-            colored(
-                f"Warning: You have reached {num_tokens} tokens out of {token_limit}. This is more than 50% of the limit.",
-                "red",
-            )
+            f"Warning: The content exceeds {TOKENLIMIT} tokens, which may not fit within a single OpenAI GPT-3.5/4 request."
         )
-    else:
-        print(f"Number of tokens: {num_tokens}")
-
-    print(f"Number of lines copied to clipboard: {num_lines}")
 
 
 if __name__ == "__main__":
