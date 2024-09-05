@@ -1,7 +1,19 @@
 # Vulcan 3D Engine from scratch
 
+# Notes
+* As this is supposed to be a portfolio project it is vital to put in effort into presentation
+    * Should look into CodeSnap
+
+# Reminders and things to look out for
+* (Currently not implemented) Be careful whether you are compiling with DEBUG flag set or not
+* (Currently always on) The runtime sanitizers in compilation settings are VERY slow, active during debug, if things are slow should try to disable those first.
 
 # Setup
+I'm using AppleClang 15.0.0.15000309 as my compiler and CMake to generate my make files. The project can be rebuild by using the `clean_and_recompile.sh` script (Warning: This wipes all build information and so can be quite slow. Although I don't build my dependencies from scratch so it shouldn't be too bad. Might build vulcan from source later on, but currently I just use the SDK directly.)
+
+If you want to compile the project you can either use the `compile_and_run.sh` (just comment out the last line if you don't want to run after building)
+```
+
 You can download the newest Vulkan SDK [here](https://vulkan.lunarg.com/sdk/home) 
 
 I'm using version 1.3.290.0 (23-Jul-2024) which has the following SHA256 checksum:
@@ -14,8 +26,10 @@ Add the following to your RC file (I'm using the ZSH shell so it's at `~/.zshrc`
 # Vulkan
 export VULKAN_SDK=/Users/danielsinkin/VulkanSDK/1.3.290.0/macOS
 export PATH=$VULKAN_SDK/bin:$PATH
-export DYLD_LIBRARY_PATH=$VULKAN_SDK/lib
-export VK_LAYER_PATH=/Users/danielsinkin/VulkanSDK/1.3.290.0/macOS/etc/vulkan/explicit_layer.d
+export DYLD_LIBRARY_PATH=$VULKAN_SDK/lib:/usr/local/lib:$DYLD_LIBRARY_PATH
+export VK_LAYER_PATH=$VULKAN_SDK/share/vulkan/explicit_layer.d
+# export VK_INSTANCE_LAYERS="VK_LAYER_LUNARG_api_dump:VK_LAYER_KHRONOS_validation"
+export VK_INSTANCE_LAYERS="VK_LAYER_KHRONOS_validation"
 export VK_ICD_FILENAMES=/Users/danielsinkin/VulkanSDK/1.3.290.0/macOS/share/vulkan/icd.d/MoltenVK_icd.json
 ```
 
