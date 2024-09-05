@@ -175,7 +175,7 @@ private:
             if (result == VK_ERROR_EXTENSION_NOT_PRESENT) {
                 throw std::runtime_error("failed to set up debug messenger because the DebugUtilsMessenger Extension is missing! (error_code = -7)");
             } else {
-                throw std::runtime_error(std::format("failed to set up debug messenger, error_code = {}", result));
+                throw std::runtime_error(std::format("failed to set up debug messenger, error_code = {}", std::string_view(util::to_string(result))));
             }
         }
     }
