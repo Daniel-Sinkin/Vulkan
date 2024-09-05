@@ -14,7 +14,7 @@ import tiktoken
 TOKENLIMIT = 6000
 
 # Global project root as pathlib object
-project_root = Path("..").resolve()
+project_root = Path(".").resolve()
 
 
 def get_file_content(filepath):
