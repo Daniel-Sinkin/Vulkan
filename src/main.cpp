@@ -49,22 +49,22 @@ public:
     }
 
 private:
-    GLFWwindow *window;
+    GLFWwindow *m_Window;
 
-    VkInstance instance;
-    VkDebugUtilsMessengerEXT debugMessenger;
+    VkInstance m_Instance;
+    VkDebugUtilsMessengerEXT m_DebugMessenger;
 
     void initWindow() {
         if (glfwInit() == GLFW_FALSE) {
             throw std::runtime_error("Failed to instantiate GLFW window!");
         }
 
-        // GLFW defaults to creating OpenGL context, this suppresses that
+        // GLFW defaults to creating OpenGL context if we don't pass GLFW_NO_APP explicitly
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         // Disables window resizing
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
-        window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Vulkan", nullptr, nullptr);
+        m_Window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Vulkan", nullptr, nullptr);
     }
 
     bool const validateExtensions(const std::vector<VkExtensionProperties> &supported_extensions, const char **required_extensions, const uint32_t required_extensions_count) {
@@ -121,7 +121,7 @@ private:
             createInfo.pNext = nullptr;
         }
 
-        if (vkCreateInstance(&createInfo, nullptr, &this->instance) != VK_SUCCESS) {
+        if (vkCreateInstance(&createInfo, nullptr, &m_Instance) != VK_SUCCESS) {
             throw std::runtime_error("failed to create instance!");
         }
 
@@ -138,22 +138,26 @@ private:
     void initVulkan() {
         createInstance();
         setupDebugMessenger();
+        pickPhysicalDevice();
+    }
+
+    void pickPhysicalDevice() {
     }
 
     void mainLoop() {
-        while (!glfwWindowShouldClose(window)) {
+        while (!glfwWindowShouldClose(m_Window)) {
             glfwPollEvents();
         }
     }
 
     void cleanup() {
         if (enableValidationLayers) {
-            DestroyDebugUtilsMessengerEXT(this->instance, this->debugMessenger, nullptr);
+            DestroyDebugUtilsMessengerEXT(m_Instance, m_DebugMessenger, nullptr);
         }
 
-        vkDestroyInstance(this->instance, nullptr);
+        vkDestroyInstance(m_Instance, nullptr);
 
-        glfwDestroyWindow(window);
+        glfwDestroyWindow(m_Window);
         glfwTerminate();
     }
 
@@ -172,7 +176,7 @@ private:
         VkDebugUtilsMessengerCreateInfoEXT createInfo;
         populateDebugMessengerCreateInfo(createInfo);
 
-        VkResult result = CreateDebugUtilsMessengerEXT(this->instance, &createInfo, nullptr, &debugMessenger);
+        VkResult result = CreateDebugUtilsMessengerEXT(m_Instance, &createInfo, nullptr, &m_DebugMessenger);
         if (result != VK_SUCCESS) {
             throw std::runtime_error("failed to set up debug messenger!");
         }
