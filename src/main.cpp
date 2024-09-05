@@ -55,7 +55,9 @@ private:
     VkDebugUtilsMessengerEXT debugMessenger;
 
     void initWindow() {
-        glfwInit();
+        if (glfwInit() == GLFW_FALSE) {
+            throw std::runtime_error("Failed to instantiate GLFW window!");
+        }
 
         // GLFW defaults to creating OpenGL context, this suppresses that
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -119,7 +121,7 @@ private:
             createInfo.pNext = nullptr;
         }
 
-        if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
+        if (vkCreateInstance(&createInfo, nullptr, &this->instance) != VK_SUCCESS) {
             throw std::runtime_error("failed to create instance!");
         }
 
@@ -146,10 +148,10 @@ private:
 
     void cleanup() {
         if (enableValidationLayers) {
-            DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+            DestroyDebugUtilsMessengerEXT(this->instance, this->debugMessenger, nullptr);
         }
 
-        vkDestroyInstance(instance, nullptr);
+        vkDestroyInstance(this->instance, nullptr);
 
         glfwDestroyWindow(window);
         glfwTerminate();
@@ -170,13 +172,9 @@ private:
         VkDebugUtilsMessengerCreateInfoEXT createInfo;
         populateDebugMessengerCreateInfo(createInfo);
 
-        VkResult result = CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debugMessenger);
+        VkResult result = CreateDebugUtilsMessengerEXT(this->instance, &createInfo, nullptr, &debugMessenger);
         if (result != VK_SUCCESS) {
-            if (result == VK_ERROR_EXTENSION_NOT_PRESENT) {
-                throw std::runtime_error("failed to set up debug messenger because the DebugUtilsMessenger Extension is missing! (error_code = -7)");
-            } else {
-                throw std::runtime_error(std::format("failed to set up debug messenger, error_code = {}", std::string_view(util::to_string(result))));
-            }
+            throw std::runtime_error("failed to set up debug messenger!");
         }
     }
 
@@ -195,10 +193,10 @@ private:
 
     bool checkValidationLayerSupport() {
         uint32_t layerCount;
-        vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+        (void)vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
 
         std::vector<VkLayerProperties> availableLayers(layerCount);
-        vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+        (void)vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
 
         for (const char *layerName : validationLayers) {
             bool layerFound = false;
