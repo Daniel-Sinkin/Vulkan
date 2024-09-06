@@ -3,7 +3,6 @@
 #include <vulkan/vulkan_beta.h> // For VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME
 
 #include "Settings.h"
-#include "util.h"
 
 #include <cstdlib>
 #include <cstring>
