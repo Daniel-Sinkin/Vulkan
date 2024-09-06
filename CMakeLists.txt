@@ -65,18 +65,27 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         -fstrict-aliasing            # Enable strict aliasing
         -Wshorten-64-to-32           # Warn when implicit truncation from 64-bit to 32-bit happens
         -Wnull-dereference           # Shows places where nullptr are dereferenced
-        -Wredundant-move
-        -Wpessimizing-move
-        -Wformat-nonliteral
-        -Wlifetime                   # This is experimental, might remove this later
-        -Wmissing-field-initializers
-        -Wimplicit-fallthrough
-        -Wnoexcept                   # Checks that NOEXCEPT functions really can't throw exceptions (which is very slow)
+        -Wredundant-move             # Warn for redundant moves
+        -Wpessimizing-move           # Warn for pessimizing moves
+        -Wformat-nonliteral          # Warn about non-literal format strings
+        -Wlifetime                   # Warn about lifetime issues (experimental)
+        -Wmissing-field-initializers # Warn if not all fields in a struct are initialized
+        -Wimplicit-fallthrough       # Warn if fallthrough is not explicit
+        -Wnoexcept                   # Checks that NOEXCEPT functions really can't throw exceptions
         -Wc++2a-compat               # C++23 and up compatibility
+        -Wunused-result              # Warn if function results are unused
+        -Woverloaded-virtual         # Warn if a function in a derived class hides a non-virtual function in a base class
+        -Wlogical-op                 # Warn for suspicious logical operations
+        -Wduplicated-cond            # Warn about duplicated conditions in if-else chains
+        -Wduplicated-branches        # Warn when if-else branches have identical bodies
+        -Wuseless-cast               # Warn if a cast does not change the type or value
+        -Wunsafe-loop-optimizations  # Warn about unsafe loop optimizations
+        -Wvla-larger-than=1024       # Warn when a VLA is larger than 1024 bytes
+        -Weffc++                     # Enable Scott Meyers' Effective C++ warnings
         
-        # Runtime Sanitizers are VERY slow, this must be removed later one, should be fine for development though
+        # Runtime Sanitizers are VERY slow, this must be removed later on, should be fine for development though
         # Should make those be set only when project-wide DEBUG flag is set
-        -fsanitize=address           # Adress Sanitizer
-        -fsanitize=undefined         # UB sanitizer
+        -fsanitize=address           # Address Sanitizer
+        -fsanitize=undefined         # UB Sanitizer
     )
 endif()
