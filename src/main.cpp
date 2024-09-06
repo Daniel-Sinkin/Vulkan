@@ -4,6 +4,7 @@
 
 #include "Settings.h"
 
+#include <algorithm>
 #include <cstdlib>
 #include <cstring>
 #include <format>
@@ -11,6 +12,7 @@
 #include <optional>
 #include <set>
 #include <stdexcept>
+#include <string_view>
 #include <vector>
 
 // Initial Window size, currently we explicitly do NOT allow resizing (see initWindow)
@@ -44,6 +46,15 @@ void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT
 
 class HelloTriangleApplication {
 public:
+    HelloTriangleApplication()
+        : m_Window(nullptr),
+          m_Instance(VK_NULL_HANDLE),
+          m_PhysicalDevice(VK_NULL_HANDLE),
+          m_Device(VK_NULL_HANDLE),
+          m_GraphicsQueue(VK_NULL_HANDLE),
+          m_PresentationQueue(VK_NULL_HANDLE),
+          m_Surface(VK_NULL_HANDLE) {}
+
     void run() {
         initWindow();
         initVulkan();
@@ -81,23 +92,19 @@ private:
         m_Window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Vulkan", nullptr, nullptr);
     }
 
-    bool const validateExtensions(const std::vector<VkExtensionProperties> &supported_extensions, const char **required_extensions, const uint32_t required_extensions_count) {
-        for (uint32_t i = 0; i < required_extensions_count; i++) {
-            bool is_included = false;
-            for (const auto &required_extension : supported_extensions) {
-                if (std::strcmp(required_extensions[i], required_extension.extensionName)) {
-                    is_included = true;
-                    break;
-                }
-            }
-            if (!is_included) {
-                return false;
-            }
-        }
-        return true;
+    bool validateExtensions(const std::vector<VkExtensionProperties> &supported_extensions, const char **required_extensions, uint32_t required_extensions_count) {
+        const char **ext_first = required_extensions;
+        const char **ext_last = required_extensions + required_extensions_count;
+        return std::all_of(ext_first, ext_last, [&](const char *required_extension) {
+            std::string_view required_extension_view(required_extension);
+            return std::any_of(supported_extensions.begin(), supported_extensions.end(), [&](const auto &supported_extension) {
+                return std::string_view(supported_extension.extensionName) == required_extension_view;
+            });
+        });
     }
 
-    void createInstance() {
+    void
+    createInstance() {
         if (enableValidationLayers && !checkValidationLayerSupport()) {
             throw std::runtime_error("Validation layers requested, but not available!");
         }
@@ -113,8 +120,8 @@ private:
 
         VkInstanceCreateInfo createInfo = {};
 
-#if defined(__APPLE__) && defined(__arm64__) // MacOS specific workarounds
         std::vector<const char *> requiredExtensions = getRequiredExtensions();
+#if defined(__APPLE__) && defined(__arm64__) // MacOS specific workarounds
         requiredExtensions.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
         requiredExtensions.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
         createInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
@@ -133,7 +140,8 @@ private:
             createInfo.ppEnabledLayerNames = validationLayers.data();
 
             populateDebugMessengerCreateInfo(debugCreateInfo);
-            createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT *)&debugCreateInfo;
+            // Note that pNext is in general a `const void*` ptr so we can't static_cast it
+            createInfo.pNext = reinterpret_cast<VkDebugUtilsMessengerCreateInfoEXT *>(&debugCreateInfo);
         } else {
             createInfo.enabledLayerCount = 0;
             createInfo.pNext = nullptr;
@@ -168,7 +176,7 @@ private:
     }
 
     void createLogicalDevice() {
-        (void)fprintf(stdout, "\nTrying to create Logical Device\n");
+        fprintf(stdout, "\nTrying to create Logical Device\n");
 
         QueueFamilyIndices indices = findQueueFamilies(m_PhysicalDevice);
 
@@ -229,20 +237,19 @@ private:
         std::vector<VkPhysicalDevice> devices(deviceCount);
         vkEnumeratePhysicalDevices(m_Instance, &deviceCount, devices.data());
 
-        for (const auto &device : devices) {
-            if (isDeviceSuitable(device)) {
-                m_PhysicalDevice = device;
-                break;
-            }
-        }
+        auto it = std::find_if(devices.begin(), devices.end(), [&](const auto &device) {
+            return isDeviceSuitable(device);
+        });
 
-        if (m_PhysicalDevice == VK_NULL_HANDLE) {
+        if (it != devices.end()) {
+            m_PhysicalDevice = *it;
+        } else {
             throw std::runtime_error("failed to find a suitable GPU!");
         }
     }
 
     bool isDeviceSuitable(VkPhysicalDevice device) {
-        fprintf(stdout, "\nChecking out device for suitability.");
+        fprintf(stdout, "\nChecking the following device for suitability.");
         VkPhysicalDeviceProperties deviceProperties;
         VkPhysicalDeviceFeatures deviceFeatures;
         vkGetPhysicalDeviceProperties(device, &deviceProperties);
@@ -388,20 +395,20 @@ private:
 
     bool checkValidationLayerSupport() {
         uint32_t layerCount;
-        (void)vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+        vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
 
         std::vector<VkLayerProperties> availableLayers(layerCount);
         (void)vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
 
         for (const char *layerName : validationLayers) {
-            bool layerFound = false;
+            std::string_view layerNameView(layerName);
 
-            for (const auto &layerProperties : availableLayers) {
-                if (strcmp(layerName, layerProperties.layerName) == 0) {
-                    layerFound = true;
-                    break;
-                }
-            }
+            bool layerFound = std::any_of(
+                availableLayers.begin(),
+                availableLayers.end(),
+                [&](const auto &layerProperties) {
+                    return layerNameView == std::string_view(layerProperties.layerName);
+                });
 
             if (!layerFound) {
                 return false;
