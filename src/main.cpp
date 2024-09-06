@@ -92,7 +92,7 @@ private:
         m_Window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Vulkan", nullptr, nullptr);
     }
 
-    bool validateExtensions(const std::vector<VkExtensionProperties> &supported_extensions, const char **required_extensions, uint32_t required_extensions_count) {
+    bool static validateExtensions(const std::vector<VkExtensionProperties> &supported_extensions, const char **required_extensions, uint32_t required_extensions_count) {
         const char **ext_first = required_extensions;
         const char **ext_last = required_extensions + required_extensions_count;
         return std::all_of(ext_first, ext_last, [&](const char *required_extension) {
@@ -343,7 +343,7 @@ private:
         glfwTerminate();
     }
 
-    void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &createInfo) {
+    void static populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &createInfo) {
         createInfo = {};
         createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
         createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
@@ -364,7 +364,7 @@ private:
         }
     }
 
-    std::vector<const char *> getRequiredExtensions() {
+    static std::vector<const char *> getRequiredExtensions() {
         uint32_t glfwExtensionCount = 0;
         const char **glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
@@ -377,7 +377,7 @@ private:
         return extensions;
     }
 
-    std::vector<const char *> getRequiredDeviceExtensions(VkPhysicalDevice device) {
+    static std::vector<const char *> getRequiredDeviceExtensions(VkPhysicalDevice device) {
         uint32_t deviceExtensionPropertyCount = 0;
         vkEnumerateDeviceExtensionProperties(device, nullptr, &deviceExtensionPropertyCount, nullptr);
 
@@ -393,7 +393,7 @@ private:
         return extensions;
     }
 
-    bool checkValidationLayerSupport() {
+    static bool checkValidationLayerSupport() {
         uint32_t layerCount;
         vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
 

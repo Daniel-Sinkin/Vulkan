@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.10)
 
 project(VulkanEngine)
 
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Set C++20 as the standard
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -40,6 +42,10 @@ endif()
 # Set flags for different build types
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+# set(CMAKE_CXX_CLANG_TIDY "clang-tidy;-checks=modernize-*")
 
 # Add Clang-specific warning flags
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
