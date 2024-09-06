@@ -49,6 +49,7 @@ public:
     HelloTriangleApplication()
         : m_Window(nullptr),
           m_Instance(VK_NULL_HANDLE),
+          m_DebugMessenger(VK_NULL_HANDLE),
           m_PhysicalDevice(VK_NULL_HANDLE),
           m_Device(VK_NULL_HANDLE),
           m_GraphicsQueue(VK_NULL_HANDLE),
@@ -268,8 +269,7 @@ private:
         }
         fprintf(stdout, "\n");
 
-        bool is_discrete_gpu = deviceProperties.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
-        if (!Settings::ALLOW_DEVICE_WITHOUT_INTEGRATED_GPU && is_discrete_gpu) {
+        if (!Settings::ALLOW_DEVICE_WITHOUT_INTEGRATED_GPU && deviceProperties.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
             fprintf(stdout, "Device is unsuitable because it's not a discrete GPU!.\n");
             return false;
         }
