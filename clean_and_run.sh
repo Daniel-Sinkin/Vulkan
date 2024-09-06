@@ -28,4 +28,4 @@ fi
 cmake --build . -j $NUM_CORES
 
 # Run the compiled binary
-./main
+./VulkanEngine

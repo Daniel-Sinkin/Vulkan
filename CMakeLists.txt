@@ -71,7 +71,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         -Wlifetime                   # This is experimental, might remove this later
         -Wmissing-field-initializers
         -Wimplicit-fallthrough
-        -Wnoexcept                   # Checks taht NOEXCEPT functions really can't throw exceptions (which is very slow)
+        -Wnoexcept                   # Checks that NOEXCEPT functions really can't throw exceptions (which is very slow)
         -Wc++2a-compat               # C++23 and up compatibility
         
         # Runtime Sanitizers are VERY slow, this must be removed later one, should be fine for development though
