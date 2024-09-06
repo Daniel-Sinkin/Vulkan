@@ -16,7 +16,6 @@ cppcheck --inconclusive \
 
 echo "Running clang-tidy"
 clang-tidy -p build src/*.cpp \
-           -checks='*,-clang-analyzer-alpha*,-cppcoreguidelines-macro-usage,-llvmlibc-restrict-system-libc-headers' \
            -header-filter='^/Users/danielsinkin/GitHub_private/Vulcan/.*' \
            --extra-arg=-Iinclude \
            --extra-arg=-I/opt/homebrew/opt/glfw/include \

@@ -1,0 +1,1 @@
+Checks: '-llvmlibc-callee-namespace,-clang-analyzer-alpha*,-cppcoreguidelines-macro-usage,-llvmlibc-restrict-system-libc-headers,*'
