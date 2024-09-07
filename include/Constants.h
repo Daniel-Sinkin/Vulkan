@@ -23,11 +23,13 @@ using std::set;
 using std::string;
 using std::vector;
 
-#define DEF auto // Only use for the auto in functions, not for normal code so its easier to search for functions
+#define DEF auto                                      // Only use for the auto in functions, not for normal code so its easier to search for functions
+constexpr unsigned long long NO_TIMEOUT = UINT64_MAX; // Can't disable timeout in vulcan semaphore, this is a workaround for that
 
 // inline DEF operator==(const VkSurfaceFormatKHR &lhs, const VkSurfaceFormatKHR &rhs)->bool {
 // return lhs.format == rhs.format && lhs.colorSpace == rhs.colorSpace;
 // }
+
 namespace Util {
 static auto readFile(const std::string &filename) -> std::vector<char> {
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
