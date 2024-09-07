@@ -65,3 +65,5 @@ build/
 *.spv
 
 *.DS_Store
+
+private/*
