@@ -90,7 +90,9 @@ private:
     VkFormat m_SwapChainImageFormat = VK_FORMAT_UNDEFINED;
     VkExtent2D m_SwapChainExtent = {};
 
-    VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
+    VkRenderPass m_RenderPass = VK_NULL_HANDLE;
+    VkPipelineLayout m_PipelineLayout = VK_NULL_HANDLE;
+    VkPipeline m_GraphicsPipeline = VK_NULL_HANDLE;
 
     DEF initWindow() -> void {
         fprintf(stdout, "\nTrying to initialize window.\n");
@@ -189,8 +191,44 @@ private:
         createLogicalDevice();
         createSwapChain();
         createImageViews();
+        createRenderPass();
         createGraphicsPipeline();
         fprintf(stdout, "\n\nFinished setting up Vulkan.\n");
+    }
+
+    DEF createRenderPass() -> void {
+        fprintf(stdout, "\nTrying to setup Render Pass.\n");
+        VkAttachmentDescription colorAttachment{
+            .format = m_SwapChainImageFormat,
+            .samples = VK_SAMPLE_COUNT_1_BIT,
+            .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+            .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+            .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+            .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+            .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+            .finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR};
+
+        VkAttachmentReference colorAttachmentRef{
+            .attachment = 0,
+            .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+
+        VkSubpassDescription subpass{
+            .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
+            .colorAttachmentCount = 1,
+            .pColorAttachments = &colorAttachmentRef};
+
+        VkRenderPassCreateInfo renderPassInfo{
+            .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
+            .attachmentCount = 1,
+            .pAttachments = &colorAttachment,
+            .subpassCount = 1,
+            .pSubpasses = &subpass};
+
+        if (vkCreateRenderPass(m_Device, &renderPassInfo, nullptr, &m_RenderPass) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create render pass!");
+        }
+
+        fprintf(stdout, "\nSuccessfully set upped Render Pass.\n");
     }
 
     DEF createGraphicsPipeline() -> void {
@@ -219,8 +257,7 @@ private:
             .module = fragShaderModule,
             .pName = "main"};
 
-        std::array<VkPipelineShaderStageCreateInfo, 2>
-            shaderStages = {vertShaderStageInfo, fragShaderStageInfo};
+        std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages = {vertShaderStageInfo, fragShaderStageInfo};
         fprintf(stdout, "Successfully created the shader modules.\n");
 
         fprintf(stdout, "\tTrying to Initialize Fixed Functions.\n");
@@ -270,19 +307,19 @@ private:
             .depthClampEnable = VK_FALSE,
             .rasterizerDiscardEnable = VK_FALSE,
             .polygonMode = VK_POLYGON_MODE_FILL,
-            .lineWidth = 1.0f,
             .cullMode = VK_CULL_MODE_BACK_BIT,
             .frontFace = VK_FRONT_FACE_CLOCKWISE,
             .depthBiasEnable = VK_FALSE,
             .depthBiasConstantFactor = 0.0f,
             .depthBiasClamp = 0.0f,
-            .depthBiasSlopeFactor = 0.0f};
+            .depthBiasSlopeFactor = 0.0f,
+            .lineWidth = 1.0f};
 
         fprintf(stdout, "\t\tInitializing Multisampling.\n");
         VkPipelineMultisampleStateCreateInfo multisampling{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
-            .sampleShadingEnable = VK_FALSE,
             .rasterizationSamples = VK_SAMPLE_COUNT_1_BIT,
+            .sampleShadingEnable = VK_FALSE,
             .minSampleShading = 1.0f,
             .pSampleMask = nullptr,
             .alphaToCoverageEnable = VK_FALSE,
@@ -290,7 +327,6 @@ private:
 
         fprintf(stdout, "\t\tInitializing Color Blending.\n");
         VkPipelineColorBlendAttachmentState colorBlendAttachment{
-            .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
             .blendEnable = VK_FALSE,
             .srcColorBlendFactor = VK_BLEND_FACTOR_ONE,
             .dstColorBlendFactor = VK_BLEND_FACTOR_ZERO,
@@ -298,6 +334,7 @@ private:
             .srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
             .dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
             .alphaBlendOp = VK_BLEND_OP_ADD,
+            .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
         };
 
         VkPipelineColorBlendStateCreateInfo colorBlending{
@@ -306,12 +343,9 @@ private:
             .logicOp = VK_LOGIC_OP_COPY,
             .attachmentCount = 1,
             .pAttachments = &colorBlendAttachment,
-            .blendConstants[0] = 0.0F,
-            .blendConstants[1] = 0.0F,
-            .blendConstants[2] = 0.0F,
-            .blendConstants[3] = 0.0F,
-        };
+            .blendConstants = {0.0F, 0.0F, 0.0F, 0.0F}};
 
+        fprintf(stdout, "\t\tInitializing Render Pipeline.\n");
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
             .setLayoutCount = 0,
@@ -319,10 +353,29 @@ private:
             .pushConstantRangeCount = 0,
             .pPushConstantRanges = nullptr};
 
-        if (vkCreatePipelineLayout(m_Device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
+        if (vkCreatePipelineLayout(m_Device, &pipelineLayoutInfo, nullptr, &m_PipelineLayout) != VK_SUCCESS) {
             throw std::runtime_error("failed to create pipeline layout!");
         }
-        fprintf(stdout, "\tSuccessfully setup fixed function state.\n");
+
+        VkGraphicsPipelineCreateInfo pipelineInfo{
+            .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+            .stageCount = 2,
+            .pStages = shaderStages.data(),
+            .pVertexInputState = &vertexInputInfo,
+            .pInputAssemblyState = &inputAssembly,
+            .pViewportState = &viewportState,
+            .pRasterizationState = &rasterizer,
+            .pMultisampleState = &multisampling,
+            .pColorBlendState = &colorBlending,
+            .pDynamicState = &dynamicState,
+            .layout = m_PipelineLayout,
+            .renderPass = m_RenderPass,
+            .subpass = 0,
+            .basePipelineHandle = VK_NULL_HANDLE};
+
+        if (vkCreateGraphicsPipelines(m_Device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_GraphicsPipeline) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create graphics pipeline!");
+        }
 
         fprintf(stdout, "\tCleaning up shader modules.\n");
         vkDestroyShaderModule(m_Device, fragShaderModule, nullptr);
@@ -482,13 +535,17 @@ private:
         // For now every feature is disabled
         VkPhysicalDeviceFeatures deviceFeatures{};
 
-        VkDeviceCreateInfo createInfo{
+        // This used to be a MACOS workaround, will keep it around if it turns out to be needed later on
+        // std::vector<const char *> requiredDeviceExtensions = getRequiredDeviceExtensions(m_PhysicalDevice);
+        // requiredDeviceExtensions.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+
+                VkDeviceCreateInfo createInfo{
             .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
             .queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size()),
             .pQueueCreateInfos = queueCreateInfos.data(),
-            .pEnabledFeatures = &deviceFeatures,
             .enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size()),
-            .ppEnabledExtensionNames = deviceExtensions.data()};
+            .ppEnabledExtensionNames = deviceExtensions.data(),
+            .pEnabledFeatures = &deviceFeatures};
 
         if (enableValidationLayers) {
             createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
@@ -641,7 +698,11 @@ private:
 
     DEF cleanup() -> void {
         fprintf(stdout, "\nStarting the cleanup.\n");
-        vkDestroyPipelineLayout(m_Device, pipelineLayout, nullptr);
+
+        vkDestroyPipeline(m_Device, m_GraphicsPipeline, nullptr);
+        vkDestroyPipelineLayout(m_Device, m_PipelineLayout, nullptr);
+        vkDestroyRenderPass(m_Device, m_RenderPass, nullptr);
+
         for (auto imageView : m_SwapChainImageViews) {
             vkDestroyImageView(m_Device, imageView, nullptr);
         }

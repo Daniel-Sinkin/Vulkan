@@ -18,10 +18,11 @@
         * [x] Window Surface
         * [x] Swap Chain
         * [x] Image Views
-    * [ ] Graphics pipeline basics
+    * [x] Graphics pipeline basics
         * [x] Shader modules
         * [x] Fixed functions
-        * [ ] Render passes 
+        * [x] Render passes 
+        * [x] Conclusion
     * [ ] Drawing
     * [ ] Swap chain recreation
 * [ ] Vertex Buffers
