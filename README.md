@@ -16,7 +16,7 @@
         * [x] Logical Devices and queues
     * [x] Presentation
         * [x] Window Surface
-        * [ ] Swap Chain
+        * [x] Swap Chain
         * [ ] Image Views
     * [ ] Graphics pipeline basics
     * [ ] Drawing
