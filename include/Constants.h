@@ -66,6 +66,8 @@ namespace Settings {
 constexpr bool ALLOW_DEVICE_WITHOUT_INTEGRATED_GPU = true;
 constexpr bool ALLOW_DEVICE_WITHOUT_GEOMETRY_SHADER = true;
 
+constexpr int MAX_FRAMES_IN_FLIGHT = 2;
+
 // Define the preferred surface format as a VkSurfaceFormatKHR struct
 constexpr VkSurfaceFormatKHR PREFERRED_SURFACE_FORMAT = {
     VK_FORMAT_B8G8R8A8_SRGB,          // format

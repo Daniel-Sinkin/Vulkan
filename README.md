@@ -23,11 +23,11 @@
         * [x] Fixed functions
         * [x] Render passes 
         * [x] Conclusion
-    * [ ] Drawing
+    * [x] Drawing
         * [x] Framebuffers
         * [x] Command Buffers
-        * [ ] Rendering and presentation
-        * [ ] Frames in flight
+        * [x] Rendering and presentation
+        * [x] Frames in flight
     * [ ] Swap chain recreation
 * [ ] Vertex Buffers
 * [ ] Texture Mapping
