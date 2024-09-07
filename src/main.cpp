@@ -1,23 +1,4 @@
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>         // Implicitly imports vulkan
-#include <vulkan/vulkan_beta.h> // For VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME
-
-#include "Settings.h"
-
-#include <algorithm>
-#include <cstdlib>
-#include <cstring>
-#include <format>
-#include <iostream>
-#include <optional>
-#include <set>
-#include <stdexcept>
-#include <string_view>
-#include <vector>
-
-using std::set;
-using std::string;
-using std::vector;
+#include "Constants.h"
 
 // Initial Window size, currently we explicitly do NOT allow resizing (see initWindow)
 const uint32_t WINDOW_WIDTH = 800;
@@ -201,6 +182,12 @@ private:
         createSwapChain();
         createImageViews();
         fprintf(stdout, "\n\nFinished setting up Vulkan.\n");
+    }
+
+    void createGraphicsPipeline() {
+        fprintf(stdout, "\nTrying to setup Graphics Pipeline.\n");
+
+        fprintf(stdout, "Successfully set up Graphics Pipeline.\n");
     }
 
     void createImageViews() {

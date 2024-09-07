@@ -19,6 +19,9 @@
         * [x] Swap Chain
         * [x] Image Views
     * [ ] Graphics pipeline basics
+        * [ ] Shader modules
+        * [ ] Fixed functions
+        * [ ] Render passes 
     * [ ] Drawing
     * [ ] Swap chain recreation
 * [ ] Vertex Buffers
@@ -58,6 +61,7 @@ Add the following to your RC file (I'm using the ZSH shell so it's at `~/.zshrc`
 ```
 # Vulkan
 export VULKAN_SDK=/Users/danielsinkin/VulkanSDK/1.3.290.0/macOS
+export GLSC=$VULKAN_SDK/bin/glsc
 export PATH=$VULKAN_SDK/bin:$PATH
 export DYLD_LIBRARY_PATH=$VULKAN_SDK/lib:/usr/local/lib:$DYLD_LIBRARY_PATH
 export VK_LAYER_PATH=$VULKAN_SDK/share/vulkan/explicit_layer.d
