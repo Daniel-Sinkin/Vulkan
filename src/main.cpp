@@ -102,7 +102,7 @@ private:
 
     VkSwapchainKHR m_SwapChain;
     vector<VkImage> m_SwapChainImages;
-
+    vector<VkImageView> m_SwapChainImageViews;
     VkFormat m_SwapChainImageFormat;
     VkExtent2D m_SwapChainExtent;
 
@@ -199,7 +199,38 @@ private:
         pickPhysicalDevice();
         createLogicalDevice();
         createSwapChain();
+        createImageViews();
         fprintf(stdout, "\n\nFinished setting up Vulkan.\n");
+    }
+
+    void createImageViews() {
+        fprintf(stdout, "\nTrying to create ImageViews.\n");
+
+        m_SwapChainImageViews.resize(m_SwapChainImages.size());
+        for (size_t i = 0; i < m_SwapChainImages.size(); i++) {
+            fprintf(stdout, "\t%zu. SwapChainImageView.\n", i + 1);
+            VkImageViewCreateInfo createInfo{};
+            createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+            createInfo.image = m_SwapChainImages[i];
+            createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+            createInfo.format = m_SwapChainImageFormat;
+            createInfo.components = {
+                VK_COMPONENT_SWIZZLE_IDENTITY,
+                VK_COMPONENT_SWIZZLE_IDENTITY,
+                VK_COMPONENT_SWIZZLE_IDENTITY,
+                VK_COMPONENT_SWIZZLE_IDENTITY};
+            createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            createInfo.subresourceRange.baseMipLevel = 0;
+            createInfo.subresourceRange.levelCount = 1;
+            createInfo.subresourceRange.baseArrayLayer = 0;
+            createInfo.subresourceRange.layerCount = 1;
+
+            if (vkCreateImageView(m_Device, &createInfo, nullptr, &m_SwapChainImageViews[i]) != VK_SUCCESS) {
+                throw std::runtime_error("failed to create image views!");
+            }
+        }
+
+        fprintf(stdout, "Successfully created ImageViews.\n");
     }
 
     void createSwapChain() {
@@ -458,6 +489,10 @@ private:
 
     void cleanup() {
         fprintf(stdout, "\nStarting the cleanup.\n");
+        for (auto imageView : m_SwapChainImageViews) {
+            vkDestroyImageView(m_Device, imageView, nullptr);
+        }
+
         if (enableValidationLayers) {
             DestroyDebugUtilsMessengerEXT(m_Instance, m_DebugMessenger, nullptr);
         }

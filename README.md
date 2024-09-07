@@ -17,7 +17,7 @@
     * [x] Presentation
         * [x] Window Surface
         * [x] Swap Chain
-        * [ ] Image Views
+        * [x] Image Views
     * [ ] Graphics pipeline basics
     * [ ] Drawing
     * [ ] Swap chain recreation
