@@ -82,13 +82,13 @@ private:
     VkQueue m_GraphicsQueue = VK_NULL_HANDLE;
     VkQueue m_PresentationQueue = VK_NULL_HANDLE;
     VkSurfaceKHR m_Surface = VK_NULL_HANDLE;
-    VkSwapchainKHR m_SwapChain = VK_NULL_HANDLE;
 
+    VkSwapchainKHR m_SwapChain = VK_NULL_HANDLE;
     std::vector<VkImage> m_SwapChainImages;
     std::vector<VkImageView> m_SwapChainImageViews;
-
     VkFormat m_SwapChainImageFormat = VK_FORMAT_UNDEFINED;
     VkExtent2D m_SwapChainExtent = {};
+    vector<VkFramebuffer> m_SwapChainFramebuffers;
 
     VkRenderPass m_RenderPass = VK_NULL_HANDLE;
     VkPipelineLayout m_PipelineLayout = VK_NULL_HANDLE;
@@ -193,7 +193,33 @@ private:
         createImageViews();
         createRenderPass();
         createGraphicsPipeline();
+        createFramebuffers();
         fprintf(stdout, "\n\nFinished setting up Vulkan.\n");
+    }
+
+    DEF createFramebuffers() -> void {
+        fprintf(stdout, "\nTrying to setup Framebuffers.\n");
+        m_SwapChainFramebuffers.resize(m_SwapChainImageViews.size());
+        for (size_t i = 0; i < m_SwapChainImageViews.size(); i++) {
+            fprintf(stdout, "\t%zu. Framebuffers.\n", i + 1);
+            VkImageView attachments[] = {m_SwapChainImageViews[i]};
+
+            VkFramebufferCreateInfo framebufferInfo{
+                .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+                .renderPass = m_RenderPass,
+                .attachmentCount = 1,
+                .pAttachments = attachments,
+                .width = m_SwapChainExtent.width,
+                .height = m_SwapChainExtent.height,
+                .layers = 1,
+            };
+
+            if (vkCreateFramebuffer(m_Device, &framebufferInfo, nullptr, &m_SwapChainFramebuffers[i]) != VK_SUCCESS) {
+                throw std::runtime_error("failed to create framebuffer!");
+            }
+        }
+
+        fprintf(stdout, "\nSuccessfully set up Framebuffers.\n");
     }
 
     DEF createRenderPass() -> void {
@@ -539,7 +565,7 @@ private:
         // std::vector<const char *> requiredDeviceExtensions = getRequiredDeviceExtensions(m_PhysicalDevice);
         // requiredDeviceExtensions.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 
-                VkDeviceCreateInfo createInfo{
+        VkDeviceCreateInfo createInfo{
             .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
             .queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size()),
             .pQueueCreateInfos = queueCreateInfos.data(),
@@ -698,6 +724,10 @@ private:
 
     DEF cleanup() -> void {
         fprintf(stdout, "\nStarting the cleanup.\n");
+
+        for (auto framebuffer : m_SwapChainFramebuffers) {
+            vkDestroyFramebuffer(m_Device, framebuffer, nullptr);
+        }
 
         vkDestroyPipeline(m_Device, m_GraphicsPipeline, nullptr);
         vkDestroyPipelineLayout(m_Device, m_PipelineLayout, nullptr);

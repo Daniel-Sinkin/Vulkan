@@ -24,6 +24,10 @@
         * [x] Render passes 
         * [x] Conclusion
     * [ ] Drawing
+        * [x] Framebuffers
+        * [ ] Command Buffers
+        * [ ] Rendering and presentation
+        * [ ] Frames in flight
     * [ ] Swap chain recreation
 * [ ] Vertex Buffers
 * [ ] Texture Mapping
