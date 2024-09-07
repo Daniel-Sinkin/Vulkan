@@ -30,7 +30,7 @@ const bool enableValidationLayers = true;
 #endif
 
 DEF CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkDebugUtilsMessengerEXT *pDebugMessenger) -> VkResult {
-    auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+    auto func = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT"));
     if (func != nullptr) {
         return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
     } else {
@@ -39,7 +39,7 @@ DEF CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessenge
 }
 
 DEF DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks *pAllocator) -> void {
-    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+    auto func = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT"));
     if (func != nullptr) {
         func(instance, debugMessenger, pAllocator);
     }
@@ -47,47 +47,37 @@ DEF DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT 
 
 class HelloTriangleApplication {
 public:
-    HelloTriangleApplication()
-        : m_Window(nullptr),
-          m_Instance(VK_NULL_HANDLE),
-          m_DebugMessenger(VK_NULL_HANDLE),
-          m_PhysicalDevice(VK_NULL_HANDLE),
-          m_Device(VK_NULL_HANDLE),
-          m_GraphicsQueue(VK_NULL_HANDLE),
-          m_PresentationQueue(VK_NULL_HANDLE),
-          m_Surface(VK_NULL_HANDLE) {}
+    HelloTriangleApplication() = default;
 
     DEF run() -> auto {
         initWindow();
         initVulkan();
-        // Force a buffer flush
-        std::cout << std::endl;
+
+        std::cout << std::flush;
 
         mainLoop();
         cleanup();
     }
 
 private:
-    GLFWwindow *m_Window;
+    GLFWwindow *m_Window = nullptr;
 
-    VkInstance m_Instance;
-    VkDebugUtilsMessengerEXT m_DebugMessenger;
-
+    VkInstance m_Instance = VK_NULL_HANDLE;
+    VkDebugUtilsMessengerEXT m_DebugMessenger = VK_NULL_HANDLE;
     VkPhysicalDevice m_PhysicalDevice = VK_NULL_HANDLE;
-    VkDevice m_Device;
+    VkDevice m_Device = VK_NULL_HANDLE;
+    VkQueue m_GraphicsQueue = VK_NULL_HANDLE;
+    VkQueue m_PresentationQueue = VK_NULL_HANDLE;
+    VkSurfaceKHR m_Surface = VK_NULL_HANDLE;
+    VkSwapchainKHR m_SwapChain = VK_NULL_HANDLE;
 
-    VkQueue m_GraphicsQueue;
-    VkQueue m_PresentationQueue;
+    std::vector<VkImage> m_SwapChainImages;
+    std::vector<VkImageView> m_SwapChainImageViews;
 
-    VkSurfaceKHR m_Surface;
+    VkFormat m_SwapChainImageFormat = VK_FORMAT_UNDEFINED;
+    VkExtent2D m_SwapChainExtent = {};
 
-    VkSwapchainKHR m_SwapChain;
-    vector<VkImage> m_SwapChainImages;
-    vector<VkImageView> m_SwapChainImageViews;
-    VkFormat m_SwapChainImageFormat;
-    VkExtent2D m_SwapChainExtent;
-
-    VkPipelineLayout pipelineLayout;
+    VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
 
     DEF initWindow() -> void {
         fprintf(stdout, "\nTrying to initialize window.\n");
@@ -300,10 +290,10 @@ private:
         colorBlending.logicOp = VK_LOGIC_OP_COPY;
         colorBlending.attachmentCount = 1;
         colorBlending.pAttachments = &colorBlendAttachment;
-        colorBlending.blendConstants[0] = 0.0f;
-        colorBlending.blendConstants[1] = 0.0f;
-        colorBlending.blendConstants[2] = 0.0f;
-        colorBlending.blendConstants[3] = 0.0f;
+        colorBlending.blendConstants[0] = 0.0F;
+        colorBlending.blendConstants[1] = 0.0F;
+        colorBlending.blendConstants[2] = 0.0F;
+        colorBlending.blendConstants[3] = 0.0F;
 
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
         pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -329,7 +319,7 @@ private:
         createInfo.codeSize = code.size();
         createInfo.pCode = reinterpret_cast<const uint32_t *>(code.data());
 
-        VkShaderModule shaderModule;
+        VkShaderModule shaderModule = VK_NULL_HANDLE;
         if (vkCreateShaderModule(m_Device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
             throw std::runtime_error("failed to create shader module!");
         }
@@ -394,13 +384,13 @@ private:
         createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
         QueueFamilyIndices indices = findQueueFamilies(m_PhysicalDevice);
-        uint32_t QueueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentationFamily.value()};
+        array<uint32_t, 2> QueueFamilyIndices = {indices.graphicsFamily.value(), indices.presentationFamily.value()};
 
         if (indices.graphicsFamily != indices.presentationFamily) {
             fprintf(stdout, "\tSetting imageSharingMode to Concurrent.\n");
             createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
             createInfo.queueFamilyIndexCount = 2;
-            createInfo.pQueueFamilyIndices = QueueFamilyIndices;
+            createInfo.pQueueFamilyIndices = QueueFamilyIndices.data();
         } else {
             fprintf(stdout, "\tSetting imageSharingMode to Exclusive.\n");
             createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -445,10 +435,15 @@ private:
 
         vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 
-        set<uint32_t> uniqueQueueFamilies = {
-            indices.graphicsFamily.value(),
-            indices.presentationFamily.value(),
-        };
+        set<uint32_t> uniqueQueueFamilies;
+        if (indices.isComplete()) {
+            uniqueQueueFamilies = {
+                indices.graphicsFamily.value(),
+                indices.presentationFamily.value(),
+            };
+        } else {
+            throw std::runtime_error("QueueFamilyIndices are not fully defined.");
+        }
 
         // Between 0.0 and 1.0
         float queuePriority = 1.0f;
@@ -505,17 +500,17 @@ private:
         vkEnumeratePhysicalDevices(m_Instance, &deviceCount, devices.data());
 
         size_t i = 0;
-        auto it = std::find_if(devices.begin(), devices.end(), [&](const auto &device) {
-            fprintf(stdout, "\tChecking %zu. device", ++i);
-            return isDeviceSuitable(device);
-        });
+        auto found = std::find_if(
+            devices.begin(),
+            devices.end(),
+            [&](const auto &device) {
+                fprintf(stdout, "\tChecking %zu. device", ++i);
+                return isDeviceSuitable(device);
+            });
+        if (found == devices.end()) throw std::runtime_error("failed to find a suitable GPU!");
 
-        if (it != devices.end()) {
-            m_PhysicalDevice = *it;
-        } else {
-            throw std::runtime_error("failed to find a suitable GPU!");
-        }
-        fprintf(stdout, "\nSuccessfully picked physical device.\n");
+        m_PhysicalDevice = *found;
+        fprintf(stdout, "Successfully picked physical device.\n");
     }
 
     DEF isDeviceSuitable(VkPhysicalDevice device) -> bool {
@@ -574,7 +569,7 @@ private:
     }
 
     static DEF checkDeviceExtensionSupport(VkPhysicalDevice device) -> bool {
-        uint32_t extensionCount;
+        uint32_t extensionCount = 0;
         vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
         vector<VkExtensionProperties> availiableExtensions(extensionCount);
         vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availiableExtensions.data());
@@ -683,14 +678,23 @@ private:
 
     static DEF getRequiredDeviceExtensions(VkPhysicalDevice device) -> vector<const char *> {
         uint32_t deviceExtensionPropertyCount = 0;
-        vkEnumerateDeviceExtensionProperties(device, nullptr, &deviceExtensionPropertyCount, nullptr);
+        vkEnumerateDeviceExtensionProperties(
+            device,
+            nullptr,
+            &deviceExtensionPropertyCount,
+            nullptr);
 
         vector<VkExtensionProperties> deviceExtensionProperties(deviceExtensionPropertyCount);
-        vkEnumerateDeviceExtensionProperties(device, nullptr, &deviceExtensionPropertyCount, deviceExtensionProperties.data());
+        vkEnumerateDeviceExtensionProperties(
+            device,
+            nullptr,
+            &deviceExtensionPropertyCount,
+            deviceExtensionProperties.data());
 
         vector<const char *> extensions;
+        auto desired_extensions = std::string_view(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
         for (const auto &property : deviceExtensionProperties) {
-            if (strcmp(property.extensionName, VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME) == 0) {
+            if (std::string_view(property.extensionName) == desired_extensions) {
                 extensions.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
             }
         }
@@ -728,64 +732,81 @@ private:
         const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
         void *pUserData) -> VkBool32 {
 
-        std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+        std::cerr << "validation layer: " << pCallbackData->pMessage << "\n";
         return VK_FALSE;
     }
 
     DEF querySwapChainSupport(VkPhysicalDevice device) -> SwapChainSupportDetails {
         SwapChainSupportDetails details;
-        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, m_Surface, &details.capabilities);
+        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
+            device,
+            m_Surface,
+            &details.capabilities);
 
-        uint32_t formatCount;
-        vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_Surface, &formatCount, details.formats.data());
+        uint32_t formatCount = 0;
+        vkGetPhysicalDeviceSurfaceFormatsKHR(
+            device,
+            m_Surface,
+            &formatCount,
+            details.formats.data());
         if (formatCount != 0) {
             details.formats.resize(formatCount);
-            vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_Surface, &formatCount, details.formats.data());
+            vkGetPhysicalDeviceSurfaceFormatsKHR(
+                device,
+                m_Surface,
+                &formatCount,
+                details.formats.data());
         }
 
-        uint32_t presentModeCount;
-        vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_Surface, &presentModeCount, nullptr);
+        uint32_t presentModeCount = 0;
+        vkGetPhysicalDeviceSurfacePresentModesKHR(
+            device,
+            m_Surface,
+            &presentModeCount,
+            nullptr);
         if (presentModeCount != 0) {
             details.presentModes.resize(presentModeCount);
-            vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_Surface, &presentModeCount, details.presentModes.data());
+            vkGetPhysicalDeviceSurfacePresentModesKHR(device,
+                m_Surface,
+                &presentModeCount,
+                details.presentModes.data());
         }
 
         return details;
     }
 
     static DEF chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats) -> VkSurfaceFormatKHR {
-        if (availableFormats.empty()) {
-            fprintf(stderr, "No surface formats availiable!");
-        }
-        const auto begin_ = availableFormats.begin();
-        const auto end_ = availableFormats.end();
-        auto it = std::find_if(begin_, end_, [](const VkSurfaceFormatKHR &availableFormat) {
-            return availableFormat == Settings::PREFERRED_SURFACE_FORMAT;
-        });
-        return (it != end_) ? *it : availableFormats[0];
+        if (availableFormats.empty()) fprintf(stderr, "No surface formats availiable!");
+
+        auto found = std::find_if(
+            availableFormats.begin(),
+            availableFormats.end(),
+            [](const VkSurfaceFormatKHR &availableFormat) {
+                return availableFormat.format == Settings::PREFERRED_SURFACE_FORMAT.format &&
+                       availableFormat.colorSpace == Settings::PREFERRED_SURFACE_FORMAT.colorSpace;
+            });
+        return (found != availableFormats.end()) ? *found : availableFormats[0];
     }
 
-    static DEF chooseSwapPresentMode(const vector<VkPresentModeKHR> &availablePresentModes) -> VkPresentModeKHR {
-        if (availablePresentModes.empty()) {
-            fprintf(stderr, "No presentation modes availiable!");
-        }
-        const auto begin_ = availablePresentModes.begin();
-        const auto end_ = availablePresentModes.end();
-        auto it = std::find_if(begin_, end_, [](const VkPresentModeKHR &availablePresentMode) {
-            return availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR;
-        });
-        return (it != end_) ? *it : availablePresentModes[0];
+    static DEF chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes) -> VkPresentModeKHR {
+        if (availablePresentModes.empty()) fprintf(stderr, "No presentation modes availiable!");
+
+        auto found = std::find_if(
+            availablePresentModes.begin(),
+            availablePresentModes.end(),
+            [](const VkPresentModeKHR &availablePresentMode) {
+                return availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR;
+            });
+        return (found != availablePresentModes.end()) ? *found : availablePresentModes[0];
     }
 
     DEF chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities) -> VkExtent2D {
-        if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
-            return capabilities.currentExtent;
-        }
+        bool isExtentUndefined = capabilities.currentExtent.width == std::numeric_limits<uint32_t>::max();
+        if (!isExtentUndefined) return capabilities.currentExtent;
 
         int width = 0;
         int height = 0;
         glfwGetFramebufferSize(m_Window, &width, &height);
-
         VkExtent2D actualExtent = {
             std::clamp(static_cast<uint32_t>(width), capabilities.minImageExtent.width, capabilities.maxImageExtent.width),
             std::clamp(static_cast<uint32_t>(height), capabilities.minImageExtent.height, capabilities.maxImageExtent.height),

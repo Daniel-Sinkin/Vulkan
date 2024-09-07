@@ -1,4 +1,4 @@
-Checks: 'clang-diagnostic-*,clang-analyzer-*,-llvmlibc-callee-namespace,modernize-*,cppcoreguidelines-*,bugprone-*,performance-*,readability-*'
+Checks: 'clang-diagnostic-*,clang-analyzer-*,-llvmlibc-callee-namespace,modernize-*,cppcoreguidelines-*,-cppcoreguidelines-pro-bounds-array-to-pointer-decay,-cppcoreguidelines-braces-around-statements,bugprone-*,performance-*,cppcoreguidelines-*,-cppcoreguidelines-qualified-auto,-modernize-use-nodiscard,-cppcoreguidelines-pro-type-reinterpret-cast,-cppcoreguidelines-pro-type-vararg,-cppcoreguidelines-pro-type-member-init'
 WarningsAsErrors: ''
 HeaderFileExtensions:
   - ''
