@@ -23,7 +23,6 @@ using std::vector;
 inline bool operator==(const VkSurfaceFormatKHR &lhs, const VkSurfaceFormatKHR &rhs) {
     return lhs.format == rhs.format && lhs.colorSpace == rhs.colorSpace;
 }
-
 namespace Util {
 static std::vector<char> readFile(const std::string &filename) {
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
@@ -37,10 +36,17 @@ static std::vector<char> readFile(const std::string &filename) {
         }
         throw std::runtime_error("failed to open file!");
     }
+
     size_t fileSize = (size_t)file.tellg();
+    if (fileSize > std::numeric_limits<std::streamsize>::max()) {
+        throw std::runtime_error("File size exceeds the maximum supported size.");
+    }
+
     std::vector<char> buffer(fileSize);
     file.seekg(0);
-    file.read(buffer.data(), fileSize);
+
+    // Cast fileSize to std::streamsize after checking the range
+    file.read(buffer.data(), static_cast<std::streamsize>(fileSize));
     file.close();
 
     return buffer;
