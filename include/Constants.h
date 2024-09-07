@@ -1,15 +1,20 @@
 #ifndef SETTINGS_H
 #define SETTINGS_H
 #define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>         // Implicitly imports vulkan
+#include <GLFW/glfw3.h> // Implicitly imports vulkan
+#include <vulkan/vulkan.h>
 #include <vulkan/vulkan_beta.h> // For VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME
 
+#define GLM_FORCE_RADIANS
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
 #include <algorithm>
+#include <chrono>
 #include <cstdlib>
 #include <cstring>
 #include <format>
 #include <fstream>
-#include <glm/glm.hpp>
 #include <iostream>
 #include <optional>
 #include <set>
@@ -17,16 +22,17 @@
 #include <stdexcept>
 #include <string_view>
 #include <vector>
-#include <vulkan/vulkan.h>
 
 using std::array;
 using std::set;
 using std::string;
 using std::vector;
 
-#define DEF auto                                      // Only use for the auto in functions, not for normal code so its easier to search for functions
-constexpr unsigned long long NO_TIMEOUT = UINT64_MAX; // Can't disable timeout in vulcan semaphore, this is a workaround for that
+using time_point = std::chrono::steady_clock::time_point;
 
+#define DEF auto // Only use for the auto in functions, not for normal code so its easier to search for functions
+
+constexpr unsigned long long NO_TIMEOUT = UINT64_MAX; // Can't disable timeout in vulcan semaphore, this is a workaround for that
 constexpr int INVALID_FRAMEBUFFER_SIZE = 0;
 
 struct SwapChainSupportDetails {
@@ -90,6 +96,12 @@ const vector<Vertex> vertices = {
 const vector<uint16_t> indices = {0, 2, 3, 1, 0, 3}; // Set to uint32_t if we get too many vertices
 // clang-format on
 
+struct UniformBufferObject {
+    glm::mat4 model;
+    glm::mat4 view;
+    glm::mat4 proj;
+};
+
 namespace FilePaths {
 constexpr const char *SHADER_VERT = "/Users/danielsinkin/GitHub_private/Vulcan/shaders/compiled/vert.spv";
 constexpr const char *SHADER_FRAG = "/Users/danielsinkin/GitHub_private/Vulcan/shaders/compiled/frag.spv";
@@ -137,6 +149,9 @@ constexpr bool ALLOW_DEVICE_WITHOUT_INTEGRATED_GPU = true;
 constexpr bool ALLOW_DEVICE_WITHOUT_GEOMETRY_SHADER = true;
 
 constexpr int MAX_FRAMES_IN_FLIGHT = 2;
+
+constexpr float CLIPPING_PLANE_NEAR = 0.1f;
+constexpr float CLIPPING_PLANE_FAR = 10.0f;
 
 // Define the preferred surface format as a VkSurfaceFormatKHR struct
 constexpr VkSurfaceFormatKHR PREFERRED_SURFACE_FORMAT = {

@@ -80,6 +80,7 @@ private:
     vector<VkFramebuffer> m_SwapChainFramebuffers;
 
     VkRenderPass m_RenderPass = VK_NULL_HANDLE;
+    VkDescriptorSetLayout m_DescriptorSetLayout = VK_NULL_HANDLE;
     VkPipelineLayout m_PipelineLayout = VK_NULL_HANDLE;
     VkPipeline m_GraphicsPipeline = VK_NULL_HANDLE;
 
@@ -98,6 +99,10 @@ private:
     VkDeviceMemory m_VertexBufferMemory = VK_NULL_HANDLE;
     VkBuffer m_IndexBuffer = VK_NULL_HANDLE;
     VkDeviceMemory m_IndexBufferMemory = VK_NULL_HANDLE;
+
+    vector<VkBuffer> m_UniformBuffers;
+    vector<VkDeviceMemory> m_UniformBuffersMemory;
+    vector<void *> m_UniformBuffersMapped;
 
     DEF initWindow() -> void {
         fprintf(stdout, "\nTrying to initialize window.\n");
@@ -209,6 +214,7 @@ private:
         createSwapChain();
         createImageViews();
         createRenderPass();
+        createDescriptorSetLayout();
         createGraphicsPipeline();
         createFramebuffers();
         createCommandPool();
@@ -217,6 +223,53 @@ private:
         createCommandBuffers();
         createSyncObjects();
         fprintf(stdout, "\n\nFinished setting up Vulkan.\n");
+    }
+
+    DEF createUniformBuffers() -> void {
+        VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+
+        m_UniformBuffers.resize(Settings::MAX_FRAMES_IN_FLIGHT);
+        m_UniformBuffersMemory.resize(Settings::MAX_FRAMES_IN_FLIGHT);
+        m_UniformBuffersMapped.resize(Settings::MAX_FRAMES_IN_FLIGHT);
+
+        for (size_t i = 0; i < Settings::MAX_FRAMES_IN_FLIGHT; i++) {
+            createBuffer(
+                bufferSize,
+                VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                m_UniformBuffers[i],
+                m_UniformBuffersMemory[i]);
+            VkResult result = vkMapMemory(
+                m_Device,
+                m_UniformBuffersMemory[i],
+                0,
+                bufferSize,
+                0,
+                &m_UniformBuffersMapped[i]);
+            if (result != VK_SUCCESS) throw std::runtime_error("failed to map memory for the uniform memory buffer.");
+        }
+    }
+
+    DEF createDescriptorSetLayout() -> void {
+        VkDescriptorSetLayoutBinding uboLayoutBinding{
+            .binding = 0,
+            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            .descriptorCount = 1,
+            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT};
+
+        VkDescriptorSetLayoutCreateInfo layoutInfo{
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+            .bindingCount = 1,
+            .pBindings = &uboLayoutBinding};
+
+        if (vkCreateDescriptorSetLayout(m_Device, &layoutInfo, nullptr, &m_DescriptorSetLayout) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create descriptor set layout!");
+        }
+
+        VkPipelineLayoutCreateInfo pipelineLayoutInfo{
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+            .setLayoutCount = 1,
+            .pSetLayouts = &m_DescriptorSetLayout};
     }
 
     DEF findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) -> uint32_t {
@@ -1047,6 +1100,8 @@ private:
         array<VkPipelineStageFlags, 1> waitStages = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
         array<VkSemaphore, 1> signalSemaphores = {m_RenderFinishedSemaphores[m_CurrentFrameIdx]};
 
+        updateUniformBuffer(m_CurrentFrameIdx);
+
         VkSubmitInfo submitInfo{
             .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
             .waitSemaphoreCount = 1,
@@ -1083,6 +1138,33 @@ private:
         m_CurrentFrameIdx = (m_CurrentFrameIdx + 1) % Settings::MAX_FRAMES_IN_FLIGHT;
     }
 
+    void updateUniformBuffer(uint32_t currentImage) {
+        // The static here makes it into a global static variable so the next function call will not overwrite it.
+        static time_point startTime = std::chrono::high_resolution_clock::now();
+
+        time_point currentTime = std::chrono::high_resolution_clock::now();
+        float delta_time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+        UniformBufferObject ubo{
+            .model = glm::rotate(
+                glm::mat4(1.0f),
+                delta_time * glm::radians(90.0f),
+                glm::vec3(0.0f, 0.0f, 1.0f)),
+            .view = glm::lookAt(
+                glm::vec3(2.0f, 2.0f, 2.0f),
+                glm::vec3(0.0f, 0.0f, 0.0f),
+                glm::vec3(0.0f, 0.0f, 1.0f)),
+            .proj = glm::perspective(glm::radians(45.0f),
+                m_SwapChainExtent.width / (float)m_SwapChainExtent.height,
+                Settings::CLIPPING_PLANE_NEAR,
+                Settings::CLIPPING_PLANE_FAR)};
+
+        // GLM uses OpenGL convention, this fixes that
+        ubo.proj[1][1] *= -1;
+
+        memcpy(m_UniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
+    }
+
     DEF cleanup() -> void {
         fprintf(stdout, "\nStarting the cleanup.\n");
         fprintf(stdout, "\tStarting the Vulkan cleanup.\n");
@@ -1094,10 +1176,19 @@ private:
         }
         cleanupSwapChain();
 
+        vkDestroyDescriptorSetLayout(m_Device, m_DescriptorSetLayout, nullptr);
+
         vkDestroyBuffer(m_Device, m_IndexBuffer, nullptr);
         vkFreeMemory(m_Device, m_IndexBufferMemory, nullptr);
         vkDestroyBuffer(m_Device, m_VertexBuffer, nullptr);
         vkFreeMemory(m_Device, m_VertexBufferMemory, nullptr);
+
+        for (size_t i = 0; i < Settings::MAX_FRAMES_IN_FLIGHT; i++) {
+            vkDestroyBuffer(m_Device, m_UniformBuffers[i], nullptr);
+            vkFreeMemory(m_Device, m_UniformBuffersMemory[i], nullptr);
+        }
+
+        vkDestroyDescriptorSetLayout(m_Device, m_DescriptorSetLayout, nullptr);
 
         vkDestroyCommandPool(m_Device, m_CommandPool, nullptr);
 

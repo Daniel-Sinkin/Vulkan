@@ -33,7 +33,10 @@
     * [x] Vertex Input description
     * [x] Vertex Buffer Creation
     * [x] Staging Buffer
-    * [ ] Index Buffer
+    * [x] Index Buffer
+* [ ] Uniform Buffers
+    * [x] Descriptor layout and buffer
+    * [ ] Descriptor pool and sets
 * [ ] Texture Mapping
 * [ ] Depth Buffering
 * [ ] Loading Models
