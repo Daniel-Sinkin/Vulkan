@@ -45,6 +45,9 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+
+
 # set(CMAKE_CXX_CLANG_TIDY "clang-tidy;-checks=modernize-*")
 
 # Add Clang-specific warning flags

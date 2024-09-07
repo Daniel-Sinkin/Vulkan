@@ -1,4 +1,4 @@
-Checks:          'clang-diagnostic-*,clang-analyzer-*,-llvmlibc-callee-namespace'
+Checks: 'clang-diagnostic-*,clang-analyzer-*,-llvmlibc-callee-namespace,modernize-*,cppcoreguidelines-*,bugprone-*,performance-*,readability-*'
 WarningsAsErrors: ''
 HeaderFileExtensions:
   - ''
