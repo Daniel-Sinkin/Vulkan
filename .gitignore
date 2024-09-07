@@ -63,3 +63,5 @@ build/
 .venv
 
 *.spv
+
+*.DS_Store
