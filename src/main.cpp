@@ -94,15 +94,19 @@ private:
         fprintf(stdout, "Successfully initialized window.\n");
     }
 
-    static DEF validateExtensions(const vector<VkExtensionProperties> &supported_extensions, const char **required_extensions, uint32_t required_extensions_count) -> bool {
-        const char **ext_first = required_extensions;
-        const char **ext_last = required_extensions + required_extensions_count;
-        return std::all_of(ext_first, ext_last, [&](const char *required_extension) {
-            std::string_view required_extension_view(required_extension);
-            return std::any_of(supported_extensions.begin(), supported_extensions.end(), [&](const auto &supported_extension) {
-                return std::string_view(supported_extension.extensionName) == required_extension_view;
+    static DEF validateExtensions(const vector<VkExtensionProperties> &supported_extensions, vector<const char *> required_extensions) -> bool {
+        return std::all_of(
+            required_extensions.begin(),
+            required_extensions.end(),
+            [&](const char *required_extension) {
+                std::string_view required_extension_view(required_extension);
+                return std::any_of(
+                    supported_extensions.begin(),
+                    supported_extensions.end(),
+                    [&](const auto &supported_extension) {
+                        return std::string_view(supported_extension.extensionName) == required_extension_view;
+                    });
             });
-        });
     }
 
     DEF createInstance() -> void {
@@ -158,7 +162,7 @@ private:
         vector<VkExtensionProperties> extensions(extensionCount);
         vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
 
-        if (!validateExtensions(extensions, requiredExtensions.data(), static_cast<uint32_t>(requiredExtensions.size()))) {
+        if (!validateExtensions(extensions, requiredExtensions)) {
             throw std::runtime_error("Required extensions are not supported!");
         }
         fprintf(stdout, "\nSuccessfully created instance.\n");
@@ -203,7 +207,7 @@ private:
         fragShaderStageInfo.module = fragShaderModule;
         fragShaderStageInfo.pName = "main";
 
-        VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
+        std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages = {vertShaderStageInfo, fragShaderStageInfo};
         fprintf(stdout, "Successfully created the shader modules.\n");
 
         fprintf(stdout, "\tTrying to Initialize Fixed Functions.\n");
@@ -384,7 +388,12 @@ private:
         createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
         QueueFamilyIndices indices = findQueueFamilies(m_PhysicalDevice);
-        array<uint32_t, 2> QueueFamilyIndices = {indices.graphicsFamily.value(), indices.presentationFamily.value()};
+        array<uint32_t, 2> QueueFamilyIndices;
+        if (indices.graphicsFamily.has_value() && indices.presentationFamily.has_value()) {
+            QueueFamilyIndices = {indices.graphicsFamily.value(), indices.presentationFamily.value()}; // NOLINT
+        } else {
+            throw std::runtime_error("QueueFamilyIndices not complete!");
+        }
 
         if (indices.graphicsFamily != indices.presentationFamily) {
             fprintf(stdout, "\tSetting imageSharingMode to Concurrent.\n");
@@ -436,11 +445,8 @@ private:
         vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 
         set<uint32_t> uniqueQueueFamilies;
-        if (indices.isComplete()) {
-            uniqueQueueFamilies = {
-                indices.graphicsFamily.value(),
-                indices.presentationFamily.value(),
-            };
+        if (indices.graphicsFamily.has_value() && indices.presentationFamily.has_value()) {
+            uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentationFamily.value()};
         } else {
             throw std::runtime_error("QueueFamilyIndices are not fully defined.");
         }
@@ -609,6 +615,7 @@ private:
             }
             i++;
         }
+        if (!indices.isComplete()) throw std::runtime_error("findQUeueFamilies couldn't find the necessary values!\n");
         return indices;
     }
 
@@ -663,12 +670,12 @@ private:
         fprintf(stdout, "Successfully setup DebugMessanger.\n");
     }
 
-    static DEF getRequiredExtensions() -> vector<const char *> {
+    static auto getRequiredExtensions() -> std::vector<const char *> {
         uint32_t glfwExtensionCount = 0;
         const char **glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+        std::span<const char *> glfwExtensionSpan(glfwExtensions, glfwExtensionCount);
 
-        vector<const char *> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
-
+        std::vector<const char *> extensions(glfwExtensionSpan.begin(), glfwExtensionSpan.end());
         if (enableValidationLayers) {
             extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
         }
@@ -702,7 +709,7 @@ private:
     }
 
     static DEF checkValidationLayerSupport() -> bool {
-        uint32_t layerCount;
+        uint32_t layerCount = 0;
         vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
 
         vector<VkLayerProperties> availableLayers(layerCount);
