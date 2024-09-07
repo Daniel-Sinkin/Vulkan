@@ -9,6 +9,7 @@
 #include <cstring>
 #include <format>
 #include <fstream>
+#include <glm/glm.hpp>
 #include <iostream>
 #include <optional>
 #include <set>
@@ -28,9 +29,51 @@ constexpr unsigned long long NO_TIMEOUT = UINT64_MAX; // Can't disable timeout i
 
 constexpr int INVALID_FRAMEBUFFER_SIZE = 0;
 
-// inline DEF operator==(const VkSurfaceFormatKHR &lhs, const VkSurfaceFormatKHR &rhs)->bool {
-// return lhs.format == rhs.format && lhs.colorSpace == rhs.colorSpace;
-// }
+struct SwapChainSupportDetails {
+    VkSurfaceCapabilitiesKHR capabilities;
+    vector<VkSurfaceFormatKHR> formats;
+    vector<VkPresentModeKHR> presentModes;
+};
+
+struct QueueFamilyIndices {
+    std::optional<uint32_t> graphicsFamily;
+    std::optional<uint32_t> presentationFamily;
+
+    DEF isComplete() const -> bool {
+        return graphicsFamily.has_value() && presentationFamily.has_value();
+    }
+};
+struct Vertex {
+    glm::vec2 pos;
+    glm::vec3 color;
+
+    static DEF getBindingDescription() -> VkVertexInputBindingDescription {
+        VkVertexInputBindingDescription bindingDescription{
+            .binding = 0,
+            .stride = sizeof(Vertex),
+            .inputRate = VK_VERTEX_INPUT_RATE_VERTEX};
+        return bindingDescription;
+    }
+    static DEF getAttributeDescriptions() -> array<VkVertexInputAttributeDescription, 2> {
+        VkVertexInputAttributeDescription positionAttribute{
+            .location = 0,
+            .binding = 0,
+            .format = VK_FORMAT_R32G32_SFLOAT,
+            .offset = offsetof(Vertex, pos)};
+        VkVertexInputAttributeDescription colorAttribute{
+            .location = 1,
+            .binding = 0,
+            .format = VK_FORMAT_R32G32B32_SFLOAT,
+            .offset = offsetof(Vertex, color)};
+        return {positionAttribute, colorAttribute};
+    }
+};
+
+const vector<Vertex> vertices = {
+    {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+    {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+    {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+};
 
 namespace Util {
 static auto readFile(const std::string &filename) -> std::vector<char> {

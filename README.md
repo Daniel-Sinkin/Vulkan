@@ -29,7 +29,11 @@
         * [x] Rendering and presentation
         * [x] Frames in flight
     * [x] Swap chain recreation
-* [ ] Vertex Buffers
+* [x] Vertex Buffers
+    * [x] Vertex Input description
+    * [x] Vertex Buffer Creation
+    * [x] Staging Buffer
+    * [ ] Index Buffer
 * [ ] Texture Mapping
 * [ ] Depth Buffering
 * [ ] Loading Models
