@@ -26,6 +26,8 @@ using std::vector;
 #define DEF auto                                      // Only use for the auto in functions, not for normal code so its easier to search for functions
 constexpr unsigned long long NO_TIMEOUT = UINT64_MAX; // Can't disable timeout in vulcan semaphore, this is a workaround for that
 
+constexpr int INVALID_FRAMEBUFFER_SIZE = 0;
+
 // inline DEF operator==(const VkSurfaceFormatKHR &lhs, const VkSurfaceFormatKHR &rhs)->bool {
 // return lhs.format == rhs.format && lhs.colorSpace == rhs.colorSpace;
 // }
@@ -62,6 +64,11 @@ static auto readFile(const std::string &filename) -> std::vector<char> {
 } // namespace Util
 
 namespace Settings {
+constexpr uint32_t DEFAULT_WINDOW_WIDTH = 800;
+constexpr uint32_t DEFAULT_WINDOW_HEIGHT = 600;
+
+constexpr auto WINDOW_NAME = "Vulkan 3D Engine";
+
 // For example macbooks have integrated graphics cards, so they would be filtered by this, which wouldn't make sense
 constexpr bool ALLOW_DEVICE_WITHOUT_INTEGRATED_GPU = true;
 constexpr bool ALLOW_DEVICE_WITHOUT_GEOMETRY_SHADER = true;

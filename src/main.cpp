@@ -58,18 +58,22 @@ DEF DestroyDebugUtilsMessengerEXT(
     }
 }
 
-class HelloTriangleApplication {
+class Vulkan3DEngine {
 public:
-    HelloTriangleApplication() = default;
+    Vulkan3DEngine() = default;
 
-    DEF run() -> auto {
+    DEF run() -> void {
+        fprintf(stdout, "Initializing Vulkan application.\n");
         initWindow();
         initVulkan();
 
+        fprintf(stdout, "Finished Initializing Vulkan application.\n");
         std::cout << std::flush;
 
         mainLoop();
         cleanup();
+
+        fprintf(stdout, "\nReached the end of the Vulkan application.\n");
     }
 
 private:
@@ -103,6 +107,8 @@ private:
 
     uint32_t m_CurrentFrameIdx = 0; // Not the total frames, 0 <= m_CurrentFrameIdx < Settings::MAX_FRAMES_IN_FLIGHT
 
+    bool m_FramebufferResized = false;
+
     DEF initWindow() -> void {
         fprintf(stdout, "\nTrying to initialize window.\n");
         if (glfwInit() == GLFW_FALSE) {
@@ -114,8 +120,20 @@ private:
         // Disables window resizing
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
-        m_Window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Vulkan", nullptr, nullptr);
+        m_Window = glfwCreateWindow(
+            Settings::DEFAULT_WINDOW_WIDTH,
+            Settings::DEFAULT_WINDOW_HEIGHT,
+            Settings::WINDOW_NAME,
+            nullptr,
+            nullptr);
+        glfwSetWindowUserPointer(m_Window, this);
+        glfwSetFramebufferSizeCallback(m_Window, framebufferResizeCallback);
         fprintf(stdout, "Successfully initialized window.\n");
+    }
+
+    static void framebufferResizeCallback(GLFWwindow *window, int width, int height) {
+        auto app = reinterpret_cast<Vulkan3DEngine *>(glfwGetWindowUserPointer(window));
+        app->m_FramebufferResized = true;
     }
 
     static DEF validateExtensions(const vector<VkExtensionProperties> &supported_extensions, vector<const char *> required_extensions) -> bool {
@@ -636,6 +654,34 @@ private:
         fprintf(stdout, "Finished setting up the swapchain.\n");
     }
 
+    DEF cleanupSwapChain() -> void {
+        for (auto frameBuffer : m_SwapChainFramebuffers) {
+            vkDestroyFramebuffer(m_Device, frameBuffer, nullptr);
+        }
+
+        for (auto imageView : m_SwapChainImageViews) {
+            vkDestroyImageView(m_Device, imageView, nullptr);
+        }
+
+        vkDestroySwapchainKHR(m_Device, m_SwapChain, nullptr);
+    }
+
+    DEF recreateSwapChain() -> void {
+        int height = INVALID_FRAMEBUFFER_SIZE;
+        int width = INVALID_FRAMEBUFFER_SIZE;
+        glfwGetFramebufferSize(m_Window, &width, &height);
+        while (width == INVALID_FRAMEBUFFER_SIZE || height == INVALID_FRAMEBUFFER_SIZE) {
+            glfwGetFramebufferSize(m_Window, &width, &height);
+            glfwWaitEvents();
+        }
+
+        vkDeviceWaitIdle(m_Device);
+
+        createSwapChain();
+        createImageViews();
+        createFramebuffers();
+    }
+
     DEF createSurface() -> void {
         fprintf(stdout, "\nTrying to create GLFW window surface.\n");
         if (glfwCreateWindowSurface(m_Instance, m_Window, nullptr, &m_Surface) != VK_SUCCESS) {
@@ -839,10 +885,23 @@ private:
 
     DEF drawFrame() -> void {
         vkWaitForFences(m_Device, 1, &m_InFlightFences[m_CurrentFrameIdx], VK_TRUE, NO_TIMEOUT);
-        vkResetFences(m_Device, 1, &m_InFlightFences[m_CurrentFrameIdx]);
-
         uint32_t imageIndex = 0;
-        vkAcquireNextImageKHR(m_Device, m_SwapChain, NO_TIMEOUT, m_ImageAvailableSemaphores[m_CurrentFrameIdx], VK_NULL_HANDLE, &imageIndex);
+        VkResult resultNextImage = vkAcquireNextImageKHR(
+            m_Device,
+            m_SwapChain,
+            NO_TIMEOUT,
+            m_ImageAvailableSemaphores[m_CurrentFrameIdx],
+            VK_NULL_HANDLE,
+            &imageIndex);
+
+        if (resultNextImage == VK_ERROR_OUT_OF_DATE_KHR) {
+            recreateSwapChain();
+            return;
+        } else if (resultNextImage != VK_SUCCESS && resultNextImage != VK_SUBOPTIMAL_KHR) {
+            throw std::runtime_error("failed to acquire swap chain image!");
+        }
+
+        vkResetFences(m_Device, 1, &m_InFlightFences[m_CurrentFrameIdx]);
 
         vkResetCommandBuffer(m_CommandBuffers[m_CurrentFrameIdx], 0);
         recordCommandBuffer(m_CommandBuffers[m_CurrentFrameIdx], imageIndex);
@@ -875,43 +934,48 @@ private:
             .pImageIndices = &imageIndex,
             .pResults = nullptr};
 
-        vkQueuePresentKHR(m_PresentQueue, &presentInfo);
+        VkResult resultQueue = vkQueuePresentKHR(m_PresentQueue, &presentInfo);
+
+        if (resultQueue == VK_ERROR_OUT_OF_DATE_KHR || resultQueue == VK_SUBOPTIMAL_KHR || m_FramebufferResized) {
+            m_FramebufferResized = false;
+            recreateSwapChain();
+        } else if (resultQueue != VK_SUCCESS) {
+            throw std::runtime_error("failed to present swap chain image!");
+        }
 
         m_CurrentFrameIdx = (m_CurrentFrameIdx + 1) % Settings::MAX_FRAMES_IN_FLIGHT;
     }
 
     DEF cleanup() -> void {
         fprintf(stdout, "\nStarting the cleanup.\n");
+        fprintf(stdout, "\tStarting the Vulkan cleanup.\n");
 
         for (size_t i = 0; i < Settings::MAX_FRAMES_IN_FLIGHT; i++) {
             vkDestroySemaphore(m_Device, m_ImageAvailableSemaphores[i], nullptr);
             vkDestroySemaphore(m_Device, m_RenderFinishedSemaphores[i], nullptr);
             vkDestroyFence(m_Device, m_InFlightFences[i], nullptr);
         }
+        cleanupSwapChain();
 
         vkDestroyCommandPool(m_Device, m_CommandPool, nullptr);
-        for (auto framebuffer : m_SwapChainFramebuffers) {
-            vkDestroyFramebuffer(m_Device, framebuffer, nullptr);
-        }
+
         vkDestroyPipeline(m_Device, m_GraphicsPipeline, nullptr);
         vkDestroyPipelineLayout(m_Device, m_PipelineLayout, nullptr);
         vkDestroyRenderPass(m_Device, m_RenderPass, nullptr);
 
-        for (auto imageView : m_SwapChainImageViews) {
-            vkDestroyImageView(m_Device, imageView, nullptr);
-        }
-
         if (enableValidationLayers) {
             DestroyDebugUtilsMessengerEXT(m_Instance, m_DebugMessenger, nullptr);
         }
-        vkDestroySwapchainKHR(m_Device, m_SwapChain, nullptr);
         vkDestroyDevice(m_Device, nullptr);
         vkDestroySurfaceKHR(m_Instance, m_Surface, nullptr);
         vkDestroyInstance(m_Instance, nullptr);
+        fprintf(stdout, "\tFinished the Vulkan cleanup.\n");
 
+        fprintf(stdout, "\tStarted the the GLFW cleanup.\n");
         glfwDestroyWindow(m_Window);
         glfwTerminate();
-        fprintf(stdout, "\nFinshed the cleanup.\n");
+        fprintf(stdout, "\tFinished the GLFW cleanup.\n");
+        fprintf(stdout, "Finshed the cleanup.\n");
     }
 
     static DEF populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &createInfo) -> void {
@@ -943,7 +1007,7 @@ private:
         fprintf(stdout, "Successfully setup DebugMessanger.\n");
     }
 
-    static auto getRequiredExtensions() -> std::vector<const char *> {
+    static DEF getRequiredExtensions() -> std::vector<const char *> {
         uint32_t glfwExtensionCount = 0;
         const char **glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
         std::span<const char *> glfwExtensionSpan(glfwExtensions, glfwExtensionCount);
@@ -1072,10 +1136,12 @@ private:
 };
 
 DEF main() -> int {
-    HelloTriangleApplication app;
+    Vulkan3DEngine app;
 
     try {
+        fprintf(stdout, "\nStarting application run.\n");
         app.run();
+        fprintf(stdout, "\nFinished application run.\n");
     } catch (const std::exception &e) {
         std::cerr << e.what() << "\n";
         return EXIT_FAILURE;

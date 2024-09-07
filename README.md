@@ -28,7 +28,7 @@
         * [x] Command Buffers
         * [x] Rendering and presentation
         * [x] Frames in flight
-    * [ ] Swap chain recreation
+    * [x] Swap chain recreation
 * [ ] Vertex Buffers
 * [ ] Texture Mapping
 * [ ] Depth Buffering
