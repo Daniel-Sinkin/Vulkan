@@ -25,7 +25,7 @@
         * [x] Conclusion
     * [ ] Drawing
         * [x] Framebuffers
-        * [ ] Command Buffers
+        * [x] Command Buffers
         * [ ] Rendering and presentation
         * [ ] Frames in flight
     * [ ] Swap chain recreation

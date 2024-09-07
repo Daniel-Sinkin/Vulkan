@@ -94,6 +94,9 @@ private:
     VkPipelineLayout m_PipelineLayout = VK_NULL_HANDLE;
     VkPipeline m_GraphicsPipeline = VK_NULL_HANDLE;
 
+    VkCommandPool m_CommandPool;
+    VkCommandBuffer m_CommandBuffer;
+
     DEF initWindow() -> void {
         fprintf(stdout, "\nTrying to initialize window.\n");
         if (glfwInit() == GLFW_FALSE) {
@@ -194,7 +197,86 @@ private:
         createRenderPass();
         createGraphicsPipeline();
         createFramebuffers();
+        createCommandPool();
+        createCommandBuffer();
         fprintf(stdout, "\n\nFinished setting up Vulkan.\n");
+    }
+
+    DEF createCommandBuffer() -> void {
+        fprintf(stdout, "\nTrying to setup Command Buffer.\n");
+        VkCommandBufferAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        allocInfo.commandPool = m_CommandPool;
+        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        allocInfo.commandBufferCount = 1;
+
+        if (vkAllocateCommandBuffers(m_Device, &allocInfo, &m_CommandBuffer) != VK_SUCCESS) {
+            throw std::runtime_error("failed to allocate command buffers!");
+        }
+        fprintf(stdout, "Successfully set up Command Buffer.\n");
+    }
+
+    void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
+        VkCommandBufferBeginInfo beginInfo{};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+        if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
+            throw std::runtime_error("failed to begin recording command buffer!");
+        }
+
+        VkOffset2D offset = {0, 0};
+        VkExtent2D extent = m_SwapChainExtent;
+        VkRect2D renderArea = {offset, extent};
+        VkRenderPassBeginInfo renderPassInfo{
+            .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+            .renderPass = m_RenderPass,
+            .framebuffer = m_SwapChainFramebuffers[imageIndex],
+            .renderArea = renderArea};
+
+        VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
+        renderPassInfo.clearValueCount = 1;
+        renderPassInfo.pClearValues = &clearColor;
+
+        vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_GraphicsPipeline);
+
+        VkViewport viewport{
+            .x = 0.0f,
+            .y = 0.0f,
+            .width = static_cast<float>(m_SwapChainExtent.width),
+            .height = static_cast<float>(m_SwapChainExtent.height),
+            .minDepth = 0.0f,
+            .maxDepth = 1.0f};
+        vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+
+        VkRect2D scissor{.offset = {0, 0}, .extent = m_SwapChainExtent};
+        vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+        vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+
+        vkCmdEndRenderPass(commandBuffer);
+
+        if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
+            throw std::runtime_error("failed to record command buffer!");
+        }
+    }
+
+    DEF createCommandPool() -> void {
+        fprintf(stdout, "\nTrying to setup Command Pool.\n");
+        QueueFamilyIndices queueFamilyIndices = findQueueFamilies(m_PhysicalDevice);
+        if (!queueFamilyIndices.graphicsFamily.has_value()) {
+            throw std::runtime_error("QueueFamilyIndices GraphicsFamily has no value!");
+        }
+        VkCommandPoolCreateInfo poolInfo{
+            .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+            .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
+            .queueFamilyIndex = queueFamilyIndices.graphicsFamily.value()};
+
+        if (vkCreateCommandPool(m_Device, &poolInfo, nullptr, &m_CommandPool) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create command pool!");
+        }
+        fprintf(stdout, "Successfully set up Command Pool.\n");
     }
 
     DEF createFramebuffers() -> void {
@@ -202,13 +284,13 @@ private:
         m_SwapChainFramebuffers.resize(m_SwapChainImageViews.size());
         for (size_t i = 0; i < m_SwapChainImageViews.size(); i++) {
             fprintf(stdout, "\t%zu. Framebuffers.\n", i + 1);
-            VkImageView attachments[] = {m_SwapChainImageViews[i]};
+            std::array<VkImageView, 1> attachments = {m_SwapChainImageViews[i]};
 
             VkFramebufferCreateInfo framebufferInfo{
                 .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
                 .renderPass = m_RenderPass,
                 .attachmentCount = 1,
-                .pAttachments = attachments,
+                .pAttachments = attachments.data(),
                 .width = m_SwapChainExtent.width,
                 .height = m_SwapChainExtent.height,
                 .layers = 1,
@@ -219,7 +301,7 @@ private:
             }
         }
 
-        fprintf(stdout, "\nSuccessfully set up Framebuffers.\n");
+        fprintf(stdout, "Successfully set up Framebuffers.\n");
     }
 
     DEF createRenderPass() -> void {
@@ -254,7 +336,7 @@ private:
             throw std::runtime_error("failed to create render pass!");
         }
 
-        fprintf(stdout, "\nSuccessfully set upped Render Pass.\n");
+        fprintf(stdout, "Successfully set upped Render Pass.\n");
     }
 
     DEF createGraphicsPipeline() -> void {
@@ -284,7 +366,7 @@ private:
             .pName = "main"};
 
         std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages = {vertShaderStageInfo, fragShaderStageInfo};
-        fprintf(stdout, "Successfully created the shader modules.\n");
+        fprintf(stdout, "\tSuccessfully created the shader modules.\n");
 
         fprintf(stdout, "\tTrying to Initialize Fixed Functions.\n");
         fprintf(stdout, "\t\tInitializing Vertex Input.\n");
@@ -300,18 +382,6 @@ private:
             .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
             .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
             .primitiveRestartEnable = VK_FALSE};
-
-        fprintf(stdout, "\t\tInitializing Viewport and scissors.\n");
-        VkViewport viewport{
-            .x = 0.0f,
-            .y = 0.0f,
-            .width = static_cast<float>(m_SwapChainExtent.width),
-            .height = static_cast<float>(m_SwapChainExtent.height),
-            .minDepth = 0.0f,
-            .maxDepth = 1.0f,
-        };
-
-        VkRect2D scissor{.offset = {0, 0}, .extent = m_SwapChainExtent};
 
         std::vector<VkDynamicState> dynamicStates = {
             VK_DYNAMIC_STATE_VIEWPORT,
@@ -409,8 +479,7 @@ private:
         fprintf(stdout, "Successfully set up Graphics Pipeline.\n");
     }
 
-    DEF
-    createShaderModule(const std::vector<char> &code) -> VkShaderModule {
+    DEF createShaderModule(const std::vector<char> &code) -> VkShaderModule {
         VkShaderModuleCreateInfo createInfo{
             .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
             .codeSize = code.size(),
@@ -725,10 +794,10 @@ private:
     DEF cleanup() -> void {
         fprintf(stdout, "\nStarting the cleanup.\n");
 
+        vkDestroyCommandPool(m_Device, m_CommandPool, nullptr);
         for (auto framebuffer : m_SwapChainFramebuffers) {
             vkDestroyFramebuffer(m_Device, framebuffer, nullptr);
         }
-
         vkDestroyPipeline(m_Device, m_GraphicsPipeline, nullptr);
         vkDestroyPipelineLayout(m_Device, m_PipelineLayout, nullptr);
         vkDestroyRenderPass(m_Device, m_RenderPass, nullptr);
@@ -789,31 +858,6 @@ private:
             extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
         }
 
-        return extensions;
-    }
-
-    static DEF getRequiredDeviceExtensions(VkPhysicalDevice device) -> vector<const char *> {
-        uint32_t deviceExtensionPropertyCount = 0;
-        vkEnumerateDeviceExtensionProperties(
-            device,
-            nullptr,
-            &deviceExtensionPropertyCount,
-            nullptr);
-
-        vector<VkExtensionProperties> deviceExtensionProperties(deviceExtensionPropertyCount);
-        vkEnumerateDeviceExtensionProperties(
-            device,
-            nullptr,
-            &deviceExtensionPropertyCount,
-            deviceExtensionProperties.data());
-
-        vector<const char *> extensions;
-        auto desired_extensions = std::string_view(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
-        for (const auto &property : deviceExtensionProperties) {
-            if (std::string_view(property.extensionName) == desired_extensions) {
-                extensions.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
-            }
-        }
         return extensions;
     }
 
