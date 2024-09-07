@@ -68,12 +68,21 @@ struct Vertex {
         return {positionAttribute, colorAttribute};
     }
 };
-
+/*
+// clang-format off
 const vector<Vertex> vertices = {
+    {{ 0.5f, -0.5f}, { 0.0f,  1.0f,  0.0f}},
+    {{-0.5f, -0.5f}, { 1.0f,  0.0f,  0.0f}},
+    {{ 0.5f,  0.5f}, { 0.0f,  0.0f,  1.0f}},
+    {{-0.5f,  0.5f}, { 1.0f,  1.0f,  1.0f}},
+};
+const vector<uint16_t> indices = { 0, 1, 2, 2, 3, 0}; // Set to uint32_t if we get too many vertices
+// clang-format on
+*/
+const std::vector<Vertex> vertices = {
     {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
     {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-    {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-};
+    {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
 
 namespace Util {
 static auto readFile(const std::string &filename) -> std::vector<char> {
