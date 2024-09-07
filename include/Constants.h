@@ -20,11 +20,13 @@ using std::set;
 using std::string;
 using std::vector;
 
+#define DEF auto // Only use for the auto in functions, not for normal code so its easier to search for functions
+
 inline bool operator==(const VkSurfaceFormatKHR &lhs, const VkSurfaceFormatKHR &rhs) {
     return lhs.format == rhs.format && lhs.colorSpace == rhs.colorSpace;
 }
 namespace Util {
-static std::vector<char> readFile(const std::string &filename) {
+static auto readFile(const std::string &filename) -> std::vector<char> {
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
     if (!file.is_open()) {
         if (!std::filesystem::exists(filename)) {
@@ -57,6 +59,7 @@ static std::vector<char> readFile(const std::string &filename) {
 namespace Settings {
 // For example macbooks have integrated graphics cards, so they would be filtered by this, which wouldn't make sense
 constexpr bool ALLOW_DEVICE_WITHOUT_INTEGRATED_GPU = true;
+constexpr bool ALLOW_DEVICE_WITHOUT_GEOMETRY_SHADER = true;
 
 // Define the preferred surface format as a VkSurfaceFormatKHR struct
 constexpr VkSurfaceFormatKHR PREFERRED_SURFACE_FORMAT = {
