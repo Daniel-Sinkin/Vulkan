@@ -96,6 +96,8 @@ private:
 
     VkBuffer m_VertexBuffer = VK_NULL_HANDLE;
     VkDeviceMemory m_VertexBufferMemory = VK_NULL_HANDLE;
+    VkBuffer m_IndexBuffer = VK_NULL_HANDLE;
+    VkDeviceMemory m_IndexBufferMemory = VK_NULL_HANDLE;
 
     DEF initWindow() -> void {
         fprintf(stdout, "\nTrying to initialize window.\n");
@@ -211,6 +213,7 @@ private:
         createFramebuffers();
         createCommandPool();
         createVertexBuffer();
+        createIndexBuffer();
         createCommandBuffers();
         createSyncObjects();
         fprintf(stdout, "\n\nFinished setting up Vulkan.\n");
@@ -228,7 +231,37 @@ private:
         throw std::runtime_error("Couldn't determine the memory type.");
     }
 
-    void createVertexBuffer() {
+    DEF createIndexBuffer() -> void {
+        VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+
+        VkBuffer stagingBuffer;
+        VkDeviceMemory stagingBufferMemory;
+        createBuffer(
+            bufferSize,
+            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+            stagingBuffer,
+            stagingBufferMemory);
+
+        void *data;
+        vkMapMemory(m_Device, stagingBufferMemory, 0, bufferSize, 0, &data);
+        memcpy(data, indices.data(), (size_t)bufferSize);
+        vkUnmapMemory(m_Device, stagingBufferMemory);
+
+        createBuffer(
+            bufferSize,
+            VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+            m_IndexBuffer,
+            m_IndexBufferMemory);
+
+        copyBuffer(stagingBuffer, m_IndexBuffer, bufferSize);
+
+        vkDestroyBuffer(m_Device, stagingBuffer, nullptr);
+        vkFreeMemory(m_Device, stagingBufferMemory, nullptr);
+    }
+
+    DEF createVertexBuffer() -> void {
         VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
 
         VkBuffer stagingBuffer;
@@ -258,7 +291,13 @@ private:
         vkFreeMemory(m_Device, stagingBufferMemory, nullptr);
     }
 
-    void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer, VkDeviceMemory &bufferMemory) {
+    DEF createBuffer(
+        VkDeviceSize size,
+        VkBufferUsageFlags usage,
+        VkMemoryPropertyFlags properties,
+        VkBuffer &buffer,
+        VkDeviceMemory &bufferMemory) -> void {
+
         VkBufferCreateInfo bufferInfo{
             .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
             .size = size,
@@ -389,16 +428,16 @@ private:
             .maxDepth = 1.0f};
         vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 
-        VkRect2D scissor{
-            .offset = {0, 0},
-            .extent = m_SwapChainExtent};
+        VkRect2D scissor{.offset = {0, 0}, .extent = m_SwapChainExtent};
         vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
         array<VkBuffer, 1> vertexBuffers = {m_VertexBuffer};
         array<VkDeviceSize, 1> offsets = {0};
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers.data(), offsets.data());
 
-        vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers.data(), offsets.data());
+        vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer, 0, VK_INDEX_TYPE_UINT16);
+
+        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 
         vkCmdEndRenderPass(commandBuffer);
 
@@ -501,8 +540,8 @@ private:
         // This is a ugly workaround, for some reason c++ couldn't see the frag.spv (but the vert.spv despite being in the same directory)
         // TODO: Move this back to relative paths
         fprintf(stdout, "\tTrying to read .spv files.\n");
-        auto vertShaderCode = Util::readFile("/Users/danielsinkin/GitHub_private/Vulcan/shaders/compiled/vert.spv");
-        auto fragShaderCode = Util::readFile("/Users/danielsinkin/GitHub_private/Vulcan/shaders/compiled/frag.spv");
+        vector<char> vertShaderCode = Util::readFile(FilePaths::SHADER_VERT);
+        vector<char> fragShaderCode = Util::readFile(FilePaths::SHADER_FRAG);
 
         fprintf(stdout, "\t\tTrying to create Vertex Shader.\n");
         VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
@@ -1055,6 +1094,8 @@ private:
         }
         cleanupSwapChain();
 
+        vkDestroyBuffer(m_Device, m_IndexBuffer, nullptr);
+        vkFreeMemory(m_Device, m_IndexBufferMemory, nullptr);
         vkDestroyBuffer(m_Device, m_VertexBuffer, nullptr);
         vkFreeMemory(m_Device, m_VertexBufferMemory, nullptr);
 

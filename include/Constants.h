@@ -68,24 +68,35 @@ struct Vertex {
         return {positionAttribute, colorAttribute};
     }
 };
-/*
-// clang-format off
-const vector<Vertex> vertices = {
-    {{ 0.5f, -0.5f}, { 0.0f,  1.0f,  0.0f}},
-    {{-0.5f, -0.5f}, { 1.0f,  0.0f,  0.0f}},
-    {{ 0.5f,  0.5f}, { 0.0f,  0.0f,  1.0f}},
-    {{-0.5f,  0.5f}, { 1.0f,  1.0f,  1.0f}},
-};
-const vector<uint16_t> indices = { 0, 1, 2, 2, 3, 0}; // Set to uint32_t if we get too many vertices
-// clang-format on
+/* Vertices w/ counter-clockwise winding order
+  2: (-0.5, 0.5)     3: (0.5, 0.5)
+     *-----<<<-----*
+     |          __/|
+     v       __/   |
+     v    >>^      ^
+     | __/         ^
+     |/            |
+     *----->>>-----*
+  1: (-0.5, -0.5)    0: (0.5, -0.5)
 */
-const std::vector<Vertex> vertices = {
-    {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-    {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-    {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
+// clang-format off
+// Those vertices are different from the book, so the indices are as well
+const vector<Vertex> vertices = {
+    {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+    {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+    {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+    {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}},
+};
+const vector<uint16_t> indices = {0, 2, 3, 1, 0, 3}; // Set to uint32_t if we get too many vertices
+// clang-format on
+
+namespace FilePaths {
+constexpr const char *SHADER_VERT = "/Users/danielsinkin/GitHub_private/Vulcan/shaders/compiled/vert.spv";
+constexpr const char *SHADER_FRAG = "/Users/danielsinkin/GitHub_private/Vulcan/shaders/compiled/frag.spv";
+} // namespace FilePaths
 
 namespace Util {
-static auto readFile(const std::string &filename) -> std::vector<char> {
+static DEF readFile(const string &filename) -> vector<char> {
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
     if (!file.is_open()) {
         if (!std::filesystem::exists(filename)) {
@@ -103,7 +114,7 @@ static auto readFile(const std::string &filename) -> std::vector<char> {
         throw std::runtime_error("File size exceeds the maximum supported size.");
     }
 
-    std::vector<char> buffer(fileSize);
+    vector<char> buffer(fileSize);
     file.seekg(0);
 
     // Cast fileSize to std::streamsize after checking the range
