@@ -27,8 +27,14 @@ inline bool operator==(const VkSurfaceFormatKHR &lhs, const VkSurfaceFormatKHR &
 namespace Util {
 static std::vector<char> readFile(const std::string &filename) {
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
-
     if (!file.is_open()) {
+        if (!std::filesystem::exists(filename)) {
+            fprintf(stderr, "Error: File '%s' does not exist.\n", filename.c_str());
+        } else if (!std::filesystem::is_regular_file(filename)) {
+            fprintf(stderr, "Error: '%s' is not a regular file.\n", filename.c_str());
+        } else {
+            fprintf(stderr, "Error: Unable to open file '%s': %s\n", filename.c_str(), std::strerror(errno));
+        }
         throw std::runtime_error("failed to open file!");
     }
     size_t fileSize = (size_t)file.tellg();
@@ -39,6 +45,7 @@ static std::vector<char> readFile(const std::string &filename) {
 
     return buffer;
 }
+
 } // namespace Util
 
 namespace Settings {

@@ -1,7 +1,7 @@
 #!/bin/bash
 cd "$(dirname "$0")"
 
-# Fallback to $VULKAN_SDK/bin/glslc if $GLSLC is not set
+# Fallback if $GLSLC is not set
 GLSLC=${GLSLC:-"$VULKAN_SDK/bin/glslc"}
 
 # Compile the shaders

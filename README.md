@@ -19,7 +19,7 @@
         * [x] Swap Chain
         * [x] Image Views
     * [ ] Graphics pipeline basics
-        * [ ] Shader modules
+        * [x] Shader modules
         * [ ] Fixed functions
         * [ ] Render passes 
     * [ ] Drawing
