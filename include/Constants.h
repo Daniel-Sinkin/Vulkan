@@ -208,8 +208,8 @@ static DEF readFile(const string &filename) -> vector<char> {
 } // namespace Util
 
 namespace Settings {
-constexpr uint32_t DEFAULT_WINDOW_WIDTH = 1920;
-constexpr uint32_t DEFAULT_WINDOW_HEIGHT = 1080;
+constexpr uint32_t DEFAULT_WINDOW_WIDTH = 800;
+constexpr uint32_t DEFAULT_WINDOW_HEIGHT = 600;
 
 constexpr auto WINDOW_NAME = "Vulkan 3D Engine";
 
