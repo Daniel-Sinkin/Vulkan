@@ -741,8 +741,8 @@ private:
             .depthClampEnable = VK_FALSE,
             .rasterizerDiscardEnable = VK_FALSE,
             .polygonMode = VK_POLYGON_MODE_FILL,
-            .cullMode = VK_CULL_MODE_BACK_BIT,
-            .frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE,
+            .cullMode = VK_CULL_MODE_NONE,
+            .frontFace = VK_FRONT_FACE_CLOCKWISE,
             .depthBiasEnable = VK_FALSE,
             .depthBiasConstantFactor = 0.0f,
             .depthBiasClamp = 0.0f,
@@ -1224,7 +1224,7 @@ private:
         m_CurrentFrameIdx = (m_CurrentFrameIdx + 1) % Settings::MAX_FRAMES_IN_FLIGHT;
     }
 
-    void updateUniformBuffer(uint32_t currentImage) {
+    DEF updateUniformBuffer(uint32_t currentImage) -> void {
         // The static here makes it into a global static variable so the next function call will not overwrite it.
         static time_point startTime = std::chrono::high_resolution_clock::now();
 
@@ -1235,6 +1235,42 @@ private:
             .model = glm::rotate(glm::mat4(1.0f),
                 delta_time * glm::radians(90.0f),
                 glm::vec3(0.0f, 0.0f, 1.0f)),
+            .view = glm::lookAt(
+                glm::vec3(2.0f, 2.0f, 2.0f),
+                glm::vec3(0.0f, 0.0f, 0.0f),
+                glm::vec3(0.0f, 0.0f, 1.0f)),
+            .proj = glm::perspective(glm::radians(45.0f),
+                m_SwapChainExtent.width / (float)m_SwapChainExtent.height,
+                Settings::CLIPPING_PLANE_NEAR,
+                Settings::CLIPPING_PLANE_FAR)};
+
+        // GLM uses OpenGL convention, this fixes that
+        ubo.proj[1][1] *= -1;
+
+        memcpy(m_UniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
+    }
+
+    DEF updateUniformBuffer_Fancy(uint32_t currentImage) -> void {
+        // The static here makes it into a global static variable so the next function call will not overwrite it.
+        static auto startTime = std::chrono::high_resolution_clock::now();
+
+        auto currentTime = std::chrono::high_resolution_clock::now();
+        float delta_time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+        float slowShrink = sin(delta_time * 0.3f);
+
+        float scaleFactor = 0.2f + (1.5f - 0.2f) * (0.5f * (1.0f - cos(slowShrink * 3.14159f)));
+
+        glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.0f), glm::vec3(scaleFactor));
+
+        glm::mat4 modelMatrix = glm::rotate(glm::mat4(1.0f),
+            delta_time * glm::radians(90.0f),
+            glm::vec3(0.0f, 0.0f, 1.0f));
+
+        modelMatrix = modelMatrix * scaleMatrix;
+
+        UniformBufferObject ubo{
+            .model = modelMatrix,
             .view = glm::lookAt(
                 glm::vec3(2.0f, 2.0f, 2.0f),
                 glm::vec3(0.0f, 0.0f, 0.0f),
