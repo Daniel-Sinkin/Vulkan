@@ -4,7 +4,7 @@
 cd "$(dirname "$0")"
 
 # Compile shaders
-./util/compile_shaders.sh
+./scripts/compile_shaders.sh
 
 # Clean and prepare the build directory
 rm -rf build
