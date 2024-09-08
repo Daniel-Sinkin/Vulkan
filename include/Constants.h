@@ -172,8 +172,8 @@ struct UniformBufferObject {
 };
 
 namespace FilePaths {
-constexpr const char *SHADER_VERT = "/Users/danielsinkin/GitHub_private/Vulkan/shaders/compiled/vert.spv";
-constexpr const char *SHADER_FRAG = "/Users/danielsinkin/GitHub_private/Vulkan/shaders/compiled/frag.spv";
+constexpr const char *SHADER_VERT = "/Users/danielsinkin/GitHub_private/Vulkan/shaders/compiled/shader.vert.spv";
+constexpr const char *SHADER_FRAG = "/Users/danielsinkin/GitHub_private/Vulkan/shaders/compiled/shader.frag.spv";
 } // namespace FilePaths
 
 namespace Util {
@@ -208,8 +208,8 @@ static DEF readFile(const string &filename) -> vector<char> {
 } // namespace Util
 
 namespace Settings {
-constexpr uint32_t DEFAULT_WINDOW_WIDTH = 800;
-constexpr uint32_t DEFAULT_WINDOW_HEIGHT = 600;
+constexpr uint32_t DEFAULT_WINDOW_WIDTH = 1920;
+constexpr uint32_t DEFAULT_WINDOW_HEIGHT = 1080;
 
 constexpr auto WINDOW_NAME = "Vulkan 3D Engine";
 

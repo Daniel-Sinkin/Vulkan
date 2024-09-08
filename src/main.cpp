@@ -39,9 +39,9 @@ DEF DestroyDebugUtilsMessengerEXT(
     }
 }
 
-class Vulkan3DEngine {
+class Engine {
 public:
-    Vulkan3DEngine() = default;
+    Engine() = default;
 
     DEF run() -> void {
         fprintf(stdout, "Initializing Vulkan application.\n");
@@ -126,7 +126,7 @@ private:
     }
 
     static void framebufferResizeCallback(GLFWwindow *window, int width, int height) {
-        auto app = reinterpret_cast<Vulkan3DEngine *>(glfwGetWindowUserPointer(window));
+        auto app = reinterpret_cast<Engine *>(glfwGetWindowUserPointer(window));
         app->m_FramebufferResized = true;
     }
 
@@ -988,10 +988,6 @@ private:
         // For now every feature is disabled
         VkPhysicalDeviceFeatures deviceFeatures{};
 
-        // This used to be a MACOS workaround, will keep it around if it turns out to be needed later on
-        // std::vector<const char *> requiredDeviceExtensions = getRequiredDeviceExtensions(m_PhysicalDevice);
-        // requiredDeviceExtensions.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-
         VkDeviceCreateInfo createInfo{
             .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
             .queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size()),
@@ -1444,7 +1440,7 @@ private:
 };
 
 DEF main() -> int {
-    Vulkan3DEngine app;
+    Engine app;
 
     try {
         fprintf(stdout, "Starting application run.\n");
