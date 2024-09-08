@@ -1,14 +1,10 @@
 #!/bin/bash
+
+# Change to the script directory
 cd "$(dirname "$0")"
 
-# Fallback if $GLSLC is not set
-GLSLC=${GLSLC:-"$VULKAN_SDK/bin/glslc"}
-
-# Compile the shaders
-echo "Compiling the shaders"
-"$GLSLC" shaders/shader.frag -o shaders/compiled/frag.spv
-"$GLSLC" shaders/shader.vert -o shaders/compiled/vert.spv
-echo ""
+# Compile shaders
+./util/compile_shaders.sh
 
 # Clean and prepare the build directory
 rm -rf build
@@ -35,6 +31,3 @@ fi
 
 # Build the project
 cmake --build . -j $NUM_CORES
-
-# Run the VulkanEngine executable
-./VulkanEngine

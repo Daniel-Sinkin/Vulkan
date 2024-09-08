@@ -16,12 +16,17 @@
 #include <format>
 #include <fstream>
 #include <iostream>
+#include <numbers>
 #include <optional>
 #include <set>
 #include <span>
 #include <stdexcept>
 #include <string_view>
 #include <vector>
+
+using glm::mat4;
+using glm::vec2;
+using glm::vec3;
 
 using std::array;
 using std::set;
@@ -32,18 +37,23 @@ using time_point = std::chrono::steady_clock::time_point;
 
 #define DEF auto // Only use for the auto in functions, not for normal code so its easier to search for functions
 
-// the do...while(0) is a hack to make it work everywhere, for example with if statements without braces without
-extern size_t initVulkanIteration;
+// the scoping is a hack to make it work everywhere, for example with "if statements" without braces
 #define VULKAN_SETUP(func)                                                                  \
-    do {                                                                                    \
+    {                                                                                       \
         fprintf(stdout, " \033[32m(%zu.) initVulkan Step:\033[0m ", ++initVulkanIteration); \
         func();                                                                             \
-    } while (0)
+    }
 
 #define PRINT_BOLD_GREEN(text) fprintf(stdout, "\033[1m\033[32m\n%s\n\033[0m", text)
 
 constexpr unsigned long long NO_TIMEOUT = UINT64_MAX; // Can't disable timeout in vulcan semaphore, this is a workaround for that
 constexpr int INVALID_FRAMEBUFFER_SIZE = 0;
+
+// numbers::pi is much more accurate than numbers::pi_v
+constexpr float PI = std::numbers::pi_v<float>;
+constexpr float PI_2 = static_cast<float>(2.0 * std::numbers::pi);
+constexpr float PI_HALF = static_cast<float>(std::numbers::pi / 2);
+constexpr float PI_QUARTER = static_cast<float>(std::numbers::pi / 4);
 
 struct SwapChainSupportDetails {
     VkSurfaceCapabilitiesKHR capabilities;
@@ -60,8 +70,8 @@ struct QueueFamilyIndices {
     }
 };
 struct Vertex {
-    glm::vec2 pos;
-    glm::vec3 color;
+    vec2 pos;
+    vec3 color;
 
     static DEF getBindingDescription() -> VkVertexInputBindingDescription {
         VkVertexInputBindingDescription bindingDescription{
@@ -102,7 +112,7 @@ const std::vector<Vertex> vertices = {
     {{ 0.5f,  0.5f}, { 0.0f,  0.0f,  1.0f}},
     {{-0.5f,  0.5f}, { 1.0f,  1.0f,  1.0f}}
 };
-const vector<uint16_t> indices = {0, 1, 2, 2, 3, 0}; // Set to uint32_t if we get too many vertices
+const vector<uint16_t> vertexIndices = {0, 1, 2, 2, 3, 0}; // Set to uint32_t if we get too many vertices
 
 // These are badly setup and won't draw unless backface culling is completely disabled
 const std::vector<Vertex> vertices_Hexagon = {
@@ -156,9 +166,9 @@ const std::vector<uint16_t> indices_Hexagon = {
 // clang-format on
 
 struct UniformBufferObject {
-    glm::mat4 model;
-    glm::mat4 view;
-    glm::mat4 proj;
+    mat4 model;
+    mat4 view;
+    mat4 proj;
 };
 
 namespace FilePaths {
@@ -209,6 +219,10 @@ constexpr bool ALLOW_DEVICE_WITHOUT_GEOMETRY_SHADER = true;
 
 constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 
+constexpr vec3 CAMERA_EYE(2.0f, 2.0f, 2.0f);
+constexpr vec3 CAMERA_CENTER(0.0f, 0.0f, 0.0f);
+constexpr vec3 CAMERA_UP(0.0f, 0.0f, 1.0f);
+
 constexpr float CLIPPING_PLANE_NEAR = 0.1f;
 constexpr float CLIPPING_PLANE_FAR = 10.0f;
 
@@ -219,4 +233,54 @@ constexpr VkSurfaceFormatKHR PREFERRED_SURFACE_FORMAT = {
 };
 
 } // namespace Settings
+
+// clang-format off
+std::string vkResultToString(VkResult result) {
+    switch (result) {
+        case VK_SUCCESS: return "VK_SUCCESS";
+        case VK_NOT_READY: return "VK_NOT_READY";
+        case VK_TIMEOUT: return "VK_TIMEOUT";
+        case VK_EVENT_SET: return "VK_EVENT_SET";
+        case VK_EVENT_RESET: return "VK_EVENT_RESET";
+        case VK_INCOMPLETE: return "VK_INCOMPLETE";
+        case VK_ERROR_OUT_OF_HOST_MEMORY: return "VK_ERROR_OUT_OF_HOST_MEMORY";
+        case VK_ERROR_OUT_OF_DEVICE_MEMORY: return "VK_ERROR_OUT_OF_DEVICE_MEMORY";
+        case VK_ERROR_INITIALIZATION_FAILED: return "VK_ERROR_INITIALIZATION_FAILED";
+        case VK_ERROR_DEVICE_LOST: return "VK_ERROR_DEVICE_LOST";
+        case VK_ERROR_MEMORY_MAP_FAILED: return "VK_ERROR_MEMORY_MAP_FAILED";
+        case VK_ERROR_LAYER_NOT_PRESENT: return "VK_ERROR_LAYER_NOT_PRESENT";
+        case VK_ERROR_EXTENSION_NOT_PRESENT: return "VK_ERROR_EXTENSION_NOT_PRESENT";
+        case VK_ERROR_FEATURE_NOT_PRESENT: return "VK_ERROR_FEATURE_NOT_PRESENT";
+        case VK_ERROR_INCOMPATIBLE_DRIVER: return "VK_ERROR_INCOMPATIBLE_DRIVER";
+        case VK_ERROR_TOO_MANY_OBJECTS: return "VK_ERROR_TOO_MANY_OBJECTS";
+        case VK_ERROR_FORMAT_NOT_SUPPORTED: return "VK_ERROR_FORMAT_NOT_SUPPORTED";
+        case VK_ERROR_FRAGMENTED_POOL: return "VK_ERROR_FRAGMENTED_POOL";
+        case VK_ERROR_OUT_OF_POOL_MEMORY: return "VK_ERROR_OUT_OF_POOL_MEMORY";
+        case VK_ERROR_INVALID_EXTERNAL_HANDLE: return "VK_ERROR_INVALID_EXTERNAL_HANDLE";
+        case VK_ERROR_SURFACE_LOST_KHR: return "VK_ERROR_SURFACE_LOST_KHR";
+        case VK_ERROR_NATIVE_WINDOW_IN_USE_KHR: return "VK_ERROR_NATIVE_WINDOW_IN_USE_KHR";
+        case VK_SUBOPTIMAL_KHR: return "VK_SUBOPTIMAL_KHR";
+        case VK_ERROR_OUT_OF_DATE_KHR: return "VK_ERROR_OUT_OF_DATE_KHR";
+        case VK_ERROR_INCOMPATIBLE_DISPLAY_KHR: return "VK_ERROR_INCOMPATIBLE_DISPLAY_KHR";
+        case VK_ERROR_VALIDATION_FAILED_EXT: return "VK_ERROR_VALIDATION_FAILED_EXT";
+        case VK_ERROR_INVALID_SHADER_NV: return "VK_ERROR_INVALID_SHADER_NV";
+        case VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT: return "VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT";
+        case VK_ERROR_FRAGMENTATION_EXT: return "VK_ERROR_FRAGMENTATION_EXT";
+        case VK_ERROR_NOT_PERMITTED_EXT: return "VK_ERROR_NOT_PERMITTED_EXT";
+        default: return "Unknown Vulkan error";
+    }
+}
+// clang-format on
+
+template <typename VulkanFunction, typename... Args>
+void vkCreationWrapper(const std::string &operationName, VulkanFunction func, Args &&...args) {
+    VkResult result = func(std::forward<Args>(args)...);
+    if (result != VK_SUCCESS) {
+        std::string errorName = vkResultToString(result);
+        std::stringstream ss;
+        ss << "\nFailed to create " << operationName << "! <Error Name: " << errorName << ", Error Code: " << result << ">\n";
+        throw std::runtime_error(ss.str());
+    }
+}
+
 #endif // SETTINGS_H

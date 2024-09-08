@@ -1,7 +1,5 @@
 #include "Constants.h"
 
-size_t initVulkanIteration = 0;
-
 const vector<const char *> validationLayers = {"VK_LAYER_KHRONOS_validation"};
 // VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME is a MacOS specific workaround
 const vector<const char *> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME};
@@ -206,6 +204,7 @@ private:
     }
 
     DEF initVulkan() -> void {
+        size_t initVulkanIteration = 0;
         PRINT_BOLD_GREEN("* * * * * * * * * * * * * *");
         PRINT_BOLD_GREEN("*    Setting up Vulkan    *");
         PRINT_BOLD_GREEN("* * * * * * * * * * * * * *");
@@ -348,11 +347,6 @@ private:
         if (vkCreateDescriptorSetLayout(m_Device, &layoutInfo, nullptr, &m_DescriptorSetLayout) != VK_SUCCESS) {
             throw std::runtime_error("failed to create descriptor set layout!");
         }
-
-        VkPipelineLayoutCreateInfo pipelineLayoutInfo{
-            .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-            .setLayoutCount = 1,
-            .pSetLayouts = &m_DescriptorSetLayout};
         fprintf(stdout, "Trying to create descriptor set layout.\n");
     }
     DEF findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) -> uint32_t {
@@ -369,10 +363,10 @@ private:
 
     DEF createIndexBuffer() -> void {
         fprintf(stdout, "Trying to create Index buffer.\n");
-        VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+        VkDeviceSize bufferSize = sizeof(vertexIndices[0]) * vertexIndices.size();
 
-        VkBuffer stagingBuffer;
-        VkDeviceMemory stagingBufferMemory;
+        VkBuffer stagingBuffer = VK_NULL_HANDLE;
+        VkDeviceMemory stagingBufferMemory = VK_NULL_HANDLE;
         createBuffer(
             bufferSize,
             VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
@@ -380,9 +374,9 @@ private:
             stagingBuffer,
             stagingBufferMemory);
 
-        void *data;
+        void *data = nullptr;
         vkMapMemory(m_Device, stagingBufferMemory, 0, bufferSize, 0, &data);
-        memcpy(data, indices.data(), (size_t)bufferSize);
+        memcpy(data, vertexIndices.data(), (size_t)bufferSize);
         vkUnmapMemory(m_Device, stagingBufferMemory);
 
         createBuffer(
@@ -403,8 +397,8 @@ private:
         fprintf(stdout, "Trying to create Vertex buffer.\n");
         VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
 
-        VkBuffer stagingBuffer;
-        VkDeviceMemory stagingBufferMemory;
+        VkBuffer stagingBuffer = VK_NULL_HANDLE;
+        VkDeviceMemory stagingBufferMemory = VK_NULL_HANDLE;
         createBuffer(
             bufferSize,
             VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
@@ -412,7 +406,7 @@ private:
             stagingBuffer,
             stagingBufferMemory);
 
-        void *data;
+        void *data = nullptr;
         vkMapMemory(m_Device, stagingBufferMemory, 0, bufferSize, 0, &data);
         memcpy(data, vertices.data(), (size_t)bufferSize);
         vkUnmapMemory(m_Device, stagingBufferMemory);
@@ -466,11 +460,11 @@ private:
     void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
         VkCommandBufferAllocateInfo allocInfo{
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-            .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
             .commandPool = m_CommandPool,
+            .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
             .commandBufferCount = 1};
 
-        VkCommandBuffer commandBuffer;
+        VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
         vkAllocateCommandBuffers(m_Device, &allocInfo, &commandBuffer);
 
         VkCommandBufferBeginInfo beginInfo{};
@@ -578,7 +572,7 @@ private:
         vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer, 0, VK_INDEX_TYPE_UINT16);
 
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &m_DescriptorSets[m_CurrentFrameIdx], 0, nullptr);
-        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(vertexIndices.size()), 1, 0, 0, 0);
 
         vkCmdEndRenderPass(commandBuffer);
 
@@ -896,19 +890,19 @@ private:
             .oldSwapchain = VK_NULL_HANDLE,
         };
 
-        QueueFamilyIndices indices = findQueueFamilies(m_PhysicalDevice);
-        array<uint32_t, 2> QueueFamilyIndices;
-        if (indices.graphicsFamily.has_value() && indices.presentationFamily.has_value()) {
-            QueueFamilyIndices = {indices.graphicsFamily.value(), indices.presentationFamily.value()}; // NOLINT
+        QueueFamilyIndices queueIndices = findQueueFamilies(m_PhysicalDevice);
+        array<uint32_t, 2> queueFamilyIndices;
+        if (queueIndices.graphicsFamily.has_value() && queueIndices.presentationFamily.has_value()) {
+            queueFamilyIndices = {queueIndices.graphicsFamily.value(), queueIndices.presentationFamily.value()};
         } else {
             throw std::runtime_error("QueueFamilyIndices not complete!");
         }
 
-        if (indices.graphicsFamily != indices.presentationFamily) {
+        if (queueIndices.graphicsFamily != queueIndices.presentationFamily) {
             fprintf(stdout, "Setting imageSharingMode to Concurrent.\n");
             createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
             createInfo.queueFamilyIndexCount = 2;
-            createInfo.pQueueFamilyIndices = QueueFamilyIndices.data();
+            createInfo.pQueueFamilyIndices = queueFamilyIndices.data();
         } else {
             fprintf(stdout, "Setting imageSharingMode to Exclusive.\n");
             createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -1232,51 +1226,12 @@ private:
         float delta_time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
         UniformBufferObject ubo{
-            .model = glm::rotate(glm::mat4(1.0f),
-                delta_time * glm::radians(90.0f),
-                glm::vec3(0.0f, 0.0f, 1.0f)),
-            .view = glm::lookAt(
-                glm::vec3(2.0f, 2.0f, 2.0f),
-                glm::vec3(0.0f, 0.0f, 0.0f),
-                glm::vec3(0.0f, 0.0f, 1.0f)),
-            .proj = glm::perspective(glm::radians(45.0f),
-                m_SwapChainExtent.width / (float)m_SwapChainExtent.height,
-                Settings::CLIPPING_PLANE_NEAR,
-                Settings::CLIPPING_PLANE_FAR)};
-
-        // GLM uses OpenGL convention, this fixes that
-        ubo.proj[1][1] *= -1;
-
-        memcpy(m_UniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
-    }
-
-    DEF updateUniformBuffer_Fancy(uint32_t currentImage) -> void {
-        // The static here makes it into a global static variable so the next function call will not overwrite it.
-        static auto startTime = std::chrono::high_resolution_clock::now();
-
-        auto currentTime = std::chrono::high_resolution_clock::now();
-        float delta_time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
-        float slowShrink = sin(delta_time * 0.3f);
-
-        float scaleFactor = 0.2f + (1.5f - 0.2f) * (0.5f * (1.0f - cos(slowShrink * 3.14159f)));
-
-        glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.0f), glm::vec3(scaleFactor));
-
-        glm::mat4 modelMatrix = glm::rotate(glm::mat4(1.0f),
-            delta_time * glm::radians(90.0f),
-            glm::vec3(0.0f, 0.0f, 1.0f));
-
-        modelMatrix = modelMatrix * scaleMatrix;
-
-        UniformBufferObject ubo{
-            .model = modelMatrix,
-            .view = glm::lookAt(
-                glm::vec3(2.0f, 2.0f, 2.0f),
-                glm::vec3(0.0f, 0.0f, 0.0f),
-                glm::vec3(0.0f, 0.0f, 1.0f)),
-            .proj = glm::perspective(glm::radians(45.0f),
-                m_SwapChainExtent.width / (float)m_SwapChainExtent.height,
+            .model = glm::rotate(mat4(1.0f),
+                delta_time * PI_HALF,
+                vec3(0.0f, 0.0f, 1.0f)),
+            .view = glm::lookAt(Settings::CAMERA_EYE, Settings::CAMERA_CENTER, Settings::CAMERA_UP),
+            .proj = glm::perspective(PI_QUARTER,
+                static_cast<float>(m_SwapChainExtent.width) / static_cast<float>(m_SwapChainExtent.height),
                 Settings::CLIPPING_PLANE_NEAR,
                 Settings::CLIPPING_PLANE_FAR)};
 
