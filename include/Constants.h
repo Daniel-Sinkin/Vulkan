@@ -40,6 +40,8 @@ extern size_t initVulkanIteration;
         func();                                                                             \
     } while (0)
 
+#define PRINT_BOLD_GREEN(text) fprintf(stdout, "\033[1m\033[32m\n%s\n\033[0m", text)
+
 constexpr unsigned long long NO_TIMEOUT = UINT64_MAX; // Can't disable timeout in vulcan semaphore, this is a workaround for that
 constexpr int INVALID_FRAMEBUFFER_SIZE = 0;
 
@@ -110,8 +112,8 @@ struct UniformBufferObject {
 };
 
 namespace FilePaths {
-constexpr const char *SHADER_VERT = "/Users/danielsinkin/GitHub_private/Vulcan/shaders/compiled/vert.spv";
-constexpr const char *SHADER_FRAG = "/Users/danielsinkin/GitHub_private/Vulcan/shaders/compiled/frag.spv";
+constexpr const char *SHADER_VERT = "/Users/danielsinkin/GitHub_private/Vulkan/shaders/compiled/vert.spv";
+constexpr const char *SHADER_FRAG = "/Users/danielsinkin/GitHub_private/Vulkan/shaders/compiled/frag.spv";
 } // namespace FilePaths
 
 namespace Util {
