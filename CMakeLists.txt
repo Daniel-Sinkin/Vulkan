@@ -2,32 +2,54 @@ cmake_minimum_required(VERSION 3.10)
 
 project(VulkanEngine)
 
-
+# Set the standard and export compile commands
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-# Set C++20 as the standard
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+# Check if the VULKAN_SDK environment variable is set
 if(NOT DEFINED ENV{VULKAN_SDK})
     message(FATAL_ERROR "VULKAN_SDK environment variable is not set")
 endif()
 
+# Set Vulkan SDK paths
 set(VULKAN_SDK "$ENV{VULKAN_SDK}")
 set(VULKAN_INCLUDE_DIR "${VULKAN_SDK}/include")
 set(VULKAN_LIBRARY_DIR "${VULKAN_SDK}/lib")
 include_directories(${VULKAN_INCLUDE_DIR})
 
+# Find required packages
 find_package(Vulkan REQUIRED)
 find_package(glfw3 3.3 REQUIRED)
 
+# Define source files
 set(SOURCES
     src/main.cpp
 )
 
-include_directories(include)
+# Create an include directory if it doesn't exist
+set(INCLUDE_DIR "${CMAKE_CURRENT_BINARY_DIR}/include")
+file(MAKE_DIRECTORY ${INCLUDE_DIR})
 
+# Download stb_image.h and place it in the include directory
+set(STB_IMAGE_HEADER "${INCLUDE_DIR}/stb_image.h")
+if(NOT EXISTS ${STB_IMAGE_HEADER})
+    message(STATUS "Downloading stb_image.h...")
+    file(DOWNLOAD
+        "https://raw.githubusercontent.com/nothings/stb/master/stb_image.h"
+        ${STB_IMAGE_HEADER}
+        EXPECTED_MD5 ""
+        TLS_VERIFY ON
+    )
+endif()
+
+# Include the downloaded stb_image.h file
+include_directories(${INCLUDE_DIR})
+
+# Add the executable target
 add_executable(VulkanEngine ${SOURCES})
 
+# Link necessary libraries
 target_link_libraries(VulkanEngine 
     glfw
     Vulkan::Vulkan 
