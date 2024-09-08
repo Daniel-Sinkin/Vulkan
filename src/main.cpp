@@ -1310,8 +1310,6 @@ private:
             vkFreeMemory(m_Device, m_UniformBuffersMemory[i], nullptr);
         }
 
-        vkDestroyDescriptorSetLayout(m_Device, m_DescriptorSetLayout, nullptr);
-
         vkDestroyCommandPool(m_Device, m_CommandPool, nullptr);
 
         vkDestroyPipeline(m_Device, m_GraphicsPipeline, nullptr);
