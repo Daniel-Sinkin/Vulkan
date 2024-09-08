@@ -172,8 +172,8 @@ struct UniformBufferObject {
 };
 
 namespace FilePaths {
-constexpr const char *SHADER_VERT = "/Users/danielsinkin/GitHub_private/Vulkan/shaders/compiled/shader.vert.spv";
-constexpr const char *SHADER_FRAG = "/Users/danielsinkin/GitHub_private/Vulkan/shaders/compiled/shader.frag.spv";
+constexpr const char *SHADER_VERT = "shaders/compiled/shader.vert.spv";
+constexpr const char *SHADER_FRAG = "shaders/compiled/shader.frag.spv";
 } // namespace FilePaths
 
 namespace Util {
