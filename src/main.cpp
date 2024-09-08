@@ -501,7 +501,7 @@ private:
             .flags = VK_FENCE_CREATE_SIGNALED_BIT};
 
         for (size_t i = 0; i < Settings::MAX_FRAMES_IN_FLIGHT; i++) {
-            fprintf(stdout, "%zu. frame\n", i + 1);
+            fprintf(stdout, "\t%zu. frame\n", i + 1);
             VkResult result_1 = vkCreateSemaphore(m_Device, &semaphoreInfo, nullptr, &m_ImageAvailableSemaphores[i]);
             if (result_1 != VK_SUCCESS) throw std::runtime_error("failed to create ImageAvailable semaphore!");
             VkResult result_2 = vkCreateSemaphore(m_Device, &semaphoreInfo, nullptr, &m_RenderFinishedSemaphores[i]);
@@ -602,7 +602,7 @@ private:
         fprintf(stdout, "Trying to setup Framebuffers.\n");
         m_SwapChainFramebuffers.resize(m_SwapChainImageViews.size());
         for (size_t i = 0; i < m_SwapChainImageViews.size(); i++) {
-            fprintf(stdout, "%zu. Framebuffers.\n", i + 1);
+            fprintf(stdout, "\t%zu. Framebuffers.\n", i + 1);
             std::array<VkImageView, 1> attachments = {m_SwapChainImageViews[i]};
 
             VkFramebufferCreateInfo framebufferInfo{
@@ -827,7 +827,7 @@ private:
 
         m_SwapChainImageViews.resize(m_SwapChainImages.size());
         for (size_t i = 0; i < m_SwapChainImages.size(); i++) {
-            fprintf(stdout, "%zu. SwapChainImageView.\n", i + 1);
+            fprintf(stdout, "\t%zu. SwapChainImageView.\n", i + 1);
             // clang-format off
             VkImageViewCreateInfo createInfo{
                 .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
