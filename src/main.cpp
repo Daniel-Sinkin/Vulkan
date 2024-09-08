@@ -205,29 +205,50 @@ private:
 
     DEF initVulkan() -> void {
         size_t initVulkanIteration = 0;
+        PRINT_BOLD_GREEN("* * * * * * * * * * * * * *");
         PRINT_BOLD_GREEN("*    Setting up Vulkan    *");
+        PRINT_BOLD_GREEN("* * * * * * * * * * * * * *");
 
-        createInstance();
-        setupDebugMessenger();
-        createSurface();
-        pickPhysicalDevice();
-        createLogicalDevice();
-        createSwapChain();
-        createImageViews();
-        createRenderPass();
-        createDescriptorSetLayout();
-        createGraphicsPipeline();
-        createFramebuffers();
-        createCommandPool();
-        createVertexBuffer();
-        createIndexBuffer();
-        createUniformBuffers();
-        createDescriptorPool();
-        createDescriptorSets();
-        createCommandBuffers();
-        createSyncObjects();
+        PRINT_BOLD_GREEN("Instance and Debug Setup");
+        VULKAN_SETUP(createInstance);
+        VULKAN_SETUP(setupDebugMessenger);
 
+        PRINT_BOLD_GREEN("Window Surface Setup");
+        VULKAN_SETUP(createSurface);
+
+        PRINT_BOLD_GREEN("Physical and Logical Device Setup");
+        VULKAN_SETUP(pickPhysicalDevice);
+        VULKAN_SETUP(createLogicalDevice);
+
+        PRINT_BOLD_GREEN("Swap Chain Setup");
+        VULKAN_SETUP(createSwapChain);
+        VULKAN_SETUP(createImageViews);
+
+        PRINT_BOLD_GREEN("Render Pass and Pipeline Setup");
+        VULKAN_SETUP(createRenderPass);
+        VULKAN_SETUP(createDescriptorSetLayout);
+        VULKAN_SETUP(createGraphicsPipeline);
+
+        PRINT_BOLD_GREEN("Framebuffers and Command Pool Setup");
+        VULKAN_SETUP(createFramebuffers);
+        VULKAN_SETUP(createCommandPool);
+
+        PRINT_BOLD_GREEN("Buffers Setup");
+        VULKAN_SETUP(createVertexBuffer);
+        VULKAN_SETUP(createIndexBuffer);
+        VULKAN_SETUP(createUniformBuffers);
+
+        PRINT_BOLD_GREEN("Descriptor Pool and Sets Setup");
+        VULKAN_SETUP(createDescriptorPool);
+        VULKAN_SETUP(createDescriptorSets);
+
+        PRINT_BOLD_GREEN("Command Buffers and Sync Objects Setup");
+        VULKAN_SETUP(createCommandBuffers);
+        VULKAN_SETUP(createSyncObjects);
+
+        PRINT_BOLD_GREEN("* * * * * * * * * * * * * * * * * *");
         PRINT_BOLD_GREEN("*    Finished setting up Vulkan   *");
+        PRINT_BOLD_GREEN("* * * * * * * * * * * * * * * * * *");
         fprintf(stdout, "\n");
     }
 
