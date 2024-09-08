@@ -3,6 +3,13 @@
 # Change to the script directory
 cd "$(dirname "$0")"
 
+# Call the download dependencies script
+./scripts/download_dependencies.sh
+if [[ $? -ne 0 ]]; then
+    echo "Error downloading dependencies. Exiting."
+    exit 1
+fi
+
 # Compile shaders
 ./scripts/compile_shaders.sh
 

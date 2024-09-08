@@ -27,24 +27,8 @@ set(SOURCES
     src/main.cpp
 )
 
-# Create an include directory if it doesn't exist
-set(INCLUDE_DIR "${CMAKE_CURRENT_BINARY_DIR}/include")
-file(MAKE_DIRECTORY ${INCLUDE_DIR})
-
-# Download stb_image.h and place it in the include directory
-set(STB_IMAGE_HEADER "${INCLUDE_DIR}/stb_image.h")
-if(NOT EXISTS ${STB_IMAGE_HEADER})
-    message(STATUS "Downloading stb_image.h...")
-    file(DOWNLOAD
-        "https://raw.githubusercontent.com/nothings/stb/master/stb_image.h"
-        ${STB_IMAGE_HEADER}
-        EXPECTED_MD5 ""
-        TLS_VERIFY ON
-    )
-endif()
-
-# Include the downloaded stb_image.h file
-include_directories(${INCLUDE_DIR})
+include_directories(include)
+include_directories(external)
 
 # Add the executable target
 add_executable(VulkanEngine ${SOURCES})

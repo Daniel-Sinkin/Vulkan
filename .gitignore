@@ -67,3 +67,6 @@ build/
 *.DS_Store
 
 private/*
+
+# External Dependencies
+external/*
