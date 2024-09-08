@@ -10,6 +10,13 @@ if [[ $? -ne 0 ]]; then
     exit 1
 fi
 
+# Call the download assets script (for textures)
+./scripts/download_assets.sh
+if [[ $? -ne 0 ]]; then
+    echo "Error downloading assets. Exiting."
+    exit 1
+fi
+
 # Compile shaders
 ./scripts/compile_shaders.sh
 

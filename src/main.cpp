@@ -234,7 +234,7 @@ private:
         VULKAN_SETUP(createCommandPool);
 
         PRINT_BOLD_GREEN("Buffers Setup");
-        VULKAN_SETUP(createVertexBuffer);
+        VULKAN_SETUP(createTextureImage);
         VULKAN_SETUP(createIndexBuffer);
         VULKAN_SETUP(createUniformBuffers);
 
@@ -250,6 +250,9 @@ private:
         PRINT_BOLD_GREEN("*    Finished setting up Vulkan   *");
         PRINT_BOLD_GREEN("* * * * * * * * * * * * * * * * * *");
         fprintf(stdout, "\n");
+    }
+
+    DEF createTextureImage() -> void {
     }
 
     DEF createDescriptorSets() -> void {
