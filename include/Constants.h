@@ -32,6 +32,14 @@ using time_point = std::chrono::steady_clock::time_point;
 
 #define DEF auto // Only use for the auto in functions, not for normal code so its easier to search for functions
 
+// the do...while(0) is a hack to make it work everywhere, for example with if statements without braces without
+extern size_t initVulkanIteration;
+#define VULKAN_SETUP(func)                                                                  \
+    do {                                                                                    \
+        fprintf(stdout, " \033[32m(%zu.) initVulkan Step:\033[0m ", ++initVulkanIteration); \
+        func();                                                                             \
+    } while (0)
+
 constexpr unsigned long long NO_TIMEOUT = UINT64_MAX; // Can't disable timeout in vulcan semaphore, this is a workaround for that
 constexpr int INVALID_FRAMEBUFFER_SIZE = 0;
 
@@ -74,7 +82,7 @@ struct Vertex {
         return {positionAttribute, colorAttribute};
     }
 };
-/* Vertices w/ counter-clockwise winding order
+/* Vertices w/ counter-clockwise winding order (TODO: Update graphic with vertices from book)
   2: (-0.5, 0.5)     3: (0.5, 0.5)
      *-----<<<-----*
      |          __/|
@@ -86,14 +94,13 @@ struct Vertex {
   1: (-0.5, -0.5)    0: (0.5, -0.5)
 */
 // clang-format off
-// Those vertices are different from the book, so the indices are as well
-const vector<Vertex> vertices = {
-    {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+const std::vector<Vertex> vertices = {
     {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+    {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
     {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-    {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}},
+    {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
 };
-const vector<uint16_t> indices = {0, 2, 3, 1, 0, 3}; // Set to uint32_t if we get too many vertices
+const vector<uint16_t> indices = {0, 1, 2, 2, 3, 0}; // Set to uint32_t if we get too many vertices
 // clang-format on
 
 struct UniformBufferObject {

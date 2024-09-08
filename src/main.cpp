@@ -1,8 +1,6 @@
 #include "Constants.h"
 
-// Initial Window size, currently we explicitly do NOT allow resizing (see initWindow)
-const uint32_t WINDOW_WIDTH = 800;
-const uint32_t WINDOW_HEIGHT = 600;
+size_t initVulkanIteration = 0;
 
 const vector<const char *> validationLayers = {"VK_LAYER_KHRONOS_validation"};
 // VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME is a MacOS specific workaround
@@ -58,7 +56,7 @@ public:
         mainLoop();
         cleanup();
 
-        fprintf(stdout, "\nReached the end of the Vulkan application.\n");
+        fprintf(stdout, "Reached the end of the Vulkan application.\n");
     }
 
 private:
@@ -104,8 +102,11 @@ private:
     vector<VkDeviceMemory> m_UniformBuffersMemory;
     vector<void *> m_UniformBuffersMapped;
 
+    VkDescriptorPool m_DescriptorPool;
+    vector<VkDescriptorSet> m_DescriptorSets;
+
     DEF initWindow() -> void {
-        fprintf(stdout, "\nTrying to initialize window.\n");
+        fprintf(stdout, "Trying to initialize window.\n");
         if (glfwInit() == GLFW_FALSE) {
             throw std::runtime_error("Failed to instantiate GLFW window!");
         }
@@ -147,7 +148,7 @@ private:
     }
 
     DEF createInstance() -> void {
-        fprintf(stdout, "\nTrying to Create Instance.\n");
+        fprintf(stdout, "Trying to Create Instance.\n");
         if (enableValidationLayers && !checkValidationLayerSupport()) {
             throw std::runtime_error("Validation layers requested, but not available!");
         }
@@ -201,31 +202,89 @@ private:
         if (!validateExtensions(extensions, requiredExtensions)) {
             throw std::runtime_error("Required extensions are not supported!");
         }
-        fprintf(stdout, "\nSuccessfully created instance.\n");
+        fprintf(stdout, "Successfully created instance.\n");
     }
 
     DEF initVulkan() -> void {
-        fprintf(stdout, "\n\nTrying to setup Vulkan.\n");
-        createInstance();
-        setupDebugMessenger();
-        createSurface();
-        pickPhysicalDevice();
-        createLogicalDevice();
-        createSwapChain();
-        createImageViews();
-        createRenderPass();
-        createDescriptorSetLayout();
-        createGraphicsPipeline();
-        createFramebuffers();
-        createCommandPool();
-        createVertexBuffer();
-        createIndexBuffer();
-        createCommandBuffers();
-        createSyncObjects();
-        fprintf(stdout, "\n\nFinished setting up Vulkan.\n");
+        fprintf(stdout, "\nTrying to setup Vulkan.\n");
+
+        VULKAN_SETUP(createInstance);
+        VULKAN_SETUP(setupDebugMessenger);
+        VULKAN_SETUP(createSurface);
+        VULKAN_SETUP(pickPhysicalDevice);
+        VULKAN_SETUP(createLogicalDevice);
+        VULKAN_SETUP(createSwapChain);
+        VULKAN_SETUP(createImageViews);
+        VULKAN_SETUP(createRenderPass);
+        VULKAN_SETUP(createDescriptorSetLayout);
+        VULKAN_SETUP(createGraphicsPipeline);
+        VULKAN_SETUP(createFramebuffers);
+        VULKAN_SETUP(createCommandPool);
+        VULKAN_SETUP(createVertexBuffer);
+        VULKAN_SETUP(createIndexBuffer);
+        VULKAN_SETUP(createUniformBuffers);
+        VULKAN_SETUP(createDescriptorPool);
+        VULKAN_SETUP(createDescriptorSets);
+        VULKAN_SETUP(createCommandBuffers);
+        VULKAN_SETUP(createSyncObjects);
+
+        fprintf(stdout, "\nFinished setting up Vulkan.\n");
+    }
+
+    DEF createDescriptorSets() -> void {
+        fprintf(stdout, "Trying to create Descriptor Sets.\n");
+        std::vector<VkDescriptorSetLayout> layouts(Settings::MAX_FRAMES_IN_FLIGHT, m_DescriptorSetLayout);
+        VkDescriptorSetAllocateInfo allocInfo{
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+            .descriptorPool = m_DescriptorPool,
+            .descriptorSetCount = static_cast<uint32_t>(Settings::MAX_FRAMES_IN_FLIGHT),
+            .pSetLayouts = layouts.data()};
+        m_DescriptorSets.resize(Settings::MAX_FRAMES_IN_FLIGHT);
+        if (vkAllocateDescriptorSets(m_Device, &allocInfo, m_DescriptorSets.data()) != VK_SUCCESS) {
+            throw std::runtime_error("failed to allocate descriptor sets!");
+        }
+
+        for (size_t i = 0; i < Settings::MAX_FRAMES_IN_FLIGHT; i++) {
+            VkDescriptorBufferInfo bufferInfo{};
+            bufferInfo.buffer = m_UniformBuffers[i];
+            bufferInfo.offset = 0;
+            bufferInfo.range = sizeof(UniformBufferObject);
+
+            VkWriteDescriptorSet descriptorWrite{};
+            descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrite.dstSet = m_DescriptorSets[i];
+            descriptorWrite.dstBinding = 0;
+            descriptorWrite.dstArrayElement = 0;
+            descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            descriptorWrite.descriptorCount = 1;
+            descriptorWrite.pBufferInfo = &bufferInfo;
+
+            vkUpdateDescriptorSets(m_Device, 1, &descriptorWrite, 0, nullptr);
+        }
+        fprintf(stdout, "Successfully created Descriptor Sets.\n");
+    }
+
+    DEF createDescriptorPool() -> void {
+        fprintf(stdout, "Trying to create Descriptor Pool.\n");
+        VkDescriptorPoolSize poolSize{
+            .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            .descriptorCount = static_cast<uint32_t>(Settings::MAX_FRAMES_IN_FLIGHT)};
+
+        VkDescriptorPoolCreateInfo poolInfo{
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+            .poolSizeCount = 1,
+            .pPoolSizes = &poolSize};
+        poolInfo.maxSets = static_cast<uint32_t>(Settings::MAX_FRAMES_IN_FLIGHT);
+
+        if (vkCreateDescriptorPool(m_Device, &poolInfo, nullptr, &m_DescriptorPool) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create descriptor pool!");
+        }
+        fprintf(stdout, "Successfully created Descriptor Pool.\n");
     }
 
     DEF createUniformBuffers() -> void {
+        fprintf(stdout, "Trying to create uniform buffers.\n");
+
         VkDeviceSize bufferSize = sizeof(UniformBufferObject);
 
         m_UniformBuffers.resize(Settings::MAX_FRAMES_IN_FLIGHT);
@@ -248,9 +307,11 @@ private:
                 &m_UniformBuffersMapped[i]);
             if (result != VK_SUCCESS) throw std::runtime_error("failed to map memory for the uniform memory buffer.");
         }
+        fprintf(stdout, "Successfully created uniform buffers.\n");
     }
 
     DEF createDescriptorSetLayout() -> void {
+        fprintf(stdout, "Trying to create descriptor set layout.\n");
         VkDescriptorSetLayoutBinding uboLayoutBinding{
             .binding = 0,
             .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
@@ -270,8 +331,8 @@ private:
             .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
             .setLayoutCount = 1,
             .pSetLayouts = &m_DescriptorSetLayout};
+        fprintf(stdout, "Trying to create descriptor set layout.\n");
     }
-
     DEF findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) -> uint32_t {
         VkPhysicalDeviceMemoryProperties memProperties;
         vkGetPhysicalDeviceMemoryProperties(m_PhysicalDevice, &memProperties);
@@ -285,6 +346,7 @@ private:
     }
 
     DEF createIndexBuffer() -> void {
+        fprintf(stdout, "Trying to create Index buffer.\n");
         VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
 
         VkBuffer stagingBuffer;
@@ -312,9 +374,11 @@ private:
 
         vkDestroyBuffer(m_Device, stagingBuffer, nullptr);
         vkFreeMemory(m_Device, stagingBufferMemory, nullptr);
+        fprintf(stdout, "Successfully created Index buffer.\n");
     }
 
     DEF createVertexBuffer() -> void {
+        fprintf(stdout, "Trying to create Vertex buffer.\n");
         VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
 
         VkBuffer stagingBuffer;
@@ -342,6 +406,7 @@ private:
 
         vkDestroyBuffer(m_Device, stagingBuffer, nullptr);
         vkFreeMemory(m_Device, stagingBufferMemory, nullptr);
+        fprintf(stdout, "Successfully created Vertex buffer.\n");
     }
 
     DEF createBuffer(
@@ -409,7 +474,7 @@ private:
     }
 
     DEF createSyncObjects() -> void {
-        fprintf(stdout, "\nTrying to create Sync Objects.\n");
+        fprintf(stdout, "Trying to create Sync Objects.\n");
         m_ImageAvailableSemaphores.resize(Settings::MAX_FRAMES_IN_FLIGHT);
         m_RenderFinishedSemaphores.resize(Settings::MAX_FRAMES_IN_FLIGHT);
         m_InFlightFences.resize(Settings::MAX_FRAMES_IN_FLIGHT);
@@ -420,7 +485,7 @@ private:
             .flags = VK_FENCE_CREATE_SIGNALED_BIT};
 
         for (size_t i = 0; i < Settings::MAX_FRAMES_IN_FLIGHT; i++) {
-            fprintf(stdout, "\t%zu. frame\n", i + 1);
+            fprintf(stdout, "%zu. frame\n", i + 1);
             VkResult result_1 = vkCreateSemaphore(m_Device, &semaphoreInfo, nullptr, &m_ImageAvailableSemaphores[i]);
             if (result_1 != VK_SUCCESS) throw std::runtime_error("failed to create ImageAvailable semaphore!");
             VkResult result_2 = vkCreateSemaphore(m_Device, &semaphoreInfo, nullptr, &m_RenderFinishedSemaphores[i]);
@@ -432,7 +497,7 @@ private:
     }
 
     DEF createCommandBuffers() -> void {
-        fprintf(stdout, "\nTrying to setup Command Buffers.\n");
+        fprintf(stdout, "Trying to setup Command Buffers.\n");
         m_CommandBuffers.resize(Settings::MAX_FRAMES_IN_FLIGHT);
 
         VkCommandBufferAllocateInfo allocInfo{
@@ -490,6 +555,7 @@ private:
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers.data(), offsets.data());
         vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer, 0, VK_INDEX_TYPE_UINT16);
 
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &m_DescriptorSets[m_CurrentFrameIdx], 0, nullptr);
         vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 
         vkCmdEndRenderPass(commandBuffer);
@@ -500,7 +566,7 @@ private:
     }
 
     DEF createCommandPool() -> void {
-        fprintf(stdout, "\nTrying to setup Command Pool.\n");
+        fprintf(stdout, "Trying to setup Command Pool.\n");
         QueueFamilyIndices queueFamilyIndices = findQueueFamilies(m_PhysicalDevice);
         if (!queueFamilyIndices.graphicsFamily.has_value()) {
             throw std::runtime_error("QueueFamilyIndices GraphicsFamily has no value!");
@@ -517,10 +583,10 @@ private:
     }
 
     DEF createFramebuffers() -> void {
-        fprintf(stdout, "\nTrying to setup Framebuffers.\n");
+        fprintf(stdout, "Trying to setup Framebuffers.\n");
         m_SwapChainFramebuffers.resize(m_SwapChainImageViews.size());
         for (size_t i = 0; i < m_SwapChainImageViews.size(); i++) {
-            fprintf(stdout, "\t%zu. Framebuffers.\n", i + 1);
+            fprintf(stdout, "%zu. Framebuffers.\n", i + 1);
             std::array<VkImageView, 1> attachments = {m_SwapChainImageViews[i]};
 
             VkFramebufferCreateInfo framebufferInfo{
@@ -542,7 +608,7 @@ private:
     }
 
     DEF createRenderPass() -> void {
-        fprintf(stdout, "\nTrying to setup Render Pass.\n");
+        fprintf(stdout, "Trying to setup Render Pass.\n");
         VkAttachmentDescription colorAttachment{
             .format = m_SwapChainImageFormat,
             .samples = VK_SAMPLE_COUNT_1_BIT,
@@ -587,16 +653,16 @@ private:
     }
 
     DEF createGraphicsPipeline() -> void {
-        fprintf(stdout, "\nTrying to setup Graphics Pipeline.\n");
+        fprintf(stdout, "Trying to setup Graphics Pipeline.\n");
 
-        fprintf(stdout, "\tTrying to createa Shader modules.\n");
+        fprintf(stdout, "Trying to create Shader modules.\n");
         // This is a ugly workaround, for some reason c++ couldn't see the frag.spv (but the vert.spv despite being in the same directory)
         // TODO: Move this back to relative paths
-        fprintf(stdout, "\tTrying to read .spv files.\n");
+        fprintf(stdout, "Trying to read .spv files.\n");
         vector<char> vertShaderCode = Util::readFile(FilePaths::SHADER_VERT);
         vector<char> fragShaderCode = Util::readFile(FilePaths::SHADER_FRAG);
 
-        fprintf(stdout, "\t\tTrying to create Vertex Shader.\n");
+        fprintf(stdout, "\tTrying to create Vertex Shader.\n");
         VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
         VkPipelineShaderStageCreateInfo vertShaderStageInfo{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
@@ -604,7 +670,7 @@ private:
             .module = vertShaderModule,
             .pName = "main"};
 
-        fprintf(stdout, "\t\tTrying to create Fragment Shader.\n");
+        fprintf(stdout, "\tTrying to create Fragment Shader.\n");
         VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
         VkPipelineShaderStageCreateInfo fragShaderStageInfo{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
@@ -613,10 +679,10 @@ private:
             .pName = "main"};
 
         std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages = {vertShaderStageInfo, fragShaderStageInfo};
-        fprintf(stdout, "\tSuccessfully created the shader modules.\n");
+        fprintf(stdout, "Successfully created the shader modules.\n");
 
-        fprintf(stdout, "\tTrying to Initialize Fixed Functions.\n");
-        fprintf(stdout, "\t\tInitializing Vertex Input.\n");
+        fprintf(stdout, "Trying to Initialize Fixed Functions.\n");
+        fprintf(stdout, "\tInitializing Vertex Input.\n");
         auto bindingDescription = Vertex::getBindingDescription();
         auto attributeDescriptions = Vertex::getAttributeDescriptions();
 
@@ -627,7 +693,7 @@ private:
             .vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size()),
             .pVertexAttributeDescriptions = attributeDescriptions.data()};
 
-        fprintf(stdout, "\t\tInitializing Input Assembly.\n");
+        fprintf(stdout, "\tInitializing Input Assembly.\n");
         VkPipelineInputAssemblyStateCreateInfo inputAssembly{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
             .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
@@ -647,21 +713,21 @@ private:
             .viewportCount = 1,
             .scissorCount = 1};
 
-        fprintf(stdout, "\t\tInitializing Rasterizer.\n");
+        fprintf(stdout, "\tInitializing Rasterizer.\n");
         VkPipelineRasterizationStateCreateInfo rasterizer{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
             .depthClampEnable = VK_FALSE,
             .rasterizerDiscardEnable = VK_FALSE,
             .polygonMode = VK_POLYGON_MODE_FILL,
             .cullMode = VK_CULL_MODE_BACK_BIT,
-            .frontFace = VK_FRONT_FACE_CLOCKWISE,
+            .frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE,
             .depthBiasEnable = VK_FALSE,
             .depthBiasConstantFactor = 0.0f,
             .depthBiasClamp = 0.0f,
             .depthBiasSlopeFactor = 0.0f,
             .lineWidth = 1.0f};
 
-        fprintf(stdout, "\t\tInitializing Multisampling.\n");
+        fprintf(stdout, "\tInitializing Multisampling.\n");
         VkPipelineMultisampleStateCreateInfo multisampling{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
             .rasterizationSamples = VK_SAMPLE_COUNT_1_BIT,
@@ -671,7 +737,7 @@ private:
             .alphaToCoverageEnable = VK_FALSE,
             .alphaToOneEnable = VK_FALSE};
 
-        fprintf(stdout, "\t\tInitializing Color Blending.\n");
+        fprintf(stdout, "\tInitializing Color Blending.\n");
         VkPipelineColorBlendAttachmentState colorBlendAttachment{
             .blendEnable = VK_FALSE,
             .srcColorBlendFactor = VK_BLEND_FACTOR_ONE,
@@ -691,13 +757,11 @@ private:
             .pAttachments = &colorBlendAttachment,
             .blendConstants = {0.0F, 0.0F, 0.0F, 0.0F}};
 
-        fprintf(stdout, "\t\tInitializing Render Pipeline.\n");
+        fprintf(stdout, "\tInitializing Render Pipeline.\n");
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-            .setLayoutCount = 0,
-            .pSetLayouts = nullptr,
-            .pushConstantRangeCount = 0,
-            .pPushConstantRanges = nullptr};
+            .setLayoutCount = 1,
+            .pSetLayouts = &m_DescriptorSetLayout};
 
         if (vkCreatePipelineLayout(m_Device, &pipelineLayoutInfo, nullptr, &m_PipelineLayout) != VK_SUCCESS) {
             throw std::runtime_error("failed to create pipeline layout!");
@@ -723,7 +787,7 @@ private:
             throw std::runtime_error("failed to create graphics pipeline!");
         }
 
-        fprintf(stdout, "\tCleaning up shader modules.\n");
+        fprintf(stdout, "Cleaning up shader modules.\n");
         vkDestroyShaderModule(m_Device, fragShaderModule, nullptr);
         vkDestroyShaderModule(m_Device, vertShaderModule, nullptr);
         fprintf(stdout, "Successfully set up Graphics Pipeline.\n");
@@ -745,11 +809,11 @@ private:
     }
 
     DEF createImageViews() -> void {
-        fprintf(stdout, "\nTrying to create ImageViews.\n");
+        fprintf(stdout, "Trying to create ImageViews.\n");
 
         m_SwapChainImageViews.resize(m_SwapChainImages.size());
         for (size_t i = 0; i < m_SwapChainImages.size(); i++) {
-            fprintf(stdout, "\t%zu. SwapChainImageView.\n", i + 1);
+            fprintf(stdout, "%zu. SwapChainImageView.\n", i + 1);
             // clang-format off
             VkImageViewCreateInfo createInfo{
                 .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
@@ -779,7 +843,7 @@ private:
     }
 
     DEF createSwapChain() -> void {
-        fprintf(stdout, "\nTrying to create Swapchain.\n");
+        fprintf(stdout, "Trying to create Swapchain.\n");
 
         SwapChainSupportDetails swapChainSupport = querySwapChainSupport(m_PhysicalDevice);
 
@@ -819,12 +883,12 @@ private:
         }
 
         if (indices.graphicsFamily != indices.presentationFamily) {
-            fprintf(stdout, "\tSetting imageSharingMode to Concurrent.\n");
+            fprintf(stdout, "Setting imageSharingMode to Concurrent.\n");
             createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
             createInfo.queueFamilyIndexCount = 2;
             createInfo.pQueueFamilyIndices = QueueFamilyIndices.data();
         } else {
-            fprintf(stdout, "\tSetting imageSharingMode to Exclusive.\n");
+            fprintf(stdout, "Setting imageSharingMode to Exclusive.\n");
             createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
             createInfo.queueFamilyIndexCount = 0;
             createInfo.pQueueFamilyIndices = nullptr;
@@ -873,7 +937,7 @@ private:
     }
 
     DEF createSurface() -> void {
-        fprintf(stdout, "\nTrying to create GLFW window surface.\n");
+        fprintf(stdout, "Trying to create GLFW window surface.\n");
         if (glfwCreateWindowSurface(m_Instance, m_Window, nullptr, &m_Surface) != VK_SUCCESS) {
             throw std::runtime_error("failed to create window surface!");
         }
@@ -881,7 +945,7 @@ private:
     }
 
     DEF createLogicalDevice() -> void {
-        fprintf(stdout, "\nTrying to create Logical Device.\n");
+        fprintf(stdout, "Trying to create Logical Device.\n");
 
         QueueFamilyIndices indices = findQueueFamilies(m_PhysicalDevice);
 
@@ -937,7 +1001,7 @@ private:
     }
 
     DEF pickPhysicalDevice() -> void {
-        fprintf(stdout, "\nPicking Physical Device.\n");
+        fprintf(stdout, "Picking Physical Device.\n");
 
         uint32_t deviceCount = 0;
         vkEnumeratePhysicalDevices(m_Instance, &deviceCount, nullptr);
@@ -952,7 +1016,7 @@ private:
             devices.begin(),
             devices.end(),
             [&](const auto &device) {
-                fprintf(stdout, "\tChecking %zu. device", ++i);
+                fprintf(stdout, "Checking %zu. device", ++i);
                 return isDeviceSuitable(device);
             });
         if (found == devices.end()) throw std::runtime_error("failed to find a suitable GPU!");
@@ -967,7 +1031,7 @@ private:
         vkGetPhysicalDeviceProperties(device, &deviceProperties);
         vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
 
-        fprintf(stdout, "\nChecking the device '%s' for suitability.\n", deviceProperties.deviceName);
+        fprintf(stdout, "Checking the device '%s' for suitability.\n", deviceProperties.deviceName);
 
         if (!Settings::ALLOW_DEVICE_WITHOUT_INTEGRATED_GPU) {
             if (deviceProperties.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
@@ -1062,7 +1126,7 @@ private:
     }
 
     DEF mainLoop() -> void {
-        fprintf(stdout, "\nStarting the main loop.\n");
+        fprintf(stdout, "Starting the main loop.\n");
         while (!glfwWindowShouldClose(m_Window)) {
             glfwPollEvents();
             drawFrame();
@@ -1146,8 +1210,7 @@ private:
         float delta_time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
         UniformBufferObject ubo{
-            .model = glm::rotate(
-                glm::mat4(1.0f),
+            .model = glm::rotate(glm::mat4(1.0f),
                 delta_time * glm::radians(90.0f),
                 glm::vec3(0.0f, 0.0f, 1.0f)),
             .view = glm::lookAt(
@@ -1166,8 +1229,8 @@ private:
     }
 
     DEF cleanup() -> void {
-        fprintf(stdout, "\nStarting the cleanup.\n");
-        fprintf(stdout, "\tStarting the Vulkan cleanup.\n");
+        fprintf(stdout, "Starting the cleanup.\n");
+        fprintf(stdout, "Starting the Vulkan cleanup.\n");
 
         for (size_t i = 0; i < Settings::MAX_FRAMES_IN_FLIGHT; i++) {
             vkDestroySemaphore(m_Device, m_ImageAvailableSemaphores[i], nullptr);
@@ -1176,6 +1239,7 @@ private:
         }
         cleanupSwapChain();
 
+        vkDestroyDescriptorPool(m_Device, m_DescriptorPool, nullptr);
         vkDestroyDescriptorSetLayout(m_Device, m_DescriptorSetLayout, nullptr);
 
         vkDestroyBuffer(m_Device, m_IndexBuffer, nullptr);
@@ -1202,12 +1266,12 @@ private:
         vkDestroyDevice(m_Device, nullptr);
         vkDestroySurfaceKHR(m_Instance, m_Surface, nullptr);
         vkDestroyInstance(m_Instance, nullptr);
-        fprintf(stdout, "\tFinished the Vulkan cleanup.\n");
+        fprintf(stdout, "Finished the Vulkan cleanup.\n");
 
-        fprintf(stdout, "\tStarted the the GLFW cleanup.\n");
+        fprintf(stdout, "Started the the GLFW cleanup.\n");
         glfwDestroyWindow(m_Window);
         glfwTerminate();
-        fprintf(stdout, "\tFinished the GLFW cleanup.\n");
+        fprintf(stdout, "Finished the GLFW cleanup.\n");
         fprintf(stdout, "Finshed the cleanup.\n");
     }
 
@@ -1226,7 +1290,7 @@ private:
     }
 
     DEF setupDebugMessenger() -> void {
-        fprintf(stdout, "\nTrying to setup DebugMessanger.\n");
+        fprintf(stdout, "Trying to setup DebugMessanger.\n");
         if (!enableValidationLayers)
             return;
 
@@ -1284,7 +1348,7 @@ private:
         const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
         void *pUserData) -> VkBool32 {
 
-        std::cerr << "validation layer: " << pCallbackData->pMessage << "\n";
+        std::cerr << "validation layer: " << pCallbackData->pMessage << "";
         return VK_FALSE;
     }
 
@@ -1372,11 +1436,11 @@ DEF main() -> int {
     Vulkan3DEngine app;
 
     try {
-        fprintf(stdout, "\nStarting application run.\n");
+        fprintf(stdout, "Starting application run.\n");
         app.run();
-        fprintf(stdout, "\nFinished application run.\n");
+        fprintf(stdout, "Finished application run.\n");
     } catch (const std::exception &e) {
-        std::cerr << e.what() << "\n";
+        std::cerr << e.what() << "";
         return EXIT_FAILURE;
     }
 
