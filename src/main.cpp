@@ -1478,11 +1478,6 @@ private:
         vkDestroySampler(m_Device, m_TextureSampler, nullptr);
         vkDestroyImageView(m_Device, m_TextureImageView, nullptr);
 
-        vkDestroyImageView(m_Device, m_TextureImageView, nullptr);
-
-        vkDestroyImage(m_Device, m_TextureImage, nullptr);
-        vkFreeMemory(m_Device, m_TextureImageMemory, nullptr);
-
         vkDestroyImage(m_Device, m_TextureImage, nullptr);
         vkFreeMemory(m_Device, m_TextureImageMemory, nullptr);
 
