@@ -25,6 +25,7 @@ find_package(glfw3 3.3 REQUIRED)
 # Define source files
 set(SOURCES
     src/main.cpp
+    src/engine.cpp
 )
 
 include_directories(include)

@@ -21,7 +21,7 @@ fi
 ./scripts/compile_shaders.sh
 
 # Clean and prepare the build directory
-rm -rf build
+rm -r build
 mkdir build
 cd build
 

@@ -1,5 +1,6 @@
-#ifndef SETTINGS_H
-#define SETTINGS_H
+#ifndef CONSTANTS_H
+#define CONSTANTS_H
+
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h> // Implicitly imports vulkan
 #include <vulkan/vulkan.h>
@@ -8,9 +9,6 @@
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
 
 #include <algorithm>
 #include <chrono>
@@ -35,12 +33,12 @@ using std::all_of;
 using std::any_of;
 using std::array;
 using std::find_if;
+using std::optional;
 using std::runtime_error;
 using std::set;
 using std::string;
+using std::string_view;
 using std::vector;
-
-using time_point = std::chrono::steady_clock::time_point;
 
 // When using forward declaration we have an auto before the function name, to be able to seperate
 // it from the normal auto we find in the code I've introduced this macro, inspired by the
@@ -50,9 +48,12 @@ using time_point = std::chrono::steady_clock::time_point;
 #define VULKAN_SETUP(func, name)                                                            \
     {                                                                                       \
         fprintf(stdout, " \033[32m(%zu.) initVulkan Step:\033[0m ", ++initVulkanIteration); \
-        fprintf(stdout, "Trying to initialize %s", name);                                   \
+        fprintf(stdout, "Trying to initialize %s\n", name);                                 \
+        auto start = std::chrono::high_resolution_clock::now();                             \
         func();                                                                             \
-        fprintf(stdout, "Successfully initialized %s", name);                               \
+        auto end = std::chrono::high_resolution_clock::now();                               \
+        std::chrono::duration<double, std::milli> elapsed = end - start;                    \
+        fprintf(stdout, "Successfully initialized %s (%.2f ms)\n", name, elapsed.count());  \
     }
 
 #define PRINT_BOLD_GREEN(text) fprintf(stdout, "\033[1m\033[32m\n%s\n\033[0m", text)
@@ -96,7 +97,7 @@ struct Vertex {
     }
 
     static DEF getAttributeDescriptions() -> array<VkVertexInputAttributeDescription, 3> {
-        return std::array<VkVertexInputAttributeDescription, 3>{
+        return array<VkVertexInputAttributeDescription, 3>{
             VkVertexInputAttributeDescription{
                 .binding = 0,
                 .location = 0,
@@ -126,7 +127,7 @@ struct Vertex {
   0: (-0.5, -0.5)    1: (0.5, -0.5)
 */
 // clang-format off
-const std::vector<Vertex> vertices = {
+const vector<Vertex> vertices = {
     {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
     {{ 0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
     {{ 0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
@@ -204,6 +205,8 @@ constexpr VkSurfaceFormatKHR PREFERRED_SURFACE_FORMAT = {
 
 } // namespace Settings
 
+#endif // CONSTANTS_H
+
 /*
 // clang-format off
 std::string vkResultToString(VkResult result) {
@@ -254,5 +257,3 @@ void vkCreationWrapper(const std::string &operationName, VulkanFunction func, Ar
     }
 }
 */
-
-#endif // SETTINGS_H
