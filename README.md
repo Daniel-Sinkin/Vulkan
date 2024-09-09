@@ -91,7 +91,6 @@ export VK_ICD_FILENAMES=/Users/danielsinkin/VulkanSDK/1.3.290.0/macOS/share/vulk
     Software
         System Version: macOS 14.6.1 (23G93)
         Kernel Version: Darwin 23.6.0
-
     Hardware
         Model Name: MacBook Air
         Model Identifier: Mac14,2
@@ -105,7 +104,6 @@ export VK_ICD_FILENAMES=/Users/danielsinkin/VulkanSDK/1.3.290.0/macOS/share/vulk
         Hardware UUID: *
         Provisioning UDID: *
         Activation Lock Status: *
-
     Graphics/Displays:
         Chipset Model: Apple M2
         Type: GPU
@@ -123,7 +121,6 @@ export VK_ICD_FILENAMES=/Users/danielsinkin/VulkanSDK/1.3.290.0/macOS/share/vulk
                 Mirror: Off
                 Online: Yes
                 Automatically Adjust Brightness: No
-
 ```
 
 
