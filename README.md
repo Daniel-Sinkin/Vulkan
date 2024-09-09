@@ -38,6 +38,9 @@
     * [x] Descriptor layout and buffer
     * [x] Descriptor pool and sets
 * [ ] Texture Mapping
+    * [x] Images
+    * [ ] Image view and sampler
+    * [ ] Combined image sampler 
 * [ ] Depth Buffering
 * [ ] Loading Models
 * [ ] Generating Mipmaps
@@ -125,12 +128,47 @@ export VK_ICD_FILENAMES=/Users/danielsinkin/VulkanSDK/1.3.290.0/macOS/share/vulk
 
 
 # References
+* Libraries Used
+    * 
 * Apple is Incompatbile with OpenGL and Vulcan
-    * [1] https://developer.apple.com/documentation/apple-silicon/porting-your-macos-apps-to-apple-silicon
+    * https://developer.apple.com/documentation/apple-silicon/porting-your-macos-apps-to-apple-silicon
     * List of versions supported by device version.
-        * [2] https://support.apple.com/en-ca/101525
+        * https://support.apple.com/en-ca/101525
 * Documentation
-    * [3] https://www.glfw.org/docs/latest/vulkan_guide.html
+    * https://www.glfw.org/docs/latest/vulkan_guide.html
 * Educational Resources
-    * [4] [Vulkan Tutorial](https://vulkan-tutorial.com)
-    * [5] [Learning Modern 3D Graphics Programming](https://paroj.github.io/gltut/)
+    * Books
+        * [Physically Based Rendering: From Theory to Implementation](https://www.pbr-book.org)
+        * [Data-Oriented Design](https://www.dataorienteddesign.com/dodbook/)
+        * [Ray Tracing in one Weekend](https://raytracing.github.io)
+        * [Computer Graphics from Scratch](https://gabrielgambetta.com/computer-graphics-from-scratch/)
+        * [The Art of writing Efficient Programs](https://github.com/ssloy/tinyraytracer/wiki)
+    * Repositories
+        * [tinyraytracer](https://github.com/ssloy/tinyraytracer/wiki)
+    * Blogs
+        * [The Essential Resources for Vulkan development](https://www.vulkan.org/learn)
+        * [Nvidia's GPU Gems series](https://developer.nvidia.com/gpugems/gpugems/contributors)
+        * [A trip through the Graphics Pipeline 2011: Index](https://fgiesen.wordpress.com/2011/07/09/a-trip-through-the-graphics-pipeline-2011-index/)
+        * [Learning Modern 3D Graphics Programming](https://paroj.github.io/gltut/)
+        * [Intel: API without secrets: Introduction to Vulkan](https://www.intel.com/content/www/us/en/developer/articles/training/api-without-secrets-introduction-to-vulkan-part-1.html)
+    * Tutorials
+        * [Vulkan Tutorial](https://vulkan-tutorial.com)
+        * [Learn OpenGL](https://learnopengl.com)
+        * [VulkanGuide](https://vkguide.dev)
+    * YouTube
+        * [MollyRocket]
+            * Handmade Hero Series
+                * [Rendering Playlist](https://www.youtube.com/watch?v=ofMJUSchXwo&list=PLEMXAbCVnmY40lfaaowTqIs_dKNgOXR5Q)
+                * [Lighting Playlist](https://www.youtube.com/watch?v=owpVP0IQWXk&list=PLEMXAbCVnmY4ASbr-fMBSroE2JF-u20du)
+                * [Optimization Playlist](https://www.youtube.com/watch?v=qin-Eps3U_E&list=PLEMXAbCVnmY5qGQB96s7Vysr1nJcX_BW_)
+                * [Multithreading Playlist](https://www.youtube.com/watch?v=qkugPXGeX58&list=PLEMXAbCVnmY7me6j4VtpCYMuZX3QpcBBH)
+            * [Performanc-Aware Programming Playlist](https://www.youtube.com/watch?v=pZ0MF1q_LUE&list=PLEMXAbCVnmY7t29i_rd3mnALWu-aZr_42)
+        * [Acerola](https://www.youtube.com/@Acerola_t)
+            * Post-Processind with Shaders
+        * [GetIntoGameDev's Vulkan 2024 Series](https://www.youtube.com/watch?v=Est5AvResbE&list=PLn3eTxaOtL2Nr89hYzKPib7tvce-ZO4yB)
+        * CppCon 2021
+            * [Back to Basics Series](https://www.youtube.com/watch?v=Bt3zcJZIalk&list=PLHTh1InhhwT4TJaHBVWzvBOYhp27UO7mI)
+        * C++Now 2024
+            * [Unlocking Modern CPU Power - Next-Gen C++ Optimization Techniques - Fedor G Pikus - C++Now 2024
+](https://www.youtube.com/watch?v=wGSSUSeaLgA)
+        * [Interactive Computer Graphics](https://www.youtube.com/watch?v=UVCuWQV_-Es&list=PLplnkTzzqsZS3R5DjmCQsqupu43oS9CFN&index=1)

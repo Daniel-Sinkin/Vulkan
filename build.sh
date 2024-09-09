@@ -31,9 +31,6 @@ if [[ "$1" == "--release" ]]; then
     BUILD_TYPE="Release"
 fi
 
-# Configure the build
-cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE ..
-
 # Detect the number of CPU cores (or use 1 if sysctl is not found)
 if command -v sysctl &> /dev/null; then
     NUM_CORES=$(sysctl -n hw.ncpu)
@@ -42,6 +39,8 @@ else
     echo "Warning: 'sysctl' command not found. Defaulting to use 1 core."
     NUM_CORES=1
 fi
+
+cmake -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON -DCMAKE_BUILD_TYPE=Debug ..
 
 # Build the project
 cmake --build . -j $NUM_CORES

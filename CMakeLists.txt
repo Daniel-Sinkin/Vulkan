@@ -51,7 +51,10 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+# Disable interprocedural optimization for debug builds
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION FALSE)
+endif()
 
 
 # set(CMAKE_CXX_CLANG_TIDY "clang-tidy;-checks=modernize-*")
