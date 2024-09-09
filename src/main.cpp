@@ -106,6 +106,9 @@ private:
     VkImage m_TextureImage;
     VkDeviceMemory m_TextureImageMemory;
 
+    VkImageView m_TextureImageView;
+    VkSampler m_TextureSampler;
+
     DEF initWindow() -> void {
         fprintf(stdout, "Trying to initialize window.\n");
         if (glfwInit() == GLFW_FALSE) {
@@ -238,6 +241,8 @@ private:
 
         PRINT_BOLD_GREEN("Buffers Setup");
         VULKAN_SETUP(createTextureImage);
+        VULKAN_SETUP(createTextureImageView);
+        VULKAN_SETUP(createTextureSampler);
         VULKAN_SETUP(createVertexBuffer);
         VULKAN_SETUP(createIndexBuffer);
         VULKAN_SETUP(createUniformBuffers);
@@ -253,6 +258,33 @@ private:
         PRINT_BOLD_GREEN("* * * * * * * * * * * * * * * * * *");
         PRINT_BOLD_GREEN("*    Finished setting up Vulkan   *");
         PRINT_BOLD_GREEN("* * * * * * * * * * * * * * * * * *");
+    }
+
+    DEF createTextureSampler() -> void {
+        VkPhysicalDeviceProperties properties{};
+        vkGetPhysicalDeviceProperties(m_PhysicalDevice, &properties);
+
+        VkSamplerCreateInfo samplerInfo{
+            .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+            .magFilter = VK_FILTER_LINEAR,
+            .minFilter = VK_FILTER_LINEAR,
+            .addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+            .addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+            .addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+            .anisotropyEnable = VK_TRUE,
+            .maxAnisotropy = properties.limits.maxSamplerAnisotropy,
+            .borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
+            .unnormalizedCoordinates = VK_FALSE,
+            .compareEnable = VK_FALSE,
+            .compareOp = VK_COMPARE_OP_ALWAYS,
+            .mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+            .mipLodBias = 0.0f,
+            .minLod = 0.0f,
+            .maxLod = 0.0f};
+
+        if (vkCreateSampler(m_Device, &samplerInfo, nullptr, &m_TextureSampler) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create texture sampler!");
+        }
     }
 
     DEF createImage(
@@ -295,6 +327,32 @@ private:
         }
 
         vkBindImageMemory(m_Device, image, imageMemory, 0);
+    }
+
+    DEF createImageView(VkImage image, VkFormat format) -> VkImageView {
+        VkImageViewCreateInfo viewInfo{
+            .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+            .image = image,
+            .viewType = VK_IMAGE_VIEW_TYPE_2D,
+            .format = format,
+            .subresourceRange = {
+                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                .baseMipLevel = 0,
+                .levelCount = 1,
+                .baseArrayLayer = 0,
+                .layerCount = 1},
+        };
+
+        VkImageView imageView;
+        if (vkCreateImageView(m_Device, &viewInfo, nullptr, &imageView) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create texture image view!");
+        }
+
+        return imageView;
+    }
+
+    DEF createTextureImageView() -> void {
+        m_TextureImageView = createImageView(m_TextureImage, VK_FORMAT_R8G8B8A8_SRGB);
     }
 
     DEF createTextureImage() -> void {
@@ -405,14 +463,14 @@ private:
             bufferInfo.offset = 0;
             bufferInfo.range = sizeof(UniformBufferObject);
 
-            VkWriteDescriptorSet descriptorWrite{};
-            descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrite.dstSet = m_DescriptorSets[i];
-            descriptorWrite.dstBinding = 0;
-            descriptorWrite.dstArrayElement = 0;
-            descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            descriptorWrite.descriptorCount = 1;
-            descriptorWrite.pBufferInfo = &bufferInfo;
+            VkWriteDescriptorSet descriptorWrite{
+                .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                .dstSet = m_DescriptorSets[i],
+                .dstBinding = 0,
+                .dstArrayElement = 0,
+                .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                .descriptorCount = 1,
+                .pBufferInfo = &bufferInfo};
 
             vkUpdateDescriptorSets(m_Device, 1, &descriptorWrite, 0, nullptr);
         }
@@ -445,7 +503,6 @@ private:
         m_UniformBuffers.resize(Settings::MAX_FRAMES_IN_FLIGHT);
         m_UniformBuffersMemory.resize(Settings::MAX_FRAMES_IN_FLIGHT);
         m_UniformBuffersMapped.resize(Settings::MAX_FRAMES_IN_FLIGHT);
-
         for (size_t i = 0; i < Settings::MAX_FRAMES_IN_FLIGHT; i++) {
             createBuffer(
                 bufferSize,
@@ -566,11 +623,11 @@ private:
         VkBuffer &buffer,
         VkDeviceMemory &bufferMemory) -> void {
 
-        VkBufferCreateInfo bufferInfo{};
-        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        bufferInfo.size = size;
-        bufferInfo.usage = usage;
-        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        VkBufferCreateInfo bufferInfo{
+            .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+            .size = size,
+            .usage = usage,
+            .sharingMode = VK_SHARING_MODE_EXCLUSIVE};
 
         if (vkCreateBuffer(m_Device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
             throw std::runtime_error("failed to create buffer!");
@@ -579,10 +636,10 @@ private:
         VkMemoryRequirements memRequirements;
         vkGetBufferMemoryRequirements(m_Device, buffer, &memRequirements);
 
-        VkMemoryAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
+        VkMemoryAllocateInfo allocInfo{
+            .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+            .allocationSize = memRequirements.size,
+            .memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties)};
 
         if (vkAllocateMemory(m_Device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
             throw std::runtime_error("failed to allocate buffer memory!");
@@ -1014,31 +1071,9 @@ private:
         fprintf(stdout, "Trying to create ImageViews.\n");
 
         m_SwapChainImageViews.resize(m_SwapChainImages.size());
-        for (size_t i = 0; i < m_SwapChainImages.size(); i++) {
-            fprintf(stdout, "\t%zu. SwapChainImageView.\n", i + 1);
-            // clang-format off
-            VkImageViewCreateInfo createInfo{
-                .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-                .image = m_SwapChainImages[i],
-                .viewType = VK_IMAGE_VIEW_TYPE_2D,
-                .format = m_SwapChainImageFormat,
-                .components = {
-                    .r = VK_COMPONENT_SWIZZLE_IDENTITY,
-                    .g = VK_COMPONENT_SWIZZLE_IDENTITY,
-                    .b = VK_COMPONENT_SWIZZLE_IDENTITY,
-                    .a = VK_COMPONENT_SWIZZLE_IDENTITY,},
-                .subresourceRange = {
-                    .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-                    .baseMipLevel = 0,
-                    .levelCount = 1,
-                    .baseArrayLayer = 0,
-                    .layerCount = 1},
-            };
-            // clang-format on
 
-            if (vkCreateImageView(m_Device, &createInfo, nullptr, &m_SwapChainImageViews[i]) != VK_SUCCESS) {
-                throw std::runtime_error("failed to create image views!");
-            }
+        for (uint32_t i = 0; i < m_SwapChainImages.size(); i++) {
+            m_SwapChainImageViews[i] = createImageView(m_SwapChainImages[i], m_SwapChainImageFormat);
         }
 
         fprintf(stdout, "Successfully created ImageViews.\n");
@@ -1171,8 +1206,7 @@ private:
             queueCreateInfos.push_back(queueCreateInfo);
         }
 
-        // For now every feature is disabled
-        VkPhysicalDeviceFeatures deviceFeatures{};
+        VkPhysicalDeviceFeatures deviceFeatures{.samplerAnisotropy = VK_TRUE};
 
         VkDeviceCreateInfo createInfo{
             .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
@@ -1271,6 +1305,13 @@ private:
         SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device);
         if (swapChainSupport.formats.empty() || swapChainSupport.presentModes.empty()) {
             fprintf(stdout, "Device is unsuitable because its swapChain is not adequate!\n");
+            return false;
+        }
+
+        VkPhysicalDeviceFeatures supportedFeatures;
+        vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
+        if (!supportedFeatures.samplerAnisotropy) {
+            fprintf(stdout, "Device is unsuitable because does not support sampler Anisotropy (that is very surprising)!\n");
             return false;
         }
 
@@ -1433,6 +1474,14 @@ private:
             vkDestroyFence(m_Device, m_InFlightFences[i], nullptr);
         }
         cleanupSwapChain();
+
+        vkDestroySampler(m_Device, m_TextureSampler, nullptr);
+        vkDestroyImageView(m_Device, m_TextureImageView, nullptr);
+
+        vkDestroyImageView(m_Device, m_TextureImageView, nullptr);
+
+        vkDestroyImage(m_Device, m_TextureImage, nullptr);
+        vkFreeMemory(m_Device, m_TextureImageMemory, nullptr);
 
         vkDestroyImage(m_Device, m_TextureImage, nullptr);
         vkFreeMemory(m_Device, m_TextureImageMemory, nullptr);

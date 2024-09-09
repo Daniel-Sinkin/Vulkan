@@ -39,7 +39,7 @@
     * [x] Descriptor pool and sets
 * [ ] Texture Mapping
     * [x] Images
-    * [ ] Image view and sampler
+    * [x] Image view and sampler
     * [ ] Combined image sampler 
 * [ ] Depth Buffering
 * [ ] Loading Models
