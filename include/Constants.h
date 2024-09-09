@@ -31,30 +31,38 @@ using glm::mat4;
 using glm::vec2;
 using glm::vec3;
 
+using std::all_of;
+using std::any_of;
 using std::array;
+using std::find_if;
+using std::runtime_error;
 using std::set;
 using std::string;
 using std::vector;
 
 using time_point = std::chrono::steady_clock::time_point;
 
-#define DEF auto // Only use for the auto in functions, not for normal code so its easier to search for functions
+// When using forward declaration we have an auto before the function name, to be able to seperate
+// it from the normal auto we find in the code I've introduced this macro, inspired by the
+// python syntax for functions, which makes it easier to search function definitions.
+#define DEF auto
 
-// the scoping is a hack to make it work everywhere, for example with "if statements" without braces
-#define VULKAN_SETUP(func)                                                                  \
+#define VULKAN_SETUP(func, name)                                                            \
     {                                                                                       \
         fprintf(stdout, " \033[32m(%zu.) initVulkan Step:\033[0m ", ++initVulkanIteration); \
+        fprintf(stdout, "Trying to initialize %s", name);                                   \
         func();                                                                             \
+        fprintf(stdout, "Successfully initialized %s", name);                               \
     }
 
 #define PRINT_BOLD_GREEN(text) fprintf(stdout, "\033[1m\033[32m\n%s\n\033[0m", text)
 
-constexpr unsigned long long NO_TIMEOUT = UINT64_MAX; // Can't disable timeout in vulcan semaphore, this is a workaround for that
+constexpr unsigned long long NO_TIMEOUT = UINT64_MAX; // Can't disable timeout in Vulkan semaphore, this is a workaround
 constexpr int INVALID_FRAMEBUFFER_SIZE = 0;
 
 // numbers::pi is much more accurate than numbers::pi_v
 constexpr float PI = std::numbers::pi_v<float>;
-constexpr float PI_2 = static_cast<float>(2.0 * std::numbers::pi);
+constexpr float PI_2 = static_cast<float>(2.0 * std::numbers::pi); // Use static_cast for type conversion
 constexpr float PI_HALF = static_cast<float>(std::numbers::pi / 2);
 constexpr float PI_QUARTER = static_cast<float>(std::numbers::pi / 4);
 
@@ -72,6 +80,7 @@ struct QueueFamilyIndices {
         return graphicsFamily.has_value() && presentationFamily.has_value();
     }
 };
+
 struct Vertex {
     vec2 pos;
     vec3 color;
@@ -92,17 +101,17 @@ struct Vertex {
                 .binding = 0,
                 .location = 0,
                 .format = VK_FORMAT_R32G32_SFLOAT,
-                .offset = offsetof(Vertex, pos)},
+                .offset = static_cast<uint32_t>(offsetof(Vertex, pos))},
             VkVertexInputAttributeDescription{
                 .binding = 0,
                 .location = 1,
                 .format = VK_FORMAT_R32G32B32_SFLOAT,
-                .offset = offsetof(Vertex, color)},
+                .offset = static_cast<uint32_t>(offsetof(Vertex, color))},
             VkVertexInputAttributeDescription{
                 .binding = 0,
                 .location = 2,
                 .format = VK_FORMAT_R32G32_SFLOAT,
-                .offset = offsetof(Vertex, texCoord)}};
+                .offset = static_cast<uint32_t>(offsetof(Vertex, texCoord))}};
     }
 };
 /* Vertices w/ counter-clockwise winding order (TODO: Update graphic with vertices from book)
@@ -119,11 +128,12 @@ struct Vertex {
 // clang-format off
 const std::vector<Vertex> vertices = {
     {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-    {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-    {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-    {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
+    {{ 0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+    {{ 0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+    {{-0.5f,  0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
 };
-const vector<uint16_t> vertexIndices = {0, 1, 2, 2, 3, 0}; // Set to uint32_t if we get too many vertices
+const vector<uint16_t> vertexIndices = {0, 1, 2, 2, 3, 0}; // Make this uint32_t once we get too many vertices
+// clang-format on
 
 struct UniformBufferObject {
     mat4 model;
@@ -147,12 +157,12 @@ static DEF readFile(const string &filename) -> vector<char> {
         } else {
             fprintf(stderr, "Error: Unable to open file '%s': %s\n", filename.c_str(), std::strerror(errno));
         }
-        throw std::runtime_error("failed to open file!");
+        throw runtime_error("failed to open file!");
     }
 
-    size_t fileSize = (size_t)file.tellg();
+    size_t fileSize = static_cast<size_t>(file.tellg());
     if (fileSize > std::numeric_limits<std::streamsize>::max()) {
-        throw std::runtime_error("File size exceeds the maximum supported size.");
+        throw runtime_error("File size exceeds the maximum supported size.");
     }
 
     vector<char> buffer(fileSize);
