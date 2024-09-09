@@ -3,11 +3,9 @@
 
 #include "Constants.h"
 
-// Function prototypes for Vulkan debug callbacks
 DEF CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkDebugUtilsMessengerEXT *pDebugMessenger) -> VkResult;
 DEF DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks *pAllocator) -> void;
 
-// Engine class declaration
 class Engine {
 public:
     Engine();
@@ -15,55 +13,6 @@ public:
     DEF run() -> void;
 
 private:
-    GLFWwindow *m_Window;
-
-    VkInstance m_Instance;
-    VkDebugUtilsMessengerEXT m_DebugMessenger;
-    VkPhysicalDevice m_PhysicalDevice;
-    VkDevice m_Device;
-    VkQueue m_GraphicsQueue;
-    VkQueue m_PresentQueue;
-    VkSurfaceKHR m_Surface;
-
-    VkSwapchainKHR m_SwapChain;
-    vector<VkImage> m_SwapChainImages;
-    vector<VkImageView> m_SwapChainImageViews;
-    VkFormat m_SwapChainImageFormat;
-    VkExtent2D m_SwapChainExtent;
-    vector<VkFramebuffer> m_SwapChainFramebuffers;
-
-    VkRenderPass m_RenderPass;
-    VkDescriptorSetLayout m_DescriptorSetLayout;
-    VkPipelineLayout m_PipelineLayout;
-    VkPipeline m_GraphicsPipeline;
-
-    VkCommandPool m_CommandPool;
-    vector<VkCommandBuffer> m_CommandBuffers;
-
-    vector<VkSemaphore> m_ImageAvailableSemaphores;
-    vector<VkSemaphore> m_RenderFinishedSemaphores;
-    vector<VkFence> m_InFlightFences;
-
-    uint32_t m_CurrentFrameIdx;
-    bool m_FramebufferResized;
-
-    VkBuffer m_VertexBuffer;
-    VkDeviceMemory m_VertexBufferMemory;
-    VkBuffer m_IndexBuffer;
-    VkDeviceMemory m_IndexBufferMemory;
-
-    vector<VkBuffer> m_UniformBuffers;
-    vector<VkDeviceMemory> m_UniformBuffersMemory;
-    vector<void *> m_UniformBuffersMapped;
-
-    VkDescriptorPool m_DescriptorPool;
-    vector<VkDescriptorSet> m_DescriptorSets;
-
-    VkImage m_TextureImage;
-    VkDeviceMemory m_TextureImageMemory;
-    VkImageView m_TextureImageView;
-    VkSampler m_TextureSampler;
-
     DEF initWindow() -> void;
     DEF initVulkan() -> void;
     DEF mainLoop() -> void;
@@ -120,6 +69,55 @@ private:
     static DEF checkDeviceExtensionSupport(VkPhysicalDevice device) -> bool;
     static DEF framebufferResizeCallback(GLFWwindow *window, int width, int height) -> void;
     static DEF validateExtensions(const vector<VkExtensionProperties> &supported_extensions, vector<const char *> required_extensions) -> bool;
+
+    GLFWwindow *m_Window;
+
+    VkInstance m_Instance;
+    VkDebugUtilsMessengerEXT m_DebugMessenger;
+    VkPhysicalDevice m_PhysicalDevice;
+    VkDevice m_Device;
+    VkQueue m_GraphicsQueue;
+    VkQueue m_PresentQueue;
+    VkSurfaceKHR m_Surface;
+
+    VkSwapchainKHR m_SwapChain;
+    vector<VkImage> m_SwapChainImages;
+    vector<VkImageView> m_SwapChainImageViews;
+    VkFormat m_SwapChainImageFormat;
+    VkExtent2D m_SwapChainExtent;
+    vector<VkFramebuffer> m_SwapChainFramebuffers;
+
+    VkRenderPass m_RenderPass;
+    VkDescriptorSetLayout m_DescriptorSetLayout;
+    VkPipelineLayout m_PipelineLayout;
+    VkPipeline m_GraphicsPipeline;
+
+    VkCommandPool m_CommandPool;
+    vector<VkCommandBuffer> m_CommandBuffers;
+
+    vector<VkSemaphore> m_ImageAvailableSemaphores;
+    vector<VkSemaphore> m_RenderFinishedSemaphores;
+    vector<VkFence> m_InFlightFences;
+
+    uint32_t m_CurrentFrameIdx;
+    bool m_FramebufferResized;
+
+    VkBuffer m_VertexBuffer;
+    VkDeviceMemory m_VertexBufferMemory;
+    VkBuffer m_IndexBuffer;
+    VkDeviceMemory m_IndexBufferMemory;
+
+    vector<VkBuffer> m_UniformBuffers;
+    vector<VkDeviceMemory> m_UniformBuffersMemory;
+    vector<void *> m_UniformBuffersMapped;
+
+    VkDescriptorPool m_DescriptorPool;
+    vector<VkDescriptorSet> m_DescriptorSets;
+
+    VkImage m_TextureImage;
+    VkDeviceMemory m_TextureImageMemory;
+    VkImageView m_TextureImageView;
+    VkSampler m_TextureSampler;
 };
 
 #endif // ENGINE_H
