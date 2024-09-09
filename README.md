@@ -64,16 +64,13 @@ I'm using AppleClang 15.0.0.15000309 as my compiler and CMake to generate my mak
 
 If you want to compile the project you can either use the `compile_and_run.sh` (just comment out the last line if you don't want to run after building)
 ```
-
 You can download the newest Vulkan SDK [here](https://vulkan.lunarg.com/sdk/home) 
 
 I'm using version 1.3.290.0 (23-Jul-2024) which has the following SHA256 checksum:
-```
+
 a14f3026290c2ef0a9fc96af3f6b75135018d145748543a644107a36f1d65a71
-```
 
 Add the following to your RC file (I'm using the ZSH shell so it's at `~/.zshrc` for me).
-```
 # Vulkan
 export VULKAN_SDK=/Users/danielsinkin/VulkanSDK/1.3.290.0/macOS
 export GLSC=$VULKAN_SDK/bin/glsc
@@ -86,8 +83,8 @@ export VK_ICD_FILENAMES=/Users/danielsinkin/VulkanSDK/1.3.290.0/macOS/share/vulk
 ```
 
 # My Dev Specs
-```
-> system_profiler
+```bash
+system_profiler
     Software
         System Version: macOS 14.6.1 (23G93)
         Kernel Version: Darwin 23.6.0
@@ -126,12 +123,15 @@ export VK_ICD_FILENAMES=/Users/danielsinkin/VulkanSDK/1.3.290.0/macOS/share/vulk
 
 # References
 * Libraries Used
-    * 
+    * Vulkan
+    * GLFW
+    * [STB Image](https://github.com/nothings/stb)
 * Apple is Incompatbile with OpenGL and Vulcan
     * https://developer.apple.com/documentation/apple-silicon/porting-your-macos-apps-to-apple-silicon
     * List of versions supported by device version.
         * https://support.apple.com/en-ca/101525
 * Documentation
+    * https://docs.vulkan.org/spec/latest/index.html
     * https://www.glfw.org/docs/latest/vulkan_guide.html
 * Educational Resources
     * Books
@@ -153,7 +153,7 @@ export VK_ICD_FILENAMES=/Users/danielsinkin/VulkanSDK/1.3.290.0/macOS/share/vulk
         * [Learn OpenGL](https://learnopengl.com)
         * [VulkanGuide](https://vkguide.dev)
     * YouTube
-        * [MollyRocket]
+        * MollyRocket
             * Handmade Hero Series
                 * [Rendering Playlist](https://www.youtube.com/watch?v=ofMJUSchXwo&list=PLEMXAbCVnmY40lfaaowTqIs_dKNgOXR5Q)
                 * [Lighting Playlist](https://www.youtube.com/watch?v=owpVP0IQWXk&list=PLEMXAbCVnmY4ASbr-fMBSroE2JF-u20du)
