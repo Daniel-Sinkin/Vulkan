@@ -53,12 +53,16 @@ private:
     DEF updateUniformBuffer(uint32_t currentImage) -> void;
     DEF beginSingleTimeCommands() -> VkCommandBuffer;
     DEF endSingleTimeCommands(VkCommandBuffer commandBuffer) -> void;
-    DEF createImageView(VkImage image, VkFormat format) -> VkImageView;
+    DEF createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags) -> VkImageView;
     DEF createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage &image, VkDeviceMemory &imageMemory) -> void;
     DEF createShaderModule(const vector<char> &code) -> VkShaderModule;
     DEF findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) -> uint32_t;
     DEF chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities) -> VkExtent2D;
     DEF recordCommandBuffers(VkCommandBuffer commandBuffer, uint32_t imageIndex) -> void;
+    DEF findSupportedFormat(const vector<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features) -> VkFormat;
+    DEF createDepthResources() -> void;
+    DEF findDepthFormat() -> VkFormat;
+    DEF hasStencilComponent(VkFormat format) -> bool;
 
     static DEF getRequiredExtensions() -> vector<const char *>;
     static DEF checkValidationLayerSupport() -> bool;
@@ -118,6 +122,10 @@ private:
     VkDeviceMemory m_TextureImageMemory;
     VkImageView m_TextureImageView;
     VkSampler m_TextureSampler;
+
+    VkImage m_DepthImage;
+    VkDeviceMemory m_DepthImageMemory;
+    VkImageView m_DepthImageView;
 };
 
 #endif // ENGINE_H

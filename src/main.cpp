@@ -5,7 +5,7 @@ DEF main() -> int {
     Engine app;
 
     try {
-        fprintf(stdout, "Starting application run.\n");
+        fprintf(stdout, "\nStarting application run.\n");
         app.run();
         fprintf(stdout, "Finished application run.\n");
     } catch (const std::exception &e) {

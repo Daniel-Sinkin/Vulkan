@@ -41,7 +41,7 @@
     * [x] Images
     * [x] Image view and sampler
     * [x] Combined image sampler 
-* [ ] Depth Buffering
+* [x] Depth Buffering
 * [ ] Loading Models
 * [ ] Generating Mipmaps
 * [ ] Multisampling

@@ -83,7 +83,7 @@ struct QueueFamilyIndices {
 };
 
 struct Vertex {
-    vec2 pos;
+    vec3 pos;
     vec3 color;
     vec2 texCoord;
 
@@ -101,7 +101,7 @@ struct Vertex {
             VkVertexInputAttributeDescription{
                 .binding = 0,
                 .location = 0,
-                .format = VK_FORMAT_R32G32_SFLOAT,
+                .format = VK_FORMAT_R32G32B32_SFLOAT,
                 .offset = static_cast<uint32_t>(offsetof(Vertex, pos))},
             VkVertexInputAttributeDescription{
                 .binding = 0,
@@ -128,12 +128,21 @@ struct Vertex {
 */
 // clang-format off
 const vector<Vertex> vertices = {
-    {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-    {{ 0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-    {{ 0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-    {{-0.5f,  0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
+    {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+    {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+    {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+    {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
+
+    {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+    {{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+    {{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+    {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
 };
-const vector<uint16_t> vertexIndices = {0, 1, 2, 2, 3, 0}; // Make this uint32_t once we get too many vertices
+
+const vector<uint16_t> vertexIndices = {
+    0, 1, 2, 2, 3, 0,
+    4, 5, 6, 6, 7, 4
+}; // Make this uint32_t once we get too many vertices
 // clang-format on
 
 struct UniformBufferObject {
@@ -182,7 +191,7 @@ namespace Settings {
 constexpr uint32_t DEFAULT_WINDOW_WIDTH = 800;
 constexpr uint32_t DEFAULT_WINDOW_HEIGHT = 600;
 
-constexpr auto WINDOW_NAME = "Texture Space Shading";
+constexpr auto WINDOW_NAME = "Depth Buffering";
 
 // For example macbooks have integrated graphics cards, so they would be filtered by this, which wouldn't make sense
 constexpr bool ALLOW_DEVICE_WITHOUT_INTEGRATED_GPU = true;
