@@ -75,26 +75,34 @@ struct QueueFamilyIndices {
 struct Vertex {
     vec2 pos;
     vec3 color;
+    vec2 texCoord;
 
-    static DEF getBindingDescription() -> VkVertexInputBindingDescription {
+    static VkVertexInputBindingDescription getBindingDescription() {
         VkVertexInputBindingDescription bindingDescription{
             .binding = 0,
             .stride = sizeof(Vertex),
             .inputRate = VK_VERTEX_INPUT_RATE_VERTEX};
+
         return bindingDescription;
     }
-    static DEF getAttributeDescriptions() -> array<VkVertexInputAttributeDescription, 2> {
-        VkVertexInputAttributeDescription positionAttribute{
-            .location = 0,
-            .binding = 0,
-            .format = VK_FORMAT_R32G32_SFLOAT,
-            .offset = offsetof(Vertex, pos)};
-        VkVertexInputAttributeDescription colorAttribute{
-            .location = 1,
-            .binding = 0,
-            .format = VK_FORMAT_R32G32B32_SFLOAT,
-            .offset = offsetof(Vertex, color)};
-        return {positionAttribute, colorAttribute};
+
+    static DEF getAttributeDescriptions() -> array<VkVertexInputAttributeDescription, 3> {
+        return std::array<VkVertexInputAttributeDescription, 3>{
+            VkVertexInputAttributeDescription{
+                .binding = 0,
+                .location = 0,
+                .format = VK_FORMAT_R32G32_SFLOAT,
+                .offset = offsetof(Vertex, pos)},
+            VkVertexInputAttributeDescription{
+                .binding = 0,
+                .location = 1,
+                .format = VK_FORMAT_R32G32B32_SFLOAT,
+                .offset = offsetof(Vertex, color)},
+            VkVertexInputAttributeDescription{
+                .binding = 0,
+                .location = 2,
+                .format = VK_FORMAT_R32G32_SFLOAT,
+                .offset = offsetof(Vertex, texCoord)}};
     }
 };
 /* Vertices w/ counter-clockwise winding order (TODO: Update graphic with vertices from book)
@@ -110,63 +118,12 @@ struct Vertex {
 */
 // clang-format off
 const std::vector<Vertex> vertices = {
-    {{-0.5f, -0.5f}, { 1.0f,  0.0f,  0.0f}},
-    {{ 0.5f, -0.5f}, { 0.0f,  1.0f,  0.0f}},
-    {{ 0.5f,  0.5f}, { 0.0f,  0.0f,  1.0f}},
-    {{-0.5f,  0.5f}, { 1.0f,  1.0f,  1.0f}}
+    {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+    {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+    {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+    {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
 };
 const vector<uint16_t> vertexIndices = {0, 1, 2, 2, 3, 0}; // Set to uint32_t if we get too many vertices
-
-// These are badly setup and won't draw unless backface culling is completely disabled
-const std::vector<Vertex> vertices_Hexagon = {
-    { {  0.0000f,  0.0000f }, { 1.0f, 1.0f, 1.0f } },
-    { {  0.0000f,  1.0000f }, { 1.0f, 1.0f, 1.0f } },
-    { {  0.8660f,  0.5000f }, { 1.0f, 1.0f, 1.0f } },
-    { {  0.8660f, -0.5000f }, { 1.0f, 1.0f, 1.0f } },
-    { {  0.0000f, -1.0000f }, { 1.0f, 1.0f, 1.0f } },
-    { { -0.8660f, -0.5000f }, { 1.0f, 1.0f, 1.0f } },
-    { { -0.8660f,  0.5000f }, { 1.0f, 1.0f, 1.0f } },
-    { {  0.0000f,  0.5000f }, { 1.0f, 1.0f, 1.0f } },
-    { {  0.4330f,  0.7500f }, { 1.0f, 1.0f, 1.0f } },
-    { {  0.4330f,  0.2500f }, { 1.0f, 1.0f, 1.0f } },
-    { {  0.8660f,  0.0000f }, { 1.0f, 1.0f, 1.0f } },
-    { {  0.4330f, -0.2500f }, { 1.0f, 1.0f, 1.0f } },
-    { {  0.4330f, -0.7500f }, { 1.0f, 1.0f, 1.0f } },
-    { {  0.0000f, -0.5000f }, { 1.0f, 1.0f, 1.0f } },
-    { { -0.4330f, -0.7500f }, { 1.0f, 1.0f, 1.0f } },
-    { { -0.4330f, -0.2500f }, { 1.0f, 1.0f, 1.0f } },
-    { { -0.8660f,  0.0000f }, { 1.0f, 1.0f, 1.0f } },
-    { { -0.4330f,  0.2500f }, { 1.0f, 1.0f, 1.0f } },
-    { { -0.4330f,  0.7500f }, { 1.0f, 1.0f, 1.0f } },
-};
-
-const std::vector<uint16_t> indices_Hexagon = {
-    0, 7, 9,
-    7, 1, 8,
-    9, 8, 2,
-    7, 8, 9,
-    0, 9, 11,
-    9, 2, 10,
-    11, 10, 3,
-    9, 10, 11,
-    0, 11, 13,
-    11, 3, 12,
-    13, 12, 4,
-    11, 12, 13,
-    0, 13, 15,
-    13, 4, 14,
-    15, 14, 5,
-    13, 14, 15,
-    0, 15, 17,
-    15, 5, 16,
-    17, 16, 6,
-    15, 16, 17,
-    0, 17, 7,
-    17, 6, 18,
-    7, 18, 1,
-    17, 18, 7,
-};
-// clang-format on
 
 struct UniformBufferObject {
     mat4 model;
@@ -214,7 +171,7 @@ namespace Settings {
 constexpr uint32_t DEFAULT_WINDOW_WIDTH = 800;
 constexpr uint32_t DEFAULT_WINDOW_HEIGHT = 600;
 
-constexpr auto WINDOW_NAME = "Vulkan 3D Engine";
+constexpr auto WINDOW_NAME = "Texture Space Shading";
 
 // For example macbooks have integrated graphics cards, so they would be filtered by this, which wouldn't make sense
 constexpr bool ALLOW_DEVICE_WITHOUT_INTEGRATED_GPU = true;

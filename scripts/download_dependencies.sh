@@ -22,9 +22,11 @@ function calculate_md5 {
     fi
 }
 
-# Expected MD5 hash for stb_image.h (as of 2024-09-08)
 EXPECTED_FILE_MD5="27932e6fb3a2f26aee2fc33f2cb4e696"
-STB_IMAGE_URL="https://raw.githubusercontent.com/nothings/stb/master/stb_image.h"
+
+# Use a specific commit hash to point to a particular version of stb_image.h
+STB_IMAGE_COMMIT_HASH="013ac3b"
+STB_IMAGE_URL="https://raw.githubusercontent.com/nothings/stb/$STB_IMAGE_COMMIT_HASH/stb_image.h"
 STB_IMAGE_LOCAL_FILE="$EXTERNAL_INCLUDE_DIR/stb_image.h"
 
 # Check if stb_image.h exists and its MD5 hash matches the expected value

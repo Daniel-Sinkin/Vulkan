@@ -37,10 +37,10 @@
 * [x] Uniform Buffers
     * [x] Descriptor layout and buffer
     * [x] Descriptor pool and sets
-* [ ] Texture Mapping
+* [x] Texture Mapping
     * [x] Images
     * [x] Image view and sampler
-    * [ ] Combined image sampler 
+    * [x] Combined image sampler 
 * [ ] Depth Buffering
 * [ ] Loading Models
 * [ ] Generating Mipmaps
