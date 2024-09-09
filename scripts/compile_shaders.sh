@@ -13,6 +13,10 @@ COMPILED_DIR="$SHADERS_DIR/compiled"
 # Create the compiled directory if it doesn't exist
 mkdir -p "$COMPILED_DIR"
 
+# Delete all files in the compiled directory before recompiling
+echo "Deleting all previously compiled shaders..."
+rm -f "$COMPILED_DIR"/*
+
 # Get the list of shaders to compile (frag, vert, comp, geom)
 shader_files=($(find "$SHADERS_DIR" -type f \( -name "*.frag" -o -name "*.vert" -o -name "*.comp" -o -name "*.geom" \)))
 
