@@ -169,3 +169,12 @@ system_profiler
             * [Unlocking Modern CPU Power - Next-Gen C++ Optimization Techniques - Fedor G Pikus - C++Now 2024
 ](https://www.youtube.com/watch?v=wGSSUSeaLgA)
         * [Interactive Computer Graphics](https://www.youtube.com/watch?v=UVCuWQV_-Es&list=PLplnkTzzqsZS3R5DjmCQsqupu43oS9CFN&index=1)
+
+# Appendix A: Screenshots
+* Screenshot Album
+    * https://imgur.com/a/6aMdkmx
+* Videos
+    * https://youtu.be/afF579Obqlw (not in the folder)
+    * https://youtu.be/JDX6OLH_uUA (not in the folder)
+    * https://youtu.be/Sk9cLoi_Vtk
+    * https://youtu.be/5Q_WZqeqGG0
