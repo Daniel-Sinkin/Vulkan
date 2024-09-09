@@ -45,15 +45,15 @@ using std::vector;
 // python syntax for functions, which makes it easier to search function definitions.
 #define DEF auto
 
-#define VULKAN_SETUP(func, name)                                                            \
-    {                                                                                       \
-        fprintf(stdout, " \033[32m(%zu.) initVulkan Step:\033[0m ", ++initVulkanIteration); \
-        fprintf(stdout, "Trying to initialize %s\n", name);                                 \
-        auto start = std::chrono::high_resolution_clock::now();                             \
-        func();                                                                             \
-        auto end = std::chrono::high_resolution_clock::now();                               \
-        std::chrono::duration<double, std::milli> elapsed = end - start;                    \
-        fprintf(stdout, "Successfully initialized %s (%.2f ms)\n", name, elapsed.count());  \
+#define VULKAN_SETUP(func)                                                                       \
+    {                                                                                            \
+        fprintf(stdout, " \033[32m(%zu.) initVulkan Step:\033[0m ", ++initVulkanIteration);      \
+        fprintf(stdout, "Trying to initialize %s\n", #func);                                     \
+        auto start = std::chrono::high_resolution_clock::now();                                  \
+        func();                                                                                  \
+        auto end = std::chrono::high_resolution_clock::now();                                    \
+        std::chrono::duration<double, std::milli> elapsed = end - start;                         \
+        fprintf(stdout, "Successfully initialized %s (Took %.2f ms)\n", #func, elapsed.count()); \
     }
 
 #define PRINT_BOLD_GREEN(text) fprintf(stdout, "\033[1m\033[32m\n%s\n\033[0m", text)

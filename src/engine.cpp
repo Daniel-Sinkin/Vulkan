@@ -193,44 +193,44 @@ DEF Engine::initVulkan() -> void {
     PRINT_BOLD_GREEN("* * * * * * * * * * * * * *");
 
     PRINT_BOLD_GREEN("Instance and Debug Setup");
-    VULKAN_SETUP(createInstance, "createInstance");
-    VULKAN_SETUP(setupDebugMessenger, "setupDebugMessenger");
+    VULKAN_SETUP(createInstance);
+    VULKAN_SETUP(setupDebugMessenger);
 
     PRINT_BOLD_GREEN("Window Surface Setup");
-    VULKAN_SETUP(createSurface, "createSurface");
+    VULKAN_SETUP(createSurface);
 
     PRINT_BOLD_GREEN("Physical and Logical Device Setup");
-    VULKAN_SETUP(pickPhysicalDevice, "pickPhysicalDevice");
-    VULKAN_SETUP(createLogicalDevice, "createLogicalDevice");
+    VULKAN_SETUP(pickPhysicalDevice);
+    VULKAN_SETUP(createLogicalDevice);
 
     PRINT_BOLD_GREEN("Swap Chain Setup");
-    VULKAN_SETUP(createSwapChain, "createSwapChain");
-    VULKAN_SETUP(createImageViews, "createImageViews");
+    VULKAN_SETUP(createSwapChain);
+    VULKAN_SETUP(createImageViews);
 
     PRINT_BOLD_GREEN("Render Pass and Pipeline Setup");
-    VULKAN_SETUP(createRenderPass, "createRenderPass");
-    VULKAN_SETUP(createDescriptorSetLayout, "createDescriptorSetLayout");
-    VULKAN_SETUP(createGraphicsPipeline, "createGraphicsPipeline");
+    VULKAN_SETUP(createRenderPass);
+    VULKAN_SETUP(createDescriptorSetLayout);
+    VULKAN_SETUP(createGraphicsPipeline);
 
     PRINT_BOLD_GREEN("Framebuffers and Command Pool Setup");
-    VULKAN_SETUP(createFramebuffers, "createFramebuffers");
-    VULKAN_SETUP(createCommandPool, "createCommandPool");
+    VULKAN_SETUP(createFramebuffers);
+    VULKAN_SETUP(createCommandPool);
 
     PRINT_BOLD_GREEN("Buffers Setup");
-    VULKAN_SETUP(createTextureImage, "createTextureImage");
-    VULKAN_SETUP(createTextureImageView, "createTextureImageView");
-    VULKAN_SETUP(createTextureSampler, "createTextureSampler");
-    VULKAN_SETUP(createVertexBuffer, "createVertexBuffer");
-    VULKAN_SETUP(createIndexBuffer, "createIndexBuffer");
-    VULKAN_SETUP(createUniformBuffers, "createUniformBuffers");
+    VULKAN_SETUP(createTextureImage);
+    VULKAN_SETUP(createTextureImageView);
+    VULKAN_SETUP(createTextureSampler);
+    VULKAN_SETUP(createVertexBuffer);
+    VULKAN_SETUP(createIndexBuffer);
+    VULKAN_SETUP(createUniformBuffers);
 
     PRINT_BOLD_GREEN("Descriptor Pool and Sets Setup");
-    VULKAN_SETUP(createDescriptorPool, "createDescriptorPool");
-    VULKAN_SETUP(createDescriptorSets, "createDescriptorSets");
+    VULKAN_SETUP(createDescriptorPool);
+    VULKAN_SETUP(createDescriptorSets);
 
     PRINT_BOLD_GREEN("Command Buffers and Sync Objects Setup");
-    VULKAN_SETUP(createCommandBuffers, "createCommandBuffers");
-    VULKAN_SETUP(createSyncObjects, "createSyncObjects");
+    VULKAN_SETUP(createCommandBuffers);
+    VULKAN_SETUP(createSyncObjects);
 
     PRINT_BOLD_GREEN("* * * * * * * * * * * * * * * * * *");
     PRINT_BOLD_GREEN("*    Finished setting up Vulkan   *");
