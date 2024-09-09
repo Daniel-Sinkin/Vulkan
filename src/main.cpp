@@ -255,21 +255,28 @@ private:
         PRINT_BOLD_GREEN("* * * * * * * * * * * * * * * * * *");
     }
 
-    void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage &image, VkDeviceMemory &imageMemory) {
+    DEF createImage(
+        uint32_t width,
+        uint32_t height,
+        VkFormat format,
+        VkImageTiling tiling,
+        VkImageUsageFlags usage,
+        VkMemoryPropertyFlags properties,
+        VkImage &image,
+        VkDeviceMemory &imageMemory) -> void {
+
         VkImageCreateInfo imageInfo{
             .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
             .imageType = VK_IMAGE_TYPE_2D,
-            .extent.width = width,
-            .extent.height = height,
-            .extent.depth = 1,
+            .format = format,
+            .extent = {.width = width, .height = height, .depth = 1},
             .mipLevels = 1,
             .arrayLayers = 1,
-            .format = format,
-            .tiling = tiling,
-            .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-            .usage = usage,
             .samples = VK_SAMPLE_COUNT_1_BIT,
-            .sharingMode = VK_SHARING_MODE_EXCLUSIVE};
+            .tiling = tiling,
+            .usage = usage,
+            .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+            .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED};
 
         if (vkCreateImage(m_Device, &imageInfo, nullptr, &image) != VK_SUCCESS) {
             throw std::runtime_error("failed to create image!");
@@ -290,17 +297,17 @@ private:
         vkBindImageMemory(m_Device, image, imageMemory, 0);
     }
 
-    void createTextureImage() {
-        int texWidth, texHeight, texChannels;
+    DEF createTextureImage() -> void {
+        int texWidth = 0;
+        int texHeight = 0;
+        int texChannels = 0;
         stbi_uc *pixels = stbi_load("textures/texture.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
-        VkDeviceSize imageSize = texWidth * texHeight * 4;
+        VkDeviceSize imageSize = static_cast<VkDeviceSize>(texWidth) * texHeight * 4;
 
-        if (!pixels) {
-            throw std::runtime_error("failed to load texture image!");
-        }
+        if (!pixels) throw std::runtime_error("failed to load texture image!");
 
-        VkBuffer stagingBuffer;
-        VkDeviceMemory stagingBufferMemory;
+        VkBuffer stagingBuffer = VK_NULL_HANDLE;
+        VkDeviceMemory stagingBufferMemory = VK_NULL_HANDLE;
         createBuffer(
             imageSize,
             VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
@@ -308,7 +315,7 @@ private:
             stagingBuffer,
             stagingBufferMemory);
 
-        void *data;
+        void *data = nullptr;
         vkMapMemory(m_Device, stagingBufferMemory, 0, imageSize, 0, &data);
         memcpy(data, pixels, static_cast<size_t>(imageSize));
         vkUnmapMemory(m_Device, stagingBufferMemory);
@@ -345,15 +352,15 @@ private:
         vkFreeMemory(m_Device, stagingBufferMemory, nullptr);
     }
 
-    VkCommandBuffer beginSingleTimeCommands() {
+    DEF beginSingleTimeCommands() -> VkCommandBuffer {
         VkCommandBufferAllocateInfo allocInfo{
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-            .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
             .commandPool = m_CommandPool,
+            .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
             .commandBufferCount = 1,
         };
 
-        VkCommandBuffer commandBuffer;
+        VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
         vkAllocateCommandBuffers(m_Device, &allocInfo, &commandBuffer);
 
         VkCommandBufferBeginInfo beginInfo{};
@@ -365,7 +372,7 @@ private:
         return commandBuffer;
     }
 
-    void endSingleTimeCommands(VkCommandBuffer commandBuffer) {
+    DEF endSingleTimeCommands(VkCommandBuffer commandBuffer) -> void {
         vkEndCommandBuffer(commandBuffer);
 
         VkSubmitInfo submitInfo{};
@@ -601,10 +608,7 @@ private:
             .bufferOffset = 0,
             .bufferRowLength = 0,
             .bufferImageHeight = 0,
-            .imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-            .imageSubresource.mipLevel = 0,
-            .imageSubresource.baseArrayLayer = 0,
-            .imageSubresource.layerCount = 1,
+            .imageSubresource = {.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .mipLevel = 0, .baseArrayLayer = 0, .layerCount = 1},
             .imageOffset = {.x = 0, .y = 0, .z = 0},
             .imageExtent = {.width = width, .height = height, .depth = 1}};
 
@@ -644,9 +648,8 @@ private:
             },
         };
 
-        VkPipelineStageFlags sourceStage;
-        VkPipelineStageFlags destinationStage;
-
+        VkPipelineStageFlags sourceStage = 0;
+        VkPipelineStageFlags destinationStage = 0;
         if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
             barrier.srcAccessMask = 0;
             barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -1617,8 +1620,8 @@ private:
         int height = 0;
         glfwGetFramebufferSize(m_Window, &width, &height);
         VkExtent2D actualExtent = {
-            std::clamp(static_cast<uint32_t>(width), capabilities.minImageExtent.width, capabilities.maxImageExtent.width),
-            std::clamp(static_cast<uint32_t>(height), capabilities.minImageExtent.height, capabilities.maxImageExtent.height),
+            .width = std::clamp(static_cast<uint32_t>(width), capabilities.minImageExtent.width, capabilities.maxImageExtent.width),
+            .height = std::clamp(static_cast<uint32_t>(height), capabilities.minImageExtent.height, capabilities.maxImageExtent.height),
         };
 
         return actualExtent;

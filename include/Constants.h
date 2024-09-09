@@ -237,6 +237,7 @@ constexpr VkSurfaceFormatKHR PREFERRED_SURFACE_FORMAT = {
 
 } // namespace Settings
 
+/*
 // clang-format off
 std::string vkResultToString(VkResult result) {
     switch (result) {
@@ -285,5 +286,6 @@ void vkCreationWrapper(const std::string &operationName, VulkanFunction func, Ar
         throw std::runtime_error(ss.str());
     }
 }
+*/
 
 #endif // SETTINGS_H

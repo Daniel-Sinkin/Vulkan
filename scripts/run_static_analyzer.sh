@@ -12,6 +12,9 @@ cppcheck --inconclusive \
          --suppress=missingIncludeSystem \
          --suppress=\*:Users/danielsinkin/VulkanSDK \
          --suppress=\*:opt/homebrew/opt/glfw \
+         --suppress=missingInclude \
+         --suppress=normalCheckLevelMaxBranches \
+         --suppress=checkersReport \
          src/*.cpp
 
 echo "Running clang-tidy"
