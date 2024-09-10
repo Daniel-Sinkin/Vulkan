@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# This is deprecated in favor of the python script named "download_dependencies.py"
+
 # Define the destination folder, URL, file name, and expected MD5 hash
 TEXTURE_FOLDER="textures"
 URL="https://vulkan-tutorial.com/images/texture.jpg"
