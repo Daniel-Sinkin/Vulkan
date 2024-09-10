@@ -62,7 +62,6 @@ private:
     DEF findSupportedFormat(const vector<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features) -> VkFormat;
     DEF createDepthResources() -> void;
     DEF findDepthFormat() -> VkFormat;
-    DEF hasStencilComponent(VkFormat format) -> bool;
     DEF loadModel() -> void;
 
     static DEF getRequiredExtensions() -> vector<const char *>;
@@ -74,6 +73,7 @@ private:
     static DEF checkDeviceExtensionSupport(VkPhysicalDevice device) -> bool;
     static DEF framebufferResizeCallback(GLFWwindow *window, int width, int height) -> void;
     static DEF validateExtensions(const vector<VkExtensionProperties> &supported_extensions, vector<const char *> required_extensions) -> bool;
+    static DEF hasStencilComponent(VkFormat format) -> bool;
 
     GLFWwindow *m_Window;
 

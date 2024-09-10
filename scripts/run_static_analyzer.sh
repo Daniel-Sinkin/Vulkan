@@ -31,8 +31,8 @@ clang_tidy_output=$(clang-tidy -p build src/*.cpp \
                                --extra-arg=-I/opt/homebrew/opt/glfw/include \
                                --extra-arg=-I$VULKAN_SDK/include 2>&1)
 
-# Filter out irrelevant warnings or information messages like "warnings generated"
-clang_tidy_filtered=$(echo "$clang_tidy_output" | grep -v "warnings generated\|Suppressed\|Use -header-filter")
+# Filter out irrelevant warnings or information messages including "Processing file"
+clang_tidy_filtered=$(echo "$clang_tidy_output" | grep -v "warnings generated\|Suppressed\|Use -header-filter\|Processing file")
 
 # Check if any relevant warnings or errors remain after filtering
 if [ -n "$clang_tidy_filtered" ]; then
