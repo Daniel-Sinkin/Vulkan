@@ -3,6 +3,8 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+#define TINYOBJLOADER_IMPLEMENTATION
+#include "tiny_obj_loader.h"
 
 const vector<const char *> validationLayers = {"VK_LAYER_KHRONOS_validation"};
 // VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME is a MacOS specific workaround
@@ -222,6 +224,7 @@ DEF Engine::initVulkan() -> void {
     VULKAN_SETUP(createTextureImage);
     VULKAN_SETUP(createTextureImageView);
     VULKAN_SETUP(createTextureSampler);
+    VULKAN_SETUP(loadModel);
     VULKAN_SETUP(createVertexBuffer);
     VULKAN_SETUP(createIndexBuffer);
     VULKAN_SETUP(createUniformBuffers);
@@ -244,7 +247,51 @@ DEF Engine::initVulkan() -> void {
     fprintf(stdout, "\033[32mTotal Vulkan setup time: %.2f ms\n\033[0m", totalElapsed.count());
 }
 
-DEF hasStencilComponent(VkFormat format) -> bool {
+DEF Engine::loadModel() -> void {
+    tinyobj::attrib_t attrib;
+    vector<tinyobj::shape_t> shapes;
+    vector<tinyobj::material_t> materials;
+    string warn, err;
+
+    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, FilePaths::VIKING_ROOM_MODEL)) {
+        throw std::runtime_error(warn + err);
+    }
+
+    // Hashes vertices so we can avoid loading duplicated vertices
+    unordered_map<Vertex, uint32_t> uniqueVertices{};
+
+    for (const auto &shape : shapes) {
+        for (const auto &index : shape.mesh.indices) {
+            Vertex vertex{};
+
+            vertex.pos = {
+                attrib.vertices[3 * index.vertex_index + 0],
+                attrib.vertices[3 * index.vertex_index + 1],
+                attrib.vertices[3 * index.vertex_index + 2]};
+
+            // Have to flip coordinate because the object uses the OpenGL direction for vertical coordinate
+            vertex.texCoord = {
+                attrib.texcoords[2 * index.texcoord_index + 0],
+                1.0f - attrib.texcoords[2 * index.texcoord_index + 1]};
+
+            vertex.color = {1.0f, 1.0f, 1.0f};
+
+            if (uniqueVertices.count(vertex) == 0) {
+                uniqueVertices[vertex] = static_cast<uint32_t>(m_Vertices.size());
+                m_Vertices.push_back(vertex);
+            }
+
+            m_VertexIndices.push_back(uniqueVertices[vertex]);
+        }
+    }
+    std::cout << "\tNumber of vertices: " << attrib.vertices.size() / 3 << "\n"; // Dividing by 3 as each vertex has x, y, z
+    std::cout << "\tNumber of unique vertices: " << uniqueVertices.size() << "\n";
+    std::cout << "\tNumber of indices: " << m_VertexIndices.size() << "\n";
+    std::cout << "\tNumber of shapes: " << shapes.size() << "\n";
+    std::cout << "\tNumber of materials: " << materials.size() << "\n";
+}
+
+DEF Engine::hasStencilComponent(VkFormat format) -> bool {
     return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 }
 
@@ -389,7 +436,7 @@ DEF Engine::createTextureImage() -> void {
     int texWidth = 0;
     int texHeight = 0;
     int texChannels = 0;
-    stbi_uc *pixels = stbi_load(FilePaths::FACE_TEXTURE, &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+    stbi_uc *pixels = stbi_load(FilePaths::VIKING_ROOM_TEXTURE, &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
     VkDeviceSize imageSize = static_cast<VkDeviceSize>(texWidth) * texHeight * 4;
 
     if (!pixels) throw runtime_error("failed to load texture image!");
@@ -601,7 +648,7 @@ DEF Engine::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties
 }
 
 DEF Engine::createIndexBuffer() -> void {
-    VkDeviceSize bufferSize = sizeof(vertexIndices[0]) * vertexIndices.size();
+    VkDeviceSize bufferSize = sizeof(m_VertexIndices[0]) * m_VertexIndices.size();
 
     VkBuffer stagingBuffer = VK_NULL_HANDLE;
     VkDeviceMemory stagingBufferMemory = VK_NULL_HANDLE;
@@ -614,7 +661,7 @@ DEF Engine::createIndexBuffer() -> void {
 
     void *data = nullptr;
     vkMapMemory(m_Device, stagingBufferMemory, 0, bufferSize, 0, &data);
-    memcpy(data, vertexIndices.data(), (size_t)bufferSize);
+    memcpy(data, m_VertexIndices.data(), (size_t)bufferSize);
     vkUnmapMemory(m_Device, stagingBufferMemory);
 
     createBuffer(
@@ -631,7 +678,7 @@ DEF Engine::createIndexBuffer() -> void {
 }
 
 DEF Engine::createVertexBuffer() -> void {
-    VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+    VkDeviceSize bufferSize = sizeof(m_Vertices[0]) * m_Vertices.size();
 
     VkBuffer stagingBuffer = VK_NULL_HANDLE;
     VkDeviceMemory stagingBufferMemory = VK_NULL_HANDLE;
@@ -644,7 +691,7 @@ DEF Engine::createVertexBuffer() -> void {
 
     void *data = nullptr;
     vkMapMemory(m_Device, stagingBufferMemory, 0, bufferSize, 0, &data);
-    memcpy(data, vertices.data(), static_cast<size_t>(bufferSize));
+    memcpy(data, m_Vertices.data(), static_cast<size_t>(bufferSize));
     vkUnmapMemory(m_Device, stagingBufferMemory);
 
     createBuffer(
@@ -858,10 +905,10 @@ DEF Engine::recordCommandBuffers(VkCommandBuffer commandBuffer, uint32_t imageIn
     array<VkDeviceSize, 1> offsets = {0};
 
     vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers.data(), offsets.data());
-    vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer, 0, VK_INDEX_TYPE_UINT16);
+    vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &m_DescriptorSets[m_CurrentFrameIdx], 0, nullptr);
-    vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(vertexIndices.size()), 1, 0, 0, 0);
+    vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_VertexIndices.size()), 1, 0, 0, 0);
 
     vkCmdEndRenderPass(commandBuffer);
 

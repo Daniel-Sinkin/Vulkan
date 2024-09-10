@@ -10,6 +10,9 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/hash.hpp>
+
 #include <algorithm>
 #include <chrono>
 #include <cstdlib>
@@ -23,6 +26,7 @@
 #include <span>
 #include <stdexcept>
 #include <string_view>
+#include <unordered_map>
 #include <vector>
 
 using glm::mat4;
@@ -38,6 +42,7 @@ using std::runtime_error;
 using std::set;
 using std::string;
 using std::string_view;
+using std::unordered_map;
 using std::vector;
 
 // When using forward declaration we have an auto before the function name, to be able to seperate
@@ -114,9 +119,27 @@ struct Vertex {
                 .format = VK_FORMAT_R32G32_SFLOAT,
                 .offset = static_cast<uint32_t>(offsetof(Vertex, texCoord))}};
     }
+
+    DEF operator==(const Vertex &other) const->bool {
+        return (this->pos == other.pos) && (this->color == other.color) && (this->texCoord == other.texCoord);
+    }
 };
-/* Vertices w/ counter-clockwise winding order (TODO: Update graphic with vertices from book)
-  3: (-0.5, 0.5)     2: (0.5, 0.5)
+namespace std {
+// Implementing our hashing function into the stdlib hash template, for more details see https://en.cppreference.com/w/cpp/utility/hash
+template <>
+struct hash<Vertex> {
+    size_t operator()(Vertex const &vertex) const {
+        size_t pos_hash = hash<glm::vec3>()(vertex.pos);
+        size_t color_hash = hash<glm::vec3>()(vertex.color);
+        size_t texCoord_hash = hash<glm::vec2>()(vertex.texCoord);
+
+        return ((pos_hash ^ (color_hash << 1)) >> 1) ^ (texCoord_hash << 1);
+    }
+};
+} // namespace std
+
+/* Vertices w/ counter-clockwise winding order
+   3                 2
      *-----<<<-----*
      |          __/|
      v       __/   |
@@ -124,10 +147,10 @@ struct Vertex {
      | __/         ^
      |/            |
      *----->>>-----*
-  0: (-0.5, -0.5)    1: (0.5, -0.5)
+   0                 1
 */
 // clang-format off
-const vector<Vertex> vertices = {
+const vector<Vertex> doublePlaneVertices = {
     {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
     {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
     {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
@@ -139,7 +162,7 @@ const vector<Vertex> vertices = {
     {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
 };
 
-const vector<uint16_t> vertexIndices = {
+const vector<uint16_t> doublePlaneIndices = {
     0, 1, 2, 2, 3, 0,
     4, 5, 6, 6, 7, 4
 }; // Make this uint32_t once we get too many vertices
@@ -157,7 +180,7 @@ constexpr const char *SHADER_FRAG = "shaders/compiled/shader.frag.spv";
 
 constexpr const char *FACE_TEXTURE = "assets/textures/texture.jpg";
 constexpr const char *VIKING_ROOM_TEXTURE = "assets/textures/viking_room.png";
-constexpr const char *VIKING_ROOM_MODEL = "assets/resources/viking_room.obj";
+constexpr const char *VIKING_ROOM_MODEL = "assets/models/viking_room.obj";
 } // namespace FilePaths
 
 namespace Util {
@@ -195,7 +218,7 @@ namespace Settings {
 constexpr uint32_t DEFAULT_WINDOW_WIDTH = 800;
 constexpr uint32_t DEFAULT_WINDOW_HEIGHT = 600;
 
-constexpr auto WINDOW_NAME = "Depth Buffering";
+constexpr auto WINDOW_NAME = "Daniel's 3D Engine";
 
 // For example macbooks have integrated graphics cards, so they would be filtered by this, which wouldn't make sense
 constexpr bool ALLOW_DEVICE_WITHOUT_INTEGRATED_GPU = true;

@@ -48,19 +48,14 @@ endif()
 
 # Set flags for different build types
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3")
-
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")  # Optimize for release and disable assertions
 
 # Disable interprocedural optimization for debug builds
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION FALSE)
 endif()
 
-
-# set(CMAKE_CXX_CLANG_TIDY "clang-tidy;-checks=modernize-*")
-
-# Add Clang-specific warning flags
+# Add Clang-specific warning flags and sanitizers only for Debug builds
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     target_compile_options(VulkanEngine PRIVATE
         -Wall                        # Enable all common warnings
@@ -105,6 +100,12 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         # Runtime Sanitizers are VERY slow, this must be removed later on, should be fine for development though
         # Should make those be set only when project-wide DEBUG flag is set
         -fsanitize=address           # Address Sanitizer
-        -fsanitize=undefined         # UB Sanitizer
+            -fsanitize=undefined         # Undefined Behavior Sanitizer
     )
+        target_link_options(VulkanEngine PRIVATE
+            -fsanitize=address
+            -fsanitize=undefined
+        )
+    endif()
 endif()
+

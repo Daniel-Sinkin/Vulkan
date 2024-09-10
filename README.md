@@ -42,7 +42,7 @@
     * [x] Image view and sampler
     * [x] Combined image sampler 
 * [x] Depth Buffering
-* [ ] Loading Models
+* [x] Loading Models
 * [ ] Generating Mipmaps
 * [ ] Multisampling
 * [ ] Compute Shader
@@ -122,18 +122,21 @@ system_profiler
 
 
 # References
-* Libraries Used
-    * Vulkan
-    * GLFW
+* Dependencies
+    * [VulkanSDK](https://www.lunarg.com/vulkan-sdk/)
+        * MacOS on the new Apple Silicon chips does not support Vulkan natively for that we use [MoltenVK](https://github.com/KhronosGroup/MoltenVK) which is included in the SDK
+            * For more detaisl see this the following:
+                * https://developer.apple.com/documentation/apple-silicon/porting-your-macos-apps-to-apple-silicon
+                * https://support.apple.com/en-ca/101525
+    * [GLFW](https://www.glfw.org)
     * [STB Image](https://github.com/nothings/stb)
     * [tinyobjloader](https://github.com/tinyobjloader/tinyobjloader)
-* Apple is Incompatbile with OpenGL and Vulcan
-    * https://developer.apple.com/documentation/apple-silicon/porting-your-macos-apps-to-apple-silicon
-    * List of versions supported by device version.
-        * https://support.apple.com/en-ca/101525
 * Documentation
-    * https://docs.vulkan.org/spec/latest/index.html
-    * https://www.glfw.org/docs/latest/vulkan_guide.html
+    * [CPPReference](https://en.cppreference.com/w/)
+        * [Hash](https://en.cppreference.com/w/cpp/utility/hash)
+    * [Vulkan](https://docs.vulkan.org/spec/latest/index.html)
+    * [GLFW](https://www.glfw.org/docs/latest/vulkan_guide.html)
+        * [Vulkan Integration](https://www.glfw.org/docs/latest/vulkan_guide.html)
 * Educational Resources
     * Books
         * [Physically Based Rendering: From Theory to Implementation](https://www.pbr-book.org)
@@ -171,11 +174,9 @@ system_profiler
 ](https://www.youtube.com/watch?v=wGSSUSeaLgA)
         * [Interactive Computer Graphics](https://www.youtube.com/watch?v=UVCuWQV_-Es&list=PLplnkTzzqsZS3R5DjmCQsqupu43oS9CFN&index=1)
 
-# Appendix A: Screenshots
-* Screenshot Album
-    * https://imgur.com/a/6aMdkmx
-* Videos
-    * https://youtu.be/afF579Obqlw (not in the folder)
-    * https://youtu.be/JDX6OLH_uUA (not in the folder)
-    * https://youtu.be/Sk9cLoi_Vtk
-    * https://youtu.be/5Q_WZqeqGG0
+# Appendix A: YouTube Links to the recorded videos 
+* https://youtu.be/afF579Obqlw (Not in the screencaps folder)
+* https://youtu.be/JDX6OLH_uUA (Not in the screencaps folder)
+* https://youtu.be/Sk9cLoi_Vtk
+* https://youtu.be/5Q_WZqeqGG0
+* https://youtu.be/tLEBiCrzxFk

@@ -63,6 +63,7 @@ private:
     DEF createDepthResources() -> void;
     DEF findDepthFormat() -> VkFormat;
     DEF hasStencilComponent(VkFormat format) -> bool;
+    DEF loadModel() -> void;
 
     static DEF getRequiredExtensions() -> vector<const char *>;
     static DEF checkValidationLayerSupport() -> bool;
@@ -106,6 +107,8 @@ private:
     uint32_t m_CurrentFrameIdx;
     bool m_FramebufferResized;
 
+    std::vector<Vertex> m_Vertices;
+    std::vector<uint32_t> m_VertexIndices;
     VkBuffer m_VertexBuffer;
     VkDeviceMemory m_VertexBufferMemory;
     VkBuffer m_IndexBuffer;
