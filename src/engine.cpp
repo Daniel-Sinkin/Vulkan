@@ -389,7 +389,7 @@ DEF Engine::createTextureImage() -> void {
     int texWidth = 0;
     int texHeight = 0;
     int texChannels = 0;
-    stbi_uc *pixels = stbi_load("textures/texture.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+    stbi_uc *pixels = stbi_load(FilePaths::FACE_TEXTURE, &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
     VkDeviceSize imageSize = static_cast<VkDeviceSize>(texWidth) * texHeight * 4;
 
     if (!pixels) throw runtime_error("failed to load texture image!");

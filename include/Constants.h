@@ -154,6 +154,10 @@ struct UniformBufferObject {
 namespace FilePaths {
 constexpr const char *SHADER_VERT = "shaders/compiled/shader.vert.spv";
 constexpr const char *SHADER_FRAG = "shaders/compiled/shader.frag.spv";
+
+constexpr const char *FACE_TEXTURE = "assets/textures/texture.jpg";
+constexpr const char *VIKING_ROOM_TEXTURE = "assets/textures/viking_room.png";
+constexpr const char *VIKING_ROOM_MODEL = "assets/resources/viking_room.obj";
 } // namespace FilePaths
 
 namespace Util {

@@ -14,35 +14,41 @@ class Data(TypedDict):
     dependencies: dict[str, Dependency]
     assets: dict[str, Dependency]
 
-
-data: Data = {
-    "dependencies": {
-        "stb_image": {
-            "url": "https://raw.githubusercontent.com/nothings/stb/013ac3b/stb_image.h",
-            "expected_md5": "27932e6fb3a2f26aee2fc33f2cb4e696",
-            "local_file": "./external/stb_image.h"
-        },
-        "tiny_obj_loader": {
-            "url": "https://raw.githubusercontent.com/tinyobjloader/tinyobjloader/7b3ba0b/tiny_obj_loader.h",
-            "expected_md5": "3226a14e4a4c3a51ddbfa87bd6240f6b",
-            "local_file": "./external/tiny_obj_loader.h"
-        }
-    },
-    "assets": {
-        "texture": {
-            "url": "https://vulkan-tutorial.com/images/texture.jpg",
-            "expected_md5": "4e60ee5adc9dd77c029faeb96fd113c0",
-            "local_file": "./textures/texture.jpg"
-        }
-    }
-}
-
 EXTERNAL_INCLUDE_DIR = Path("./external")
-TEXTURE_FOLDER = Path("./textures")
+ASSETS_FOLDER = Path("./assets")
+TEXTURE_FOLDER = ASSETS_FOLDER.joinpath("textures")
+MODELS_FOLDER = ASSETS_FOLDER.joinpath("models")
+SCRIPTS_FOLDER = Path("./scripts")
+DATA_FILE = SCRIPTS_FOLDER.joinpath("dependency_data.json")
 
 EXTERNAL_INCLUDE_DIR.mkdir(parents=True, exist_ok=True)
 TEXTURE_FOLDER.mkdir(parents=True, exist_ok=True)
+MODELS_FOLDER.mkdir(parents=True, exist_ok=True)
 
+def load_data_from_json(json_file: Path) -> Data:
+    """
+    Loads the data from a JSON file.
+
+    Args:
+        json_file (Path): Path to the JSON file containing the data.
+
+    Returns:
+        Data: Parsed data from the JSON file.
+    """
+    with json_file.open("r") as f:
+        data = json.load(f)
+    return cast(Data, data)
+
+def save_data_to_json(data: Data, json_file: Path) -> None:
+    """
+    Saves the data to a JSON file.
+
+    Args:
+        data (Data): Data to save.
+        json_file (Path): Path to the JSON file.
+    """
+    with json_file.open("w") as f:
+        json.dump(data, f, indent=4)
 
 def calculate_md5(file_path: Path) -> str:
     """
@@ -84,23 +90,27 @@ def download_file(url: str, local_file: Path) -> bool:
         return False
 
 
-def download_and_verify(file_info: dict[str, str]) -> None:
+def download_and_verify(file_info: dict[str, str], data: Data, file_key: str, section: str) -> None:
     """
     Downloads a file and verifies its MD5 hash. If the file already exists and 
     matches the expected hash, no download is performed. If the hash does not match,
-    the file is re-downloaded.
+    the file is re-downloaded. If the expected MD5 is missing, it computes the hash 
+    after download and writes it back to the JSON file.
 
     Args:
         file_info (dict[str, str]): A dictionary containing file metadata, including:
             - "url": The URL to download the file from.
             - "expected_md5": The expected MD5 hash of the file.
             - "local_file": The local path to save the downloaded file.
+        data (Data): The full data structure to update the JSON file.
+        file_key (str): The key of the current file in the data dictionary.
+        section (str): The section ("dependencies" or "assets") where the file is located.
     """
     url = file_info["url"]
     local_file = Path(file_info["local_file"])
-    expected_md5 = file_info["expected_md5"]
+    expected_md5 = file_info.get("expected_md5")
 
-    if local_file.exists():
+    if local_file.exists() and expected_md5:
         local_md5 = calculate_md5(local_file)
         if local_md5 == expected_md5:
             print(f"\t\t{local_file.name} is already downloaded and the MD5 hash matches.")
@@ -111,11 +121,18 @@ def download_and_verify(file_info: dict[str, str]) -> None:
 
     if download_file(url, local_file):
         local_md5 = calculate_md5(local_file)
-        if local_md5 == expected_md5:
-            print(f"\t\t{local_file.name} downloaded and verified successfully.")
+        if expected_md5:
+            if local_md5 == expected_md5:
+                print(f"\t\t{local_file.name} downloaded and verified successfully.")
+            else:
+                print(f"\t\tMD5 hash mismatch after downloading {local_file.name}. Exiting.")
+                exit(1)
         else:
-            print(f"\t\tMD5 hash mismatch after downloading {local_file.name}. Exiting.")
-            exit(1)
+            # If the MD5 hash was missing in the JSON, update the file and save the data
+            print(f"\t\tMD5 hash for {local_file.name} is missing in the JSON. Calculating and saving it...")
+            data[section][file_key]["expected_md5"] = local_md5
+            save_data_to_json(data, DATA_FILE)
+            print(f"\t\tMD5 hash for {local_file.name} computed and saved to {DATA_FILE}.")
     else:
         print(f"\t\tFailed to download {local_file.name}. Exiting.")
         exit(1)
@@ -126,14 +143,22 @@ def main() -> None:
     Main function that orchestrates the downloading and verifying of dependencies
     and assets as specified in the JSON-encoded data.
     """
+    if not DATA_FILE.exists():
+        print(f"Data file {DATA_FILE} not found. Exiting.")
+        exit(1)
+
+    # Load data from JSON file
+    data = load_data_from_json(DATA_FILE)
+    
     print("Starting to download missing dependencies and assets.")
     print("\tDependencies")
     for file_key, file_info in data["dependencies"].items():
-        download_and_verify(file_info)
+        download_and_verify(file_info, data, file_key, "dependencies")
 
     print("\tAssets")
     for asset_key, asset_info in data["assets"].items():
-        download_and_verify(asset_info)
+        download_and_verify(asset_info, data, asset_key, "assets")
+    
     print("Finished all downloads.")
 
 

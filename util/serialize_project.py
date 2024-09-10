@@ -1,6 +1,9 @@
 import subprocess
 from pathlib import Path
 
+# This is an internal dev tool I use to quickly query LLMs about the project, the requirements.txt
+# does NOT cover the requirements for this script.
+
 import pyperclip
 import tiktoken
 
