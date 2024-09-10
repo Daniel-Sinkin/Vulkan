@@ -157,6 +157,8 @@ system_profiler
         * [A trip through the Graphics Pipeline 2011: Index](https://fgiesen.wordpress.com/2011/07/09/a-trip-through-the-graphics-pipeline-2011-index/)
         * [Learning Modern 3D Graphics Programming](https://paroj.github.io/gltut/)
         * [Intel: API without secrets: Introduction to Vulkan](https://www.intel.com/content/www/us/en/developer/articles/training/api-without-secrets-introduction-to-vulkan-part-1.html)
+        * [Writing an efficient Vulkan renderer](https://zeux.io/2020/02/27/writing-an-efficient-vulkan-renderer/)
+        * [https://edw.is/learning-vulkan/](https://edw.is/learning-vulkan/)
     * Tutorials
         * [Vulkan Tutorial](https://vulkan-tutorial.com)
         * [Learn OpenGL](https://learnopengl.com)
