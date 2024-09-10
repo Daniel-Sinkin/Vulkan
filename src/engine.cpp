@@ -1547,7 +1547,9 @@ DEF Engine::updateUniformBuffer(uint32_t currentImage) -> void {
         .proj = glm::perspective(PI_QUARTER,
             static_cast<float>(m_SwapChainExtent.width) / static_cast<float>(m_SwapChainExtent.height),
             Settings::CLIPPING_PLANE_NEAR,
-            Settings::CLIPPING_PLANE_FAR)};
+            Settings::CLIPPING_PLANE_FAR),
+        .time = delta_time,
+        ._ = vec3(0.0f, 0.0f, 0.0f)};
 
     // GLM uses OpenGL convention, this fixes that
     ubo.proj[1][1] *= -1;

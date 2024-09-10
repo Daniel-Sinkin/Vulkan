@@ -172,6 +172,8 @@ struct UniformBufferObject {
     mat4 model;
     mat4 view;
     mat4 proj;
+    float time;
+    vec3 _; // Alignment padding
 };
 
 namespace FilePaths {
@@ -181,6 +183,11 @@ constexpr const char *SHADER_FRAG = "shaders/compiled/shader.frag.spv";
 constexpr const char *FACE_TEXTURE = "assets/textures/texture.jpg";
 constexpr const char *VIKING_ROOM_TEXTURE = "assets/textures/viking_room.png";
 constexpr const char *VIKING_ROOM_MODEL = "assets/models/viking_room.obj";
+
+// Nicole model source can be found in the credits in README, FBX importing
+// is not (yet?) implemented so I had to convert .obj manually, but will not
+// a fbx->obj conversion script (for now?).
+constexpr const char *NICOLE_MODEL = "assets/models/Nicole.obj";
 } // namespace FilePaths
 
 namespace Util {
@@ -215,8 +222,8 @@ static DEF readFile(const string &filename) -> vector<char> {
 } // namespace Util
 
 namespace Settings {
-constexpr uint32_t DEFAULT_WINDOW_WIDTH = 800;
-constexpr uint32_t DEFAULT_WINDOW_HEIGHT = 600;
+constexpr uint32_t DEFAULT_WINDOW_WIDTH = 5000;
+constexpr uint32_t DEFAULT_WINDOW_HEIGHT = 2500;
 
 constexpr auto WINDOW_NAME = "Daniel's 3D Engine";
 
@@ -226,8 +233,8 @@ constexpr bool ALLOW_DEVICE_WITHOUT_GEOMETRY_SHADER = true;
 
 constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 
-constexpr vec3 CAMERA_EYE(2.0f, 2.0f, 2.0f);
-constexpr vec3 CAMERA_CENTER(0.0f, 0.0f, 0.0f);
+constexpr vec3 CAMERA_EYE(2.0f, 4.0f, 2.0f);
+constexpr vec3 CAMERA_CENTER(0.0f, 0.0f, 0.5f);
 constexpr vec3 CAMERA_UP(0.0f, 0.0f, 1.0f);
 
 constexpr float CLIPPING_PLANE_NEAR = 0.1f;
