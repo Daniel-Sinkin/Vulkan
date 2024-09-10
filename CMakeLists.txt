@@ -29,7 +29,7 @@ set(SOURCES
 )
 
 include_directories(include)
-include_directories(external)
+include_directories(SYSTEM external) # Suppresses warnings from external libraries
 
 # Add the executable target
 add_executable(VulkanEngine ${SOURCES})
