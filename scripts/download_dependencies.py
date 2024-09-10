@@ -3,16 +3,19 @@ import json
 import hashlib
 import requests
 from pathlib import Path
-from typing import Dict
+from typing import cast, TypedDict
 
-"""
-Module for downloading and verifying external dependencies and assets by checking 
-their MD5 hashes. The script ensures that necessary files are downloaded, stored 
-locally, and verified against their expected hash values.
-"""
+class Dependency(TypedDict):
+    url: str
+    expected_md5: str
+    local_file: str
 
-dependancy_json_encoding = """
-{
+class Data(TypedDict):
+    dependencies: dict[str, Dependency]
+    assets: dict[str, Dependency]
+
+
+data: Data = {
     "dependencies": {
         "stb_image": {
             "url": "https://raw.githubusercontent.com/nothings/stb/013ac3b/stb_image.h",
@@ -33,9 +36,6 @@ dependancy_json_encoding = """
         }
     }
 }
-"""
-
-data = json.loads(dependancy_json_encoding)
 
 EXTERNAL_INCLUDE_DIR = Path("./external")
 TEXTURE_FOLDER = Path("./textures")
@@ -84,14 +84,14 @@ def download_file(url: str, local_file: Path) -> bool:
         return False
 
 
-def download_and_verify(file_info: Dict[str, str]) -> None:
+def download_and_verify(file_info: dict[str, str]) -> None:
     """
     Downloads a file and verifies its MD5 hash. If the file already exists and 
     matches the expected hash, no download is performed. If the hash does not match,
     the file is re-downloaded.
 
     Args:
-        file_info (Dict[str, str]): A dictionary containing file metadata, including:
+        file_info (dict[str, str]): A dictionary containing file metadata, including:
             - "url": The URL to download the file from.
             - "expected_md5": The expected MD5 hash of the file.
             - "local_file": The local path to save the downloaded file.

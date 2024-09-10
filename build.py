@@ -19,11 +19,8 @@ def main(build_type="Debug"):
     script_dir = Path(__file__).parent.resolve()
     os.chdir(script_dir)
 
-    # Call the download dependencies script
-    run_command("./scripts/download_dependencies.sh")
-
-    # Call the download assets script (for textures)
-    run_command("./scripts/download_assets.sh")
+    # Call the download dependencies Python script
+    run_command("python3 scripts/download_dependencies.py")
 
     # Compile shaders
     run_command("./scripts/compile_shaders.sh")
