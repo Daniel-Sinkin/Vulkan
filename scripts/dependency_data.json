@@ -1,0 +1,36 @@
+{
+    "dependencies": {
+        "stb_image": {
+            "url": "https://raw.githubusercontent.com/nothings/stb/013ac3b/stb_image.h",
+            "expected_md5": "27932e6fb3a2f26aee2fc33f2cb4e696",
+            "local_file": "./external/stb_image.h"
+        },
+        "stb_image_write": {
+            "url": "https://raw.githubusercontent.com/nothings/stb/013ac3b/stb_image_write.h",
+            "expected_md5": "845b8b43d7d941890a57a477455558ad",
+            "local_file": "./external/stb_image_write.h"
+        },
+        "tiny_obj_loader": {
+            "url": "https://raw.githubusercontent.com/tinyobjloader/tinyobjloader/7b3ba0b/tiny_obj_loader.h",
+            "expected_md5": "3226a14e4a4c3a51ddbfa87bd6240f6b",
+            "local_file": "./external/tiny_obj_loader.h"
+        }
+    },
+    "assets": {
+        "face_texture": {
+            "url": "https://vulkan-tutorial.com/images/texture.jpg",
+            "expected_md5": "4e60ee5adc9dd77c029faeb96fd113c0",
+            "local_file": "./assets/textures/face_texture.jpg"
+        },
+        "viking_room_texture": {
+            "url": "https://vulkan-tutorial.com/resources/viking_room.png",
+            "expected_md5": "b49c367a4382ce12cbaf830fdb5cf674",
+            "local_file": "./assets/textures/viking_room.png"
+        },
+        "viking_room_model": {
+            "url": "https://vulkan-tutorial.com/resources/viking_room.obj",
+            "expected_md5": "7fc033abddca127409a879ce024313dd",
+            "local_file": "./assets/models/viking_room.obj"
+        }
+    }
+}
