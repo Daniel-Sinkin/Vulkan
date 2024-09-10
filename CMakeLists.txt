@@ -96,12 +96,8 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         -Wunsafe-loop-optimizations  # Warn about unsafe loop optimizations
         -Wvla-larger-than=1024       # Warn when a VLA is larger than 1024 bytes
         -Weffc++                     # Enable Scott Meyers' Effective C++ warnings
-        
-        # Runtime Sanitizers are VERY slow, this must be removed later on, should be fine for development though
-        # Should make those be set only when project-wide DEBUG flag is set
-        -fsanitize=address           # Address Sanitizer
-            -fsanitize=undefined         # Undefined Behavior Sanitizer
     )
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
         target_link_options(VulkanEngine PRIVATE
             -fsanitize=address
             -fsanitize=undefined
