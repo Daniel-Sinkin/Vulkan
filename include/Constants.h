@@ -183,6 +183,8 @@ constexpr const char *SHADER_FRAG = "shaders/compiled/shader.frag.spv";
 constexpr const char *FACE_TEXTURE = "assets/textures/texture.jpg";
 constexpr const char *VIKING_ROOM_TEXTURE = "assets/textures/viking_room.png";
 constexpr const char *VIKING_ROOM_MODEL = "assets/models/viking_room.obj";
+constexpr const char *CHALET_TEXTURE = "assets/textures/chalet.jpg";
+constexpr const char *CHALET_MODEL = "assets/models/chalet.obj";
 
 // Nicole model source can be found in the credits in README, FBX importing
 // is not (yet?) implemented so I had to convert .obj manually, but will not
