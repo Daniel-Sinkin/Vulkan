@@ -82,18 +82,25 @@ Engine::Engine()
       m_DepthImageMemory(VK_NULL_HANDLE),
       m_DepthImageView(VK_NULL_HANDLE) {}
 
-DEF Engine::run() -> void {
-    fprintf(stdout, "Initializing Vulkan application.\n");
+Engine::~Engine() {
+    fprintf(stdout, "Engine destructor has been called, waiting for the device to idle.\n");
+    vkDeviceWaitIdle(m_Device);
+    fprintf(stdout, "Finished waiting.\n");
+
+    fprintf(stdout, "Starting Engine Cleanup\n");
+    cleanup();
+    fprintf(stdout, "Finished Engine Cleanup\n");
+}
+
+DEF Engine::initialize() -> void {
+    fprintf(stdout, "Initializing Engine application.\n");
+    fprintf(stdout, "Initializing GLFW.\n");
     initWindow();
+    fprintf(stdout, "Initializing Engine application.\n");
     initVulkan();
 
     fprintf(stdout, "\nFinished Initializing Vulkan application.\n");
     std::cout << std::flush;
-
-    mainLoop();
-    cleanup();
-
-    fprintf(stdout, "Reached the end of the Vulkan application.\n");
 }
 
 DEF Engine::initWindow() -> void {
@@ -136,6 +143,10 @@ DEF Engine::validateExtensions(const vector<VkExtensionProperties> &supported_ex
                     return string_view(supported_extension.extensionName) == required_extension_view;
                 });
         });
+}
+
+DEF Engine::getWindow() -> GLFWwindow * {
+    return m_Window;
 }
 
 DEF Engine::createInstance() -> void {
@@ -960,17 +971,37 @@ DEF Engine::transitionImageLayout(
     VkPipelineStageFlags sourceStage = 0;
     VkPipelineStageFlags destinationStage = 0;
     if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
-        barrier.srcAccessMask = 0;
-        barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        // Transition from an undefined layout to a layout that allows for writing by transfer operations
+        barrier.srcAccessMask = 0;                            // No need to wait for anything
+        barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT; // The image will be written to
 
         sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
         destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+
     } else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
-        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        // Transition from a transfer destination layout to a shader-readable layout
+        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT; // Must wait for the transfer to complete
+        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;    // The image will be read by the shader
 
         sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
         destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+
+    } else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) {
+        // Transition from transfer source to presentation layout
+        barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT; // Must wait for transfer reads to complete
+        barrier.dstAccessMask = 0;                           // No need for further synchronization before presenting
+
+        sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        destinationStage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+
+    } else if (oldLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR && newLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL) {
+        // Transition from presentation layout to transfer source layout
+        barrier.srcAccessMask = 0;                           // No need to wait for anything before transitioning
+        barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT; // The image will be read as a source for transfer
+
+        sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+
     } else {
         throw std::invalid_argument("unsupported layout transition!");
     }
@@ -1355,6 +1386,7 @@ DEF Engine::createSwapChain() -> void {
     SwapChainSupportDetails swapChainSupport = querySwapChainSupport(m_PhysicalDevice);
 
     VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
+
     VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
     VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities);
 
@@ -1373,7 +1405,7 @@ DEF Engine::createSwapChain() -> void {
         .imageColorSpace = surfaceFormat.colorSpace,
         .imageExtent = extent,
         .imageArrayLayers = 1,
-        .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+        .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
         .preTransform = swapChainSupport.capabilities.currentTransform,
         .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
         .presentMode = presentMode,
@@ -1634,16 +1666,16 @@ DEF Engine::findQueueFamilies(VkPhysicalDevice device) -> QueueFamilyIndices {
     return indices;
 }
 
+DEF Engine::runIteration() -> void {
+    glfwPollEvents();
+    drawFrame();
+}
+
 DEF Engine::mainLoop() -> void {
     fprintf(stdout, "Starting the main loop.\n");
     while (!glfwWindowShouldClose(m_Window)) {
-        glfwPollEvents();
-        drawFrame();
+        runIteration();
     }
-
-    fprintf(stdout, "Finished mainLoop, waiting for the device to idle.\n");
-    vkDeviceWaitIdle(m_Device);
-    fprintf(stdout, "Finished waiting.\n");
 }
 
 DEF Engine::drawFrame() -> void {
@@ -1689,6 +1721,8 @@ DEF Engine::drawFrame() -> void {
         throw runtime_error("failed to submit draw command buffer!");
     }
 
+    pushFramebufferToCpu(imageIndex);
+
     array<VkSwapchainKHR, 1> swapChains = {m_SwapChain};
     VkPresentInfoKHR presentInfo{
         .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
@@ -1709,6 +1743,86 @@ DEF Engine::drawFrame() -> void {
     }
 
     m_CurrentFrameIdx = (m_CurrentFrameIdx + 1) % Settings::MAX_FRAMES_IN_FLIGHT;
+}
+
+DEF Engine::pushFramebufferToCpu(uint32_t imageIndex) -> void {
+    VkBuffer stagingBuffer;
+    VkDeviceMemory stagingBufferMemory;
+
+    VkDeviceSize imageSize = m_SwapChainExtent.width * m_SwapChainExtent.height * 4;
+
+    VkImage image = m_SwapChainImages[imageIndex];
+
+    createBuffer(
+        imageSize,
+        VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        stagingBuffer,
+        stagingBufferMemory);
+
+    transitionImageLayout(
+        image,
+        m_SwapChainImageFormat,
+        VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        1);
+
+    VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+
+    VkBufferImageCopy region = {
+        .bufferOffset = 0,
+        .bufferRowLength = 0,
+        .bufferImageHeight = 0,
+        .imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+        .imageSubresource.mipLevel = 0,
+        .imageSubresource.baseArrayLayer = 0,
+        .imageSubresource.layerCount = 1,
+        .imageOffset = {0, 0, 0},
+        .imageExtent = {
+            m_SwapChainExtent.width,
+            m_SwapChainExtent.height,
+            1},
+    };
+
+    vkCmdCopyImageToBuffer(
+        commandBuffer,
+        image,
+        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        stagingBuffer,
+        1,
+        &region);
+
+    vkCmdCopyImageToBuffer(commandBuffer,
+        image,
+        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        stagingBuffer,
+        1,
+        &region);
+
+    endSingleTimeCommands(commandBuffer);
+
+    transitionImageLayout(
+        image,
+        m_SwapChainImageFormat,
+        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+        1);
+
+    void *data;
+    vkMapMemory(m_Device, stagingBufferMemory, 0, imageSize, 0, &data);
+
+    std::ofstream file("framebuffer.bin", std::ios::out | std::ios::binary);
+    if (file.is_open()) {
+        file.write(static_cast<char *>(data), imageSize);
+        file.close();
+        std::cout << "Framebuffer data saved to framebuffer.bin\n";
+    } else {
+        std::cerr << "Failed to open file for writing framebuffer data\n";
+    }
+
+    vkUnmapMemory(m_Device, stagingBufferMemory);
+    vkDestroyBuffer(m_Device, stagingBuffer, nullptr);
+    vkFreeMemory(m_Device, stagingBufferMemory, nullptr);
 }
 
 DEF Engine::updateUniformBuffer(uint32_t currentImage) -> void {

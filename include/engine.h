@@ -9,15 +9,21 @@ DEF DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT 
 class Engine {
 public:
     Engine();
+    ~Engine();
 
-    DEF run() -> void;
+    DEF initialize() -> void;
+    DEF runIteration() -> void;
+    DEF mainLoop() -> void;
+
+    DEF getWindow() -> GLFWwindow *;
 
 private:
     DEF initWindow() -> void;
     DEF initVulkan() -> void;
-    DEF mainLoop() -> void;
     DEF cleanup() -> void;
 
+    DEF pushFramebufferToCpu(uint32_t imageIndex) -> void;
+    DEF drawFrame() -> void;
     DEF createInstance() -> void;
     DEF setupDebugMessenger() -> void;
     DEF createSurface() -> void;
@@ -51,7 +57,6 @@ private:
     DEF transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels) -> void;
     DEF recreateSwapChain() -> void;
     DEF cleanupSwapChain() -> void;
-    DEF drawFrame() -> void;
     DEF updateUniformBuffer(uint32_t currentImage) -> void;
     DEF beginSingleTimeCommands() -> VkCommandBuffer;
     DEF endSingleTimeCommands(VkCommandBuffer commandBuffer) -> void;
