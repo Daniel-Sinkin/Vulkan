@@ -39,6 +39,7 @@ private:
     DEF createUniformBuffers() -> void;
     DEF createDescriptorPool() -> void;
     DEF createDescriptorSets() -> void;
+    DEF generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels) -> void;
     DEF createTextureImage() -> void;
     DEF createTextureImageView() -> void;
     DEF createTextureSampler() -> void;
@@ -46,15 +47,15 @@ private:
     DEF createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer, VkDeviceMemory &bufferMemory) -> void;
     DEF copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) -> void;
     DEF copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) -> void;
-    DEF transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) -> void;
+    DEF transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels) -> void;
     DEF recreateSwapChain() -> void;
     DEF cleanupSwapChain() -> void;
     DEF drawFrame() -> void;
     DEF updateUniformBuffer(uint32_t currentImage) -> void;
     DEF beginSingleTimeCommands() -> VkCommandBuffer;
     DEF endSingleTimeCommands(VkCommandBuffer commandBuffer) -> void;
-    DEF createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags) -> VkImageView;
-    DEF createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage &image, VkDeviceMemory &imageMemory) -> void;
+    DEF createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels) -> VkImageView;
+    DEF createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage &image, VkDeviceMemory &imageMemory) -> void;
     DEF createShaderModule(const vector<char> &code) -> VkShaderModule;
     DEF findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) -> uint32_t;
     DEF chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities) -> VkExtent2D;
@@ -121,6 +122,7 @@ private:
     VkDescriptorPool m_DescriptorPool;
     vector<VkDescriptorSet> m_DescriptorSets;
 
+    uint32_t m_MipLevels;
     VkImage m_TextureImage;
     VkDeviceMemory m_TextureImageMemory;
     VkImageView m_TextureImageView;
