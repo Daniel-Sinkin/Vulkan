@@ -73,6 +73,7 @@ Engine::Engine()
       m_TextureImageMemory(VK_NULL_HANDLE),
       m_TextureImageView(VK_NULL_HANDLE),
       m_TextureSampler(VK_NULL_HANDLE),
+      m_MSAASamples(VK_SAMPLE_COUNT_1_BIT),
       m_DepthImage(VK_NULL_HANDLE),
       m_DepthImageMemory(VK_NULL_HANDLE),
       m_DepthImageView(VK_NULL_HANDLE) {}
@@ -218,6 +219,7 @@ DEF Engine::initVulkan() -> void {
     VULKAN_SETUP(createGraphicsPipeline);
 
     VULKAN_SETUP(createCommandPool);
+    VULKAN_SETUP(createColorResources);
     VULKAN_SETUP(createDepthResources);
 
     VULKAN_SETUP(createFramebuffers);
@@ -329,6 +331,7 @@ DEF Engine::createDepthResources() -> void {
         m_SwapChainExtent.width,
         m_SwapChainExtent.height,
         1,
+        m_MSAASamples,
         depthFormat,
         VK_IMAGE_TILING_OPTIMAL,
         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
@@ -336,6 +339,23 @@ DEF Engine::createDepthResources() -> void {
         m_DepthImage,
         m_DepthImageMemory);
     m_DepthImageView = createImageView(m_DepthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
+}
+
+DEF Engine::createColorResources() -> void {
+    VkFormat colorFormat = m_SwapChainImageFormat;
+
+    createImage(
+        m_SwapChainExtent.width,
+        m_SwapChainExtent.height,
+        1,
+        m_MSAASamples,
+        colorFormat,
+        VK_IMAGE_TILING_OPTIMAL,
+        VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        m_ColorImage,
+        m_ColorImageMemory);
+    m_ColorImageView = createImageView(m_ColorImage, colorFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
 }
 
 DEF Engine::createTextureSampler() -> void {
@@ -369,6 +389,7 @@ DEF Engine::createImage(
     uint32_t width,
     uint32_t height,
     uint32_t mipLevels,
+    VkSampleCountFlagBits numSamples,
     VkFormat format,
     VkImageTiling tiling,
     VkImageUsageFlags usage,
@@ -383,7 +404,7 @@ DEF Engine::createImage(
         .extent = {.width = width, .height = height, .depth = 1},
         .mipLevels = mipLevels,
         .arrayLayers = 1,
-        .samples = VK_SAMPLE_COUNT_1_BIT,
+        .samples = numSamples,
         .tiling = tiling,
         .usage = usage,
         .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
@@ -465,6 +486,7 @@ DEF Engine::createTextureImage() -> void {
         texWidth,
         texHeight,
         m_MipLevels,
+        VK_SAMPLE_COUNT_1_BIT,
         VK_FORMAT_R8G8B8A8_SRGB,
         VK_IMAGE_TILING_OPTIMAL,
         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
@@ -483,10 +505,10 @@ DEF Engine::createTextureImage() -> void {
         static_cast<uint32_t>(texWidth),
         static_cast<uint32_t>(texHeight));
 
-    generateMipmaps(m_TextureImage, VK_FORMAT_R8G8B8A8_SRGB, texWidth, texHeight, m_MipLevels);
-
     vkDestroyBuffer(m_Device, stagingBuffer, nullptr);
     vkFreeMemory(m_Device, stagingBufferMemory, nullptr);
+
+    generateMipmaps(m_TextureImage, VK_FORMAT_R8G8B8A8_SRGB, texWidth, texHeight, m_MipLevels);
 }
 
 DEF Engine::generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels) -> void {
@@ -574,6 +596,21 @@ DEF Engine::generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidt
         1, &barrier);
 
     endSingleTimeCommands(commandBuffer);
+}
+
+DEF Engine::getMaxUsableSampleCount() -> VkSampleCountFlagBits {
+    VkPhysicalDeviceProperties physicalDeviceProperties;
+    vkGetPhysicalDeviceProperties(m_PhysicalDevice, &physicalDeviceProperties);
+
+    VkSampleCountFlags counts = physicalDeviceProperties.limits.framebufferColorSampleCounts & physicalDeviceProperties.limits.framebufferDepthSampleCounts;
+    if (counts & VK_SAMPLE_COUNT_64_BIT) return VK_SAMPLE_COUNT_64_BIT;
+    if (counts & VK_SAMPLE_COUNT_32_BIT) return VK_SAMPLE_COUNT_32_BIT;
+    if (counts & VK_SAMPLE_COUNT_16_BIT) return VK_SAMPLE_COUNT_16_BIT;
+    if (counts & VK_SAMPLE_COUNT_8_BIT) return VK_SAMPLE_COUNT_8_BIT;
+    if (counts & VK_SAMPLE_COUNT_4_BIT) return VK_SAMPLE_COUNT_4_BIT;
+    if (counts & VK_SAMPLE_COUNT_2_BIT) return VK_SAMPLE_COUNT_2_BIT;
+
+    return VK_SAMPLE_COUNT_1_BIT;
 }
 
 DEF Engine::beginSingleTimeCommands() -> VkCommandBuffer {
@@ -1027,7 +1064,7 @@ DEF Engine::createFramebuffers() -> void {
     m_SwapChainFramebuffers.resize(m_SwapChainImageViews.size());
     for (size_t i = 0; i < m_SwapChainImageViews.size(); i++) {
         fprintf(stdout, "\t%zu. Framebuffers.\n", i + 1);
-        array<VkImageView, 2> attachments = {m_SwapChainImageViews[i], m_DepthImageView};
+        array<VkImageView, 3> attachments = {m_ColorImageView, m_DepthImageView, m_SwapChainImageViews[i]};
 
         VkFramebufferCreateInfo framebufferInfo{
             .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
@@ -1047,21 +1084,35 @@ DEF Engine::createFramebuffers() -> void {
 DEF Engine::createRenderPass() -> void {
     VkAttachmentDescription colorAttachment{
         .format = m_SwapChainImageFormat,
-        .samples = VK_SAMPLE_COUNT_1_BIT,
+        .samples = m_MSAASamples,
         .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+        .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+        .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+        .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+        .finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+
+    VkAttachmentReference colorAttachmentRef{
+        .attachment = 0,
+        .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+
+    VkAttachmentDescription colorAttachmentResolve{
+        .format = m_SwapChainImageFormat,
+        .samples = VK_SAMPLE_COUNT_1_BIT,
+        .loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
         .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
         .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
         .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
         .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
         .finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR};
 
-    VkAttachmentReference colorAttachmentRef{
-        .attachment = 0,
+    VkAttachmentReference colorAttachmentResolveRef{
+        .attachment = 2,
         .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
 
     VkAttachmentDescription depthAttachment{
         .format = findDepthFormat(),
-        .samples = VK_SAMPLE_COUNT_1_BIT,
+        .samples = m_MSAASamples,
         .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
         .storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
         .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
@@ -1076,8 +1127,9 @@ DEF Engine::createRenderPass() -> void {
     VkSubpassDescription subpass{
         .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
         .colorAttachmentCount = 1,
-        .pColorAttachments = &colorAttachmentRef,
-        .pDepthStencilAttachment = &depthAttachmentRef};
+        .pColorAttachments = &colorAttachmentResolveRef,
+        .pDepthStencilAttachment = &depthAttachmentRef,
+        .pResolveAttachments = &colorAttachmentResolveRef};
 
     VkSubpassDependency dependency{
         .srcSubpass = VK_SUBPASS_EXTERNAL,
@@ -1087,7 +1139,7 @@ DEF Engine::createRenderPass() -> void {
         .srcAccessMask = 0,
         .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT};
 
-    array<VkAttachmentDescription, 2> attachments = {colorAttachment, depthAttachment};
+    array<VkAttachmentDescription, 3> attachments = {colorAttachment, depthAttachment, colorAttachmentResolve};
     VkRenderPassCreateInfo renderPassInfo{
         .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
         .attachmentCount = static_cast<uint32_t>(attachments.size()),
@@ -1184,12 +1236,14 @@ DEF Engine::createGraphicsPipeline() -> void {
     fprintf(stdout, "\tInitializing Multisampling.\n");
     VkPipelineMultisampleStateCreateInfo multisampling{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
-        .rasterizationSamples = VK_SAMPLE_COUNT_1_BIT,
-        .sampleShadingEnable = VK_FALSE,
+        .rasterizationSamples = m_MSAASamples,
+        .sampleShadingEnable = VK_FALSE};
+    /*
         .minSampleShading = 1.0f,
         .pSampleMask = nullptr,
         .alphaToCoverageEnable = VK_FALSE,
-        .alphaToOneEnable = VK_FALSE};
+        .alphaToOneEnable = VK_FALSE
+    */
 
     fprintf(stdout, "\tInitializing Color Blending.\n");
     VkPipelineColorBlendAttachmentState colorBlendAttachment{
@@ -1333,6 +1387,10 @@ DEF Engine::createSwapChain() -> void {
 }
 
 DEF Engine::cleanupSwapChain() -> void {
+    vkDestroyImageView(m_Device, m_ColorImageView, nullptr);
+    vkDestroyImage(m_Device, m_ColorImage, nullptr);
+    vkFreeMemory(m_Device, m_ColorImageMemory, nullptr);
+
     vkDestroyImageView(m_Device, m_DepthImageView, nullptr);
     vkDestroyImage(m_Device, m_DepthImage, nullptr);
     vkFreeMemory(m_Device, m_DepthImageMemory, nullptr);
@@ -1362,6 +1420,7 @@ DEF Engine::recreateSwapChain() -> void {
 
     createSwapChain();
     createImageViews();
+    createColorResources();
     createDepthResources();
     createFramebuffers();
 }
@@ -1440,6 +1499,7 @@ DEF Engine::pickPhysicalDevice() -> void {
     if (found == devices.end()) throw runtime_error("failed to find a suitable GPU!");
 
     m_PhysicalDevice = *found;
+    m_MSAASamples = getMaxUsableSampleCount();
 }
 
 DEF Engine::isDeviceSuitable(VkPhysicalDevice device) -> bool {

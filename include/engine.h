@@ -27,7 +27,6 @@ private:
     DEF querySwapChainSupport(VkPhysicalDevice device) -> SwapChainSupportDetails;
     DEF createLogicalDevice() -> void;
     DEF createSwapChain() -> void;
-    DEF createImageViews() -> void;
     DEF createRenderPass() -> void;
     DEF createDescriptorSetLayout() -> void;
     DEF createGraphicsPipeline() -> void;
@@ -43,6 +42,8 @@ private:
     DEF createTextureImage() -> void;
     DEF createTextureImageView() -> void;
     DEF createTextureSampler() -> void;
+    DEF createColorResources() -> void;
+    DEF getMaxUsableSampleCount() -> VkSampleCountFlagBits;
     DEF createCommandBuffers() -> void;
     DEF createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer, VkDeviceMemory &bufferMemory) -> void;
     DEF copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) -> void;
@@ -54,8 +55,9 @@ private:
     DEF updateUniformBuffer(uint32_t currentImage) -> void;
     DEF beginSingleTimeCommands() -> VkCommandBuffer;
     DEF endSingleTimeCommands(VkCommandBuffer commandBuffer) -> void;
+    DEF createImageViews() -> void;
     DEF createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels) -> VkImageView;
-    DEF createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage &image, VkDeviceMemory &imageMemory) -> void;
+    DEF createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits numSamples, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage &image, VkDeviceMemory &imageMemory) -> void;
     DEF createShaderModule(const vector<char> &code) -> VkShaderModule;
     DEF findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) -> uint32_t;
     DEF chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities) -> VkExtent2D;
@@ -127,6 +129,12 @@ private:
     VkDeviceMemory m_TextureImageMemory;
     VkImageView m_TextureImageView;
     VkSampler m_TextureSampler;
+
+    VkSampleCountFlagBits m_MSAASamples;
+
+    VkImage m_ColorImage;
+    VkDeviceMemory m_ColorImageMemory;
+    VkImageView m_ColorImageView;
 
     VkImage m_DepthImage;
     VkDeviceMemory m_DepthImageMemory;
