@@ -73,6 +73,9 @@ Engine::Engine()
       m_TextureImageMemory(VK_NULL_HANDLE),
       m_TextureImageView(VK_NULL_HANDLE),
       m_TextureSampler(VK_NULL_HANDLE),
+      m_ColorImage(VK_NULL_HANDLE),
+      m_ColorImageMemory(VK_NULL_HANDLE),
+      m_ColorImageView(VK_NULL_HANDLE),
       m_MSAASamples(VK_SAMPLE_COUNT_1_BIT),
       m_DepthImage(VK_NULL_HANDLE),
       m_DepthImageMemory(VK_NULL_HANDLE),
@@ -1159,7 +1162,7 @@ DEF Engine::createRenderPass() -> void {
         .dstSubpass = 0,
         .srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
         .dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
-        .srcAccessMask = 0,
+        .srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
         .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT};
 
     array<VkAttachmentDescription, 3> attachments = {colorAttachment, depthAttachment, colorAttachmentResolve};
@@ -1417,6 +1420,7 @@ DEF Engine::cleanupSwapChain() -> void {
     vkDestroyImageView(m_Device, m_DepthImageView, nullptr);
     vkDestroyImage(m_Device, m_DepthImage, nullptr);
     vkFreeMemory(m_Device, m_DepthImageMemory, nullptr);
+
     for (auto frameBuffer : m_SwapChainFramebuffers) {
         vkDestroyFramebuffer(m_Device, frameBuffer, nullptr);
     }
@@ -1522,8 +1526,7 @@ DEF Engine::pickPhysicalDevice() -> void {
     if (found == devices.end()) throw runtime_error("failed to find a suitable GPU!");
 
     m_PhysicalDevice = *found;
-    // m_MSAASamples = getMaxUsableSampleCount();
-    m_MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+    m_MSAASamples = getMaxUsableSampleCount();
 }
 
 DEF Engine::isDeviceSuitable(VkPhysicalDevice device) -> bool {
