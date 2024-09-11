@@ -181,7 +181,9 @@ system_profiler
 ](https://www.youtube.com/watch?v=wGSSUSeaLgA)
         * [Interactive Computer Graphics](https://www.youtube.com/watch?v=UVCuWQV_-Es&list=PLplnkTzzqsZS3R5DjmCQsqupu43oS9CFN&index=1)
         * GSN Compose
-            * [Shaders Monthly Series](https://www.youtube.com/watch?v=mJOqVeiLOf0&list=PL8vNj3osX2PzZ-cNSqhA8G6C1-Li5-Ck8&index=1)
+            * [Shaders Monthly Series](https://www.youtube.com/watch?v=mJOqVeiLOf0&list=PL8vNj3osX2PzZ-cNSqhA8G6C1-Li5-Ck8&index=1]
+         * Vulkanised
+            * [Vulkanised 2024: Common Mistakes When Learning Vulkan - Charles Giessen](https://www.youtube.com/watch?v=0OqJtPnkfC8)
 
 # Appendix A: YouTube Links to the recorded videos 
 * https://youtu.be/afF579Obqlw (Not in the screencaps folder)
