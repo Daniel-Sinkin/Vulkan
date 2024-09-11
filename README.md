@@ -1,11 +1,5 @@
 # Vulcan 3D Engine from scratch
-
-# Notes
-* As this is supposed to be a portfolio project it is vital to put in effort into presentation
-    * Could look into CodeSnap and its alternatives
-* I'm at Swap Chains right now
-
-# Vulkan Tutorial Roadmap
+## Vulkan Tutorial Roadmap
 * [x] Development Environment
 * [x] Drawing a Triangle
     * [x] Setup
@@ -44,7 +38,7 @@
 * [x] Depth Buffering
 * [x] Loading Models
 * [x] Generating Mipmaps
-* [ ] Multisampling
+* [x] Multisampling
 * [ ] Compute Shader
 
 
