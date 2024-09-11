@@ -1115,9 +1115,15 @@ DEF Engine::createRenderPass() -> void {
         .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
         .finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
 
-    VkAttachmentReference colorAttachmentRef{
-        .attachment = 0,
-        .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+    VkAttachmentDescription depthAttachment{
+        .format = findDepthFormat(),
+        .samples = m_MSAASamples,
+        .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+        .storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+        .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+        .finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
 
     VkAttachmentDescription colorAttachmentResolve{
         .format = m_SwapChainImageFormat,
@@ -1129,23 +1135,17 @@ DEF Engine::createRenderPass() -> void {
         .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
         .finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR};
 
-    VkAttachmentReference colorAttachmentResolveRef{
-        .attachment = 2,
+    VkAttachmentReference colorAttachmentRef{
+        .attachment = 0,
         .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
-
-    VkAttachmentDescription depthAttachment{
-        .format = findDepthFormat(),
-        .samples = m_MSAASamples,
-        .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-        .storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-        .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-        .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-        .finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
 
     VkAttachmentReference depthAttachmentRef{
         .attachment = 1,
         .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
+
+    VkAttachmentReference colorAttachmentResolveRef{
+        .attachment = 2,
+        .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
 
     VkSubpassDescription subpass{
         .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -1522,7 +1522,8 @@ DEF Engine::pickPhysicalDevice() -> void {
     if (found == devices.end()) throw runtime_error("failed to find a suitable GPU!");
 
     m_PhysicalDevice = *found;
-    m_MSAASamples = getMaxUsableSampleCount();
+    // m_MSAASamples = getMaxUsableSampleCount();
+    m_MSAASamples = VK_SAMPLE_COUNT_1_BIT;
 }
 
 DEF Engine::isDeviceSuitable(VkPhysicalDevice device) -> bool {
