@@ -31,6 +31,16 @@
             "url": "https://vulkan-tutorial.com/resources/viking_room.obj",
             "expected_md5": "7fc033abddca127409a879ce024313dd",
             "local_file": "./assets/models/viking_room.obj"
+        },
+        "chalet_texture": {
+            "url": "https://raw.githubusercontent.com/Overv/VulkanTutorial/72359e2eb5571e238e4f16ac993de979cf21fb55/resources/chalet.jpg",
+            "expected_md5": "1068fcb96eda4183da92048008df0842",
+            "local_file": "./assets/textures/chalet.jpg"
+        },
+        "chalet_model": {
+            "url": "https://github.com/Overv/VulkanTutorial/raw/72359e2eb5571e238e4f16ac993de979cf21fb55/resources/chalet.obj.zip",
+            "expected_md5": "124fe3fa1a60631011c7b4d466a7f0b0",
+            "local_file": "./assets/models/chalet.obj.zip"
         }
     }
 }
