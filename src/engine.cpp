@@ -1153,7 +1153,7 @@ DEF Engine::createRenderPass() -> void {
     VkSubpassDescription subpass{
         .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
         .colorAttachmentCount = 1,
-        .pColorAttachments = &colorAttachmentResolveRef,
+        .pColorAttachments = &colorAttachmentRef,
         .pDepthStencilAttachment = &depthAttachmentRef,
         .pResolveAttachments = &colorAttachmentResolveRef};
 
@@ -1264,12 +1264,6 @@ DEF Engine::createGraphicsPipeline() -> void {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
         .rasterizationSamples = m_MSAASamples,
         .sampleShadingEnable = VK_FALSE};
-    /*
-        .minSampleShading = 1.0f,
-        .pSampleMask = nullptr,
-        .alphaToCoverageEnable = VK_FALSE,
-        .alphaToOneEnable = VK_FALSE
-    */
 
     fprintf(stdout, "\tInitializing Color Blending.\n");
     VkPipelineColorBlendAttachmentState colorBlendAttachment{
