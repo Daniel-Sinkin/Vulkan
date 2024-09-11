@@ -11,7 +11,7 @@ ImplementationFileExtensions:
   - cc
   - cpp
   - cxx
-HeaderFilterRegex: '^(?!.*__llvm_libc).*'
+HeaderFilterRegex: '^(?!.*__llvm_libc)(?!.*VulkanSDK).*'
 FormatStyle:     none
 User:            danielsinkin
 CheckOptions:

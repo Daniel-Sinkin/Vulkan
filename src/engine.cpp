@@ -73,6 +73,7 @@ Engine::Engine()
       m_TextureImageMemory(VK_NULL_HANDLE),
       m_TextureImageView(VK_NULL_HANDLE),
       m_TextureSampler(VK_NULL_HANDLE),
+      m_MipLevels(1),
       m_ColorImage(VK_NULL_HANDLE),
       m_ColorImageMemory(VK_NULL_HANDLE),
       m_ColorImageView(VK_NULL_HANDLE),
@@ -317,10 +318,14 @@ DEF Engine::findSupportedFormat(
         VkFormatProperties props;
         vkGetPhysicalDeviceFormatProperties(m_PhysicalDevice, format, &props);
 
-        if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
-            return format;
-        } else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features) {
-            return format;
+        if (tiling == VK_IMAGE_TILING_LINEAR) {
+            if ((props.linearTilingFeatures & features) == features) {
+                return format;
+            }
+        } else if (tiling == VK_IMAGE_TILING_OPTIMAL) {
+            if ((props.optimalTilingFeatures & features) == features) {
+                return format;
+            }
         }
     }
 
@@ -523,17 +528,16 @@ DEF Engine::generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidt
     }
 
     VkCommandBuffer commandBuffer = beginSingleTimeCommands();
-
     VkImageMemoryBarrier barrier{
         .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-        .image = image,
         .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
         .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .image = image,
         .subresourceRange = {
             .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            .levelCount = 1,
             .baseArrayLayer = 0,
-            .layerCount = 1,
-            .levelCount = 1},
+            .layerCount = 1},
     };
 
     int32_t mipWidth = texWidth;
@@ -558,18 +562,21 @@ DEF Engine::generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidt
             1,
             &barrier);
 
+        std::array<VkOffset3D, 2> srcOffsets = {
+            VkOffset3D{0, 0, 0},
+            VkOffset3D{mipWidth, mipHeight, 1}};
+        std::array<VkOffset3D, 2> dstOffsets = {
+            VkOffset3D{0, 0, 0},
+            VkOffset3D{mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1}};
         VkImageBlit blit{
             .srcSubresource = {
                 .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
                 .mipLevel = i - 1,
                 .baseArrayLayer = 0,
                 .layerCount = 1},
-            .srcOffsets[0] = {0, 0, 0},
-            .srcOffsets[1] = {mipWidth, mipHeight, 1},
+            .srcOffsets = {srcOffsets[0], srcOffsets[1]},
             .dstSubresource = {.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .mipLevel = i, .baseArrayLayer = 0, .layerCount = 1},
-            .dstOffsets[0] = {0, 0, 0},
-            .dstOffsets[1] = {mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1},
-        };
+            .dstOffsets = {dstOffsets[0], dstOffsets[1]}};
 
         vkCmdBlitImage(
             commandBuffer,
@@ -1154,8 +1161,8 @@ DEF Engine::createRenderPass() -> void {
         .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
         .colorAttachmentCount = 1,
         .pColorAttachments = &colorAttachmentRef,
-        .pDepthStencilAttachment = &depthAttachmentRef,
-        .pResolveAttachments = &colorAttachmentResolveRef};
+        .pResolveAttachments = &colorAttachmentResolveRef,
+        .pDepthStencilAttachment = &depthAttachmentRef};
 
     VkSubpassDependency dependency{
         .srcSubpass = VK_SUBPASS_EXTERNAL,
@@ -1304,13 +1311,13 @@ DEF Engine::createGraphicsPipeline() -> void {
         .pViewportState = &viewportState,
         .pRasterizationState = &rasterizer,
         .pMultisampleState = &multisampling,
+        .pDepthStencilState = &depthStencil,
         .pColorBlendState = &colorBlending,
         .pDynamicState = &dynamicState,
         .layout = m_PipelineLayout,
         .renderPass = m_RenderPass,
         .subpass = 0,
-        .basePipelineHandle = VK_NULL_HANDLE,
-        .pDepthStencilState = &depthStencil};
+        .basePipelineHandle = VK_NULL_HANDLE};
 
     if (vkCreateGraphicsPipelines(m_Device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_GraphicsPipeline) != VK_SUCCESS) {
         throw runtime_error("failed to create graphics pipeline!");
