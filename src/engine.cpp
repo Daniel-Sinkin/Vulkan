@@ -1721,7 +1721,7 @@ DEF Engine::drawFrame() -> void {
         throw runtime_error("failed to submit draw command buffer!");
     }
 
-    pushFramebufferToCpu(imageIndex);
+    copyFramebufferToCpu(imageIndex);
 
     array<VkSwapchainKHR, 1> swapChains = {m_SwapChain};
     VkPresentInfoKHR presentInfo{
@@ -1745,7 +1745,7 @@ DEF Engine::drawFrame() -> void {
     m_CurrentFrameIdx = (m_CurrentFrameIdx + 1) % Settings::MAX_FRAMES_IN_FLIGHT;
 }
 
-DEF Engine::pushFramebufferToCpu(uint32_t imageIndex) -> void {
+DEF Engine::copyFramebufferToCpu(uint32_t imageIndex) -> void {
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
 
@@ -1753,6 +1753,7 @@ DEF Engine::pushFramebufferToCpu(uint32_t imageIndex) -> void {
 
     VkImage image = m_SwapChainImages[imageIndex];
 
+    // Create a staging buffer to copy the image data into
     createBuffer(
         imageSize,
         VK_BUFFER_USAGE_TRANSFER_DST_BIT,
@@ -1760,6 +1761,7 @@ DEF Engine::pushFramebufferToCpu(uint32_t imageIndex) -> void {
         stagingBuffer,
         stagingBufferMemory);
 
+    // Transition the image to be copied
     transitionImageLayout(
         image,
         m_SwapChainImageFormat,
@@ -1771,19 +1773,19 @@ DEF Engine::pushFramebufferToCpu(uint32_t imageIndex) -> void {
 
     VkBufferImageCopy region = {
         .bufferOffset = 0,
-        .bufferRowLength = 0,
-        .bufferImageHeight = 0,
-        .imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-        .imageSubresource.mipLevel = 0,
-        .imageSubresource.baseArrayLayer = 0,
-        .imageSubresource.layerCount = 1,
+        .bufferRowLength = m_SwapChainExtent.width,
+        .bufferImageHeight = m_SwapChainExtent.height,
+        .imageSubresource = {
+            VK_IMAGE_ASPECT_COLOR_BIT, // aspectMask
+            0,                         // mipLevel
+            0,                         // baseArrayLayer
+            1                          // layerCount
+        },
         .imageOffset = {0, 0, 0},
-        .imageExtent = {
-            m_SwapChainExtent.width,
-            m_SwapChainExtent.height,
-            1},
+        .imageExtent = {m_SwapChainExtent.width, m_SwapChainExtent.height, 1},
     };
 
+    // Copy the image to the staging buffer
     vkCmdCopyImageToBuffer(
         commandBuffer,
         image,
@@ -1792,15 +1794,9 @@ DEF Engine::pushFramebufferToCpu(uint32_t imageIndex) -> void {
         1,
         &region);
 
-    vkCmdCopyImageToBuffer(commandBuffer,
-        image,
-        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-        stagingBuffer,
-        1,
-        &region);
-
     endSingleTimeCommands(commandBuffer);
 
+    // Transition the image back to present layout
     transitionImageLayout(
         image,
         m_SwapChainImageFormat,
@@ -1808,17 +1804,16 @@ DEF Engine::pushFramebufferToCpu(uint32_t imageIndex) -> void {
         VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
         1);
 
+    // Map the buffer memory so we can read from it
     void *data;
     vkMapMemory(m_Device, stagingBufferMemory, 0, imageSize, 0, &data);
 
-    std::ofstream file("framebuffer.bin", std::ios::out | std::ios::binary);
-    if (file.is_open()) {
-        file.write(static_cast<char *>(data), imageSize);
-        file.close();
-        std::cout << "Framebuffer data saved to framebuffer.bin\n";
-    } else {
-        std::cerr << "Failed to open file for writing framebuffer data\n";
-    }
+    uint8_t *pixelData = static_cast<uint8_t *>(data);
+
+    // Save the binary data to a file for inspection in Python
+    std::ofstream output("framebuffer_corrected.bin", std::ios::binary);
+    output.write(reinterpret_cast<const char *>(pixelData), imageSize);
+    output.close();
 
     vkUnmapMemory(m_Device, stagingBufferMemory);
     vkDestroyBuffer(m_Device, stagingBuffer, nullptr);

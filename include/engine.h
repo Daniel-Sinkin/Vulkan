@@ -22,7 +22,7 @@ private:
     DEF initVulkan() -> void;
     DEF cleanup() -> void;
 
-    DEF pushFramebufferToCpu(uint32_t imageIndex) -> void;
+    DEF copyFramebufferToCpu(uint32_t imageIndex) -> void;
     DEF drawFrame() -> void;
     DEF createInstance() -> void;
     DEF setupDebugMessenger() -> void;
