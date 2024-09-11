@@ -176,8 +176,10 @@ system_profiler
         * [Interactive Computer Graphics](https://www.youtube.com/watch?v=UVCuWQV_-Es&list=PLplnkTzzqsZS3R5DjmCQsqupu43oS9CFN&index=1)
         * GSN Compose
             * [Shaders Monthly Series](https://www.youtube.com/watch?v=mJOqVeiLOf0&list=PL8vNj3osX2PzZ-cNSqhA8G6C1-Li5-Ck8&index=1]
-         * Vulkanised
+        * Vulkanised
             * [Vulkanised 2024: Common Mistakes When Learning Vulkan - Charles Giessen](https://www.youtube.com/watch?v=0OqJtPnkfC8)
+        * [Game Engine Series](https://www.youtube.com/@GameEngineSeries) (that's the name of the channel)
+            * [Game Engine Programming Series](https://www.youtube.com/watch?v=hRL56gXqj-4&list=PLU2nPsAdxKWQYxkmQ3TdbLsyc1l2j25XM)
 
 # Appendix A: YouTube Links to the recorded videos 
 * https://youtu.be/afF579Obqlw (Not in the screencaps folder)
