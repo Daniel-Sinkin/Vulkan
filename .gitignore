@@ -71,3 +71,7 @@ private/*
 # External Dependencies
 external
 assets
+
+VulkanEngine
+
+*.bin

@@ -31,6 +31,8 @@ set(SOURCES
 include_directories(include)
 include_directories(SYSTEM external) # Suppresses warnings from external libraries
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR})
+
 # Add the executable target
 add_executable(VulkanEngine ${SOURCES})
 

@@ -18,9 +18,7 @@ DEF main() -> int {
 
     fprintf(stdout, "\nStarting mainloop.\n");
     try {
-        while (!glfwWindowShouldClose(app.getWindow())) {
-            app.runIteration();
-        }
+        app.mainLoop(true);
     } catch (const std::exception &e) {
         std::cerr << e.what() << "";
         return EXIT_FAILURE;

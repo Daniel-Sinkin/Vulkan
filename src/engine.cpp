@@ -63,6 +63,7 @@ Engine::Engine()
       m_GraphicsPipeline(VK_NULL_HANDLE),
       m_CommandPool(VK_NULL_HANDLE),
       m_CurrentFrameIdx(0), // Not the total frames, 0 <= m_CurrentFrameIdx < Settings::MAX_FRAMES_IN_FLIGHT
+      m_FrameCounter(0),
       m_FramebufferResized(false),
       m_VertexBuffer(VK_NULL_HANDLE),
       m_VertexBufferMemory(VK_NULL_HANDLE),
@@ -1666,19 +1667,21 @@ DEF Engine::findQueueFamilies(VkPhysicalDevice device) -> QueueFamilyIndices {
     return indices;
 }
 
-DEF Engine::runIteration() -> void {
+DEF Engine::runIteration(bool saveFrame) -> void {
     glfwPollEvents();
-    drawFrame();
+    drawFrame(saveFrame);
+
+    m_FrameCounter += 1;
 }
 
-DEF Engine::mainLoop() -> void {
+DEF Engine::mainLoop(bool saveFrames) -> void {
     fprintf(stdout, "Starting the main loop.\n");
     while (!glfwWindowShouldClose(m_Window)) {
-        runIteration();
+        runIteration(saveFrames);
     }
 }
 
-DEF Engine::drawFrame() -> void {
+DEF Engine::drawFrame(bool saveFrame) -> void {
     vkWaitForFences(m_Device, 1, &m_InFlightFences[m_CurrentFrameIdx], VK_TRUE, NO_TIMEOUT);
     uint32_t imageIndex = 0;
     VkResult resultNextImage = vkAcquireNextImageKHR(
@@ -1721,7 +1724,7 @@ DEF Engine::drawFrame() -> void {
         throw runtime_error("failed to submit draw command buffer!");
     }
 
-    copyFramebufferToCpu(imageIndex);
+    if (saveFrame) captureFramebuffer(imageIndex);
 
     array<VkSwapchainKHR, 1> swapChains = {m_SwapChain};
     VkPresentInfoKHR presentInfo{
@@ -1745,11 +1748,13 @@ DEF Engine::drawFrame() -> void {
     m_CurrentFrameIdx = (m_CurrentFrameIdx + 1) % Settings::MAX_FRAMES_IN_FLIGHT;
 }
 
-DEF Engine::copyFramebufferToCpu(uint32_t imageIndex) -> void {
+DEF Engine::captureFramebuffer(uint32_t imageIndex) -> void {
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
 
-    VkDeviceSize imageSize = m_SwapChainExtent.width * m_SwapChainExtent.height * 4;
+    uint32_t width = m_SwapChainExtent.width;
+    uint32_t height = m_SwapChainExtent.height;
+    VkDeviceSize imageSize = width * height * 4;
 
     VkImage image = m_SwapChainImages[imageIndex];
 
@@ -1773,8 +1778,8 @@ DEF Engine::copyFramebufferToCpu(uint32_t imageIndex) -> void {
 
     VkBufferImageCopy region = {
         .bufferOffset = 0,
-        .bufferRowLength = m_SwapChainExtent.width,
-        .bufferImageHeight = m_SwapChainExtent.height,
+        .bufferRowLength = width,
+        .bufferImageHeight = height,
         .imageSubresource = {
             VK_IMAGE_ASPECT_COLOR_BIT, // aspectMask
             0,                         // mipLevel
@@ -1782,7 +1787,7 @@ DEF Engine::copyFramebufferToCpu(uint32_t imageIndex) -> void {
             1                          // layerCount
         },
         .imageOffset = {0, 0, 0},
-        .imageExtent = {m_SwapChainExtent.width, m_SwapChainExtent.height, 1},
+        .imageExtent = {width, height, 1},
     };
 
     // Copy the image to the staging buffer
@@ -1810,10 +1815,24 @@ DEF Engine::copyFramebufferToCpu(uint32_t imageIndex) -> void {
 
     uint8_t *pixelData = static_cast<uint8_t *>(data);
 
-    // Save the binary data to a file for inspection in Python
-    std::ofstream output("framebuffer_corrected.bin", std::ios::binary);
-    output.write(reinterpret_cast<const char *>(pixelData), imageSize);
-    output.close();
+    std::ostringstream filename_builder;
+    filename_builder << "./Screencaps/Raw/" << m_FrameCounter << ".bin";
+
+    std::string filename = filename_builder.str();
+
+    std::cout << "Saving to file: " << filename << std::endl;
+    std::ofstream output(filename, std::ios::binary);
+
+    if (output.is_open()) {
+        output.write(reinterpret_cast<const char *>(&width), sizeof(width));
+        output.write(reinterpret_cast<const char *>(&height), sizeof(height));
+
+        output.write(reinterpret_cast<const char *>(pixelData), imageSize);
+
+        output.close();
+    } else {
+        std::cerr << "Failed to open file: " << filename << std::endl;
+    }
 
     vkUnmapMemory(m_Device, stagingBufferMemory);
     vkDestroyBuffer(m_Device, stagingBuffer, nullptr);
@@ -2037,7 +2056,7 @@ DEF Engine::chooseSwapPresentMode(const vector<VkPresentModeKHR> &availablePrese
 
 DEF Engine::chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities) -> VkExtent2D {
     bool isExtentUndefined = capabilities.currentExtent.width == std::numeric_limits<uint32_t>::max();
-    if (!isExtentUndefined) return capabilities.currentExtent;
+    // if (!isExtentUndefined) return capabilities.currentExtent;
 
     int width = 0;
     int height = 0;

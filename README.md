@@ -44,6 +44,7 @@
 
 
 # Reminders and things to look out for
+* I use a studio display, which has a "retina" display. What it does concretely it renders things at 5k and then downscales it to (in my case 2880x1620, i.e. with a 2x downscaling factor for width and height). Default scale is 2560x1440.
 * (Currently not implemented) Be careful whether you are compiling with DEBUG flag set or not
 * (Currently always on) The runtime sanitizers in compilation settings are VERY slow, active during debug, if things are slow should try to disable those first.
 * Regarding MacOS Specific Workarounds
@@ -175,7 +176,7 @@ system_profiler
 ](https://www.youtube.com/watch?v=wGSSUSeaLgA)
         * [Interactive Computer Graphics](https://www.youtube.com/watch?v=UVCuWQV_-Es&list=PLplnkTzzqsZS3R5DjmCQsqupu43oS9CFN&index=1)
         * GSN Compose
-            * [Shaders Monthly Series](https://www.youtube.com/watch?v=mJOqVeiLOf0&list=PL8vNj3osX2PzZ-cNSqhA8G6C1-Li5-Ck8&index=1]
+            * [Shaders Monthly Series](https://www.youtube.com/watch?v=mJOqVeiLOf0&list=PL8vNj3osX2PzZ-cNSqhA8G6C1-Li5-Ck8&index=1])
         * Vulkanised
             * [Vulkanised 2024: Common Mistakes When Learning Vulkan - Charles Giessen](https://www.youtube.com/watch?v=0OqJtPnkfC8)
         * [Game Engine Series](https://www.youtube.com/@GameEngineSeries) (that's the name of the channel)

@@ -12,8 +12,8 @@ public:
     ~Engine();
 
     DEF initialize() -> void;
-    DEF runIteration() -> void;
-    DEF mainLoop() -> void;
+    DEF runIteration(bool saveFrame = false) -> void;
+    DEF mainLoop(bool saveFrames = false) -> void;
 
     DEF getWindow() -> GLFWwindow *;
 
@@ -22,8 +22,8 @@ private:
     DEF initVulkan() -> void;
     DEF cleanup() -> void;
 
-    DEF copyFramebufferToCpu(uint32_t imageIndex) -> void;
-    DEF drawFrame() -> void;
+    DEF captureFramebuffer(uint32_t imageIndex) -> void;
+    DEF drawFrame(bool saveFrame) -> void;
     DEF createInstance() -> void;
     DEF setupDebugMessenger() -> void;
     DEF createSurface() -> void;
@@ -112,7 +112,8 @@ private:
     vector<VkSemaphore> m_RenderFinishedSemaphores;
     vector<VkFence> m_InFlightFences;
 
-    uint32_t m_CurrentFrameIdx;
+    uint32_t m_CurrentFrameIdx; // 0 <= m_CurrentFrameIdx < Max Frames in Flight
+    uint32_t m_FrameCounter;    // How many frames have been rendered
     bool m_FramebufferResized;
 
     std::vector<Vertex> m_Vertices;

@@ -24,6 +24,7 @@
 #include <optional>
 #include <set>
 #include <span>
+#include <sstream>
 #include <stdexcept>
 #include <string_view>
 #include <unordered_map>
@@ -224,8 +225,8 @@ static DEF readFile(const string &filename) -> vector<char> {
 } // namespace Util
 
 namespace Settings {
-constexpr uint32_t DEFAULT_WINDOW_WIDTH = 800;
-constexpr uint32_t DEFAULT_WINDOW_HEIGHT = 600;
+constexpr uint32_t DEFAULT_WINDOW_WIDTH = 1234;
+constexpr uint32_t DEFAULT_WINDOW_HEIGHT = 1432;
 
 constexpr auto WINDOW_NAME = "Daniel's 3D Engine";
 
