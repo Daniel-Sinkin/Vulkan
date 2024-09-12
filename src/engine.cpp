@@ -246,7 +246,7 @@ DEF Engine::initVulkan() -> void {
     VULKAN_SETUP(createTextureImage);
     VULKAN_SETUP(createTextureImageView);
     VULKAN_SETUP(createTextureSampler);
-    VULKAN_SETUP(loadModel);
+    VULKAN_SETUP(loadModelN);
     VULKAN_SETUP(createVertexBuffer);
     VULKAN_SETUP(createIndexBuffer);
     VULKAN_SETUP(createUniformBuffers);
@@ -269,13 +269,76 @@ DEF Engine::initVulkan() -> void {
     fprintf(stdout, "\033[32mTotal Vulkan setup time: %.2f ms\n\033[0m", totalElapsed.count());
 }
 
+DEF Engine::loadModelN() -> void {
+    tinyobj::attrib_t attrib;
+    vector<tinyobj::shape_t> shapes;
+    vector<tinyobj::material_t> materials;
+    string warn, err;
+
+    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, FilePaths::SPHERE_20_MODEL)) {
+        throw std::runtime_error(warn + err);
+    }
+
+    // Hashes vertices so we can avoid loading duplicated vertices
+    unordered_map<VertexN, uint32_t> uniqueVertices{};
+
+    for (const auto &shape : shapes) {
+        for (const auto &index : shape.mesh.indices) {
+            VertexN vertexN{};
+
+            // Load position
+            vertexN.pos = {
+                attrib.vertices[3 * index.vertex_index + 0],
+                attrib.vertices[3 * index.vertex_index + 1],
+                attrib.vertices[3 * index.vertex_index + 2]};
+
+            // Load normals (check if normal index exists first)
+            if (index.normal_index >= 0) {
+                vertexN.normal = {
+                    attrib.normals[3 * index.normal_index + 0],
+                    attrib.normals[3 * index.normal_index + 1],
+                    attrib.normals[3 * index.normal_index + 2]};
+            } else {
+                vertexN.normal = {0.0f, 0.0f, 0.0f}; // Default normal if none provided
+            }
+
+            // Load texture coordinates (check if texcoord index exists first)
+            if (index.texcoord_index >= 0) {
+                vertexN.texCoord = {
+                    attrib.texcoords[2 * index.texcoord_index + 0],
+                    1.0f - attrib.texcoords[2 * index.texcoord_index + 1]}; // Flip vertical coordinate
+            } else {
+                vertexN.texCoord = {0.0f, 0.0f}; // Default texcoord if none provided
+            }
+
+            // Set color (default to white in this case)
+            vertexN.color = {1.0f, 1.0f, 1.0f};
+
+            // Insert the vertex if it hasn't been added yet
+            if (uniqueVertices.count(vertexN) == 0) {
+                uniqueVertices[vertexN] = static_cast<uint32_t>(m_Vertices.size());
+                m_Vertices.push_back(vertexN);
+            }
+
+            m_VertexIndices.push_back(uniqueVertices[vertexN]);
+        }
+    }
+
+    std::cout << "\tNumber of vertices: " << attrib.vertices.size() / 3 << "\n"; // Dividing by 3 as each vertex has x, y, z
+    std::cout << "\tNumber of unique vertices: " << uniqueVertices.size() << "\n";
+    std::cout << "\tNumber of indices: " << m_VertexIndices.size() << "\n";
+    std::cout << "\tNumber of shapes: " << shapes.size() << "\n";
+    std::cout << "\tNumber of materials: " << materials.size() << "\n";
+}
+
+/*
 DEF Engine::loadModel() -> void {
     tinyobj::attrib_t attrib;
     vector<tinyobj::shape_t> shapes;
     vector<tinyobj::material_t> materials;
     string warn, err;
 
-    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, FilePaths::VIKING_ROOM_MODEL)) {
+    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, FilePaths::SPHERE_20_MODEL)) {
         throw std::runtime_error(warn + err);
     }
 
@@ -312,6 +375,7 @@ DEF Engine::loadModel() -> void {
     std::cout << "\tNumber of shapes: " << shapes.size() << "\n";
     std::cout << "\tNumber of materials: " << materials.size() << "\n";
 }
+*/
 
 DEF Engine::hasStencilComponent(VkFormat format) -> bool {
     return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
@@ -483,7 +547,7 @@ DEF Engine::createTextureImage() -> void {
     int texWidth = 0;
     int texHeight = 0;
     int texChannels = 0;
-    stbi_uc *pixels = stbi_load(FilePaths::VIKING_ROOM_TEXTURE, &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+    stbi_uc *pixels = stbi_load(FilePaths::PAINTED_PLASTER_DIFFUSE, &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
     if (!pixels) throw runtime_error("failed to load texture image!");
     VkDeviceSize imageSize = static_cast<VkDeviceSize>(texWidth) * texHeight * 4;
 
@@ -1226,8 +1290,8 @@ DEF Engine::createRenderPass() -> void {
 DEF Engine::createGraphicsPipeline() -> void {
     fprintf(stdout, "Trying to create Shader modules.\n");
     fprintf(stdout, "Trying to read .spv files.\n");
-    vector<char> vertShaderCode = Util::readFile(FilePaths::SHADER_VERT);
-    vector<char> fragShaderCode = Util::readFile(FilePaths::SHADER_FRAG);
+    vector<char> vertShaderCode = Util::readFile(FilePaths::SHADER_VERT_NORMAL);
+    vector<char> fragShaderCode = Util::readFile(FilePaths::SHADER_FRAG_NORMAL);
 
     fprintf(stdout, "\tTrying to create Vertex Shader.\n");
     VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
@@ -1250,8 +1314,8 @@ DEF Engine::createGraphicsPipeline() -> void {
 
     fprintf(stdout, "Trying to Initialize Fixed Functions.\n");
     fprintf(stdout, "\tInitializing Vertex Input.\n");
-    auto bindingDescription = Vertex::getBindingDescription();
-    auto attributeDescriptions = Vertex::getAttributeDescriptions();
+    auto bindingDescription = VertexN::getBindingDescription();
+    auto attributeDescriptions = VertexN::getAttributeDescriptions();
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
@@ -1286,7 +1350,7 @@ DEF Engine::createGraphicsPipeline() -> void {
         .depthClampEnable = VK_FALSE,
         .rasterizerDiscardEnable = VK_FALSE,
         .polygonMode = VK_POLYGON_MODE_FILL,
-        .cullMode = VK_CULL_MODE_NONE,
+        .cullMode = VK_CULL_MODE_BACK_BIT,
         .frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE,
         .depthBiasEnable = VK_FALSE,
         .depthBiasConstantFactor = 0.0f,
@@ -2125,7 +2189,6 @@ DEF Engine::lookAround(float yawOffset, float pitchOffset) -> void {
 
     // Update the camera center based on the new look direction
     m_CameraCenter = m_CameraEye + glm::normalize(lookDirection);
-    glmPrint(m_CameraCenter);
 }
 
 DEF Engine::takeScreenshot() -> void {

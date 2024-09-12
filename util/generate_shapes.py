@@ -2,7 +2,7 @@ import numpy as np
 from pathlib import Path
 
 
-def generate_sphere(radius, subdivisions):
+def generate_sphere(radius, subdivisions, clockwise=False):
     vertices = []
     normals = []
     texcoords = []
@@ -32,8 +32,12 @@ def generate_sphere(radius, subdivisions):
             v3 = (i + 1) * (subdivisions + 1) + j + 1
             v4 = v3 + 1
             # Create two triangles per quad
-            faces.append([v1, v2, v3])  # Triangle 1
-            faces.append([v2, v4, v3])  # Triangle 2
+            if clockwise:
+                faces.append([v1, v3, v2])  # Triangle 1 (reversed order)
+                faces.append([v2, v3, v4])  # Triangle 2 (reversed order)
+            else:
+                faces.append([v1, v2, v3])  # Triangle 1
+                faces.append([v2, v4, v3])  # Triangle 2
 
     return np.array(vertices), np.array(normals), np.array(texcoords), np.array(faces)
 
@@ -54,8 +58,9 @@ def save_obj(file_path, vertices, normals, texcoords, faces):
 if __name__ == "__main__":
     radius = 1.0
     subdivisions = 20  # Increase for smoother sphere
+    clockwise = True # Default to counterclockwise winding
 
-    vertices, normals, texcoords, faces = generate_sphere(radius, subdivisions)
+    vertices, normals, texcoords, faces = generate_sphere(radius, subdivisions, clockwise)
 
     # Create the path with the number of subdivisions in the filename
     output_dir = Path("assets/models")

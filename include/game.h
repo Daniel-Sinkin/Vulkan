@@ -1,13 +1,9 @@
-#include "Constants.h"
-#include "engine.h"
-#include <cstdint>
-
 class Game {
 public:
     // Constructor taking the GLFW window as an argument
     Game(Engine *engine)
         : m_Engine(engine), lastMouseX(0.0), lastMouseY(0.0), initialMouseState(true),
-          m_IsMouseLocked(true), keyBitmask(0) {
+          m_IsMouseLocked(true), keyBitmask(0), shiftPressed(false) { // Initialize shiftPressed to false
         glfwSetInputMode(m_Engine->getWindow(), GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
     }
 
@@ -23,6 +19,7 @@ private:
     bool initialMouseState;        // To handle the initial mouse movement
     bool m_IsMouseLocked;          // Variable to lock/unlock the mouse
     uint64_t keyBitmask;           // 64-bit bitmask for key states
+    bool shiftPressed;             // Flag to track if Shift key is pressed
 
     void processKeyboardInput() {
         // Close window if Escape is pressed
@@ -60,21 +57,34 @@ private:
             std::cout << "Taking screenshot\n";
         }
 
+        // Set or unset the shiftPressed flag
+        if (glfwGetKey(m_Engine->getWindow(), GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ||
+            glfwGetKey(m_Engine->getWindow(), GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS) {
+            shiftPressed = true; // Shift is held
+        } else {
+            shiftPressed = false; // Shift is not held
+        }
+
+        // TODO: Add this to Settings
+        float speed = 1.0;
+
+        if (shiftPressed) speed *= 2;
+
         // Example movement keys (WASD)
         if (glfwGetKey(m_Engine->getWindow(), GLFW_KEY_W) == GLFW_PRESS) {
-            m_Engine->moveCameraForward(1.0 / 60.0);
+            m_Engine->moveCameraForward(speed / 60.0);
             std::cout << "Move Forward\n";
         }
         if (glfwGetKey(m_Engine->getWindow(), GLFW_KEY_A) == GLFW_PRESS) {
-            m_Engine->moveCameraRight(-1.0 / 60.0);
+            m_Engine->moveCameraRight(-speed / 60.0);
             std::cout << "Move Left\n";
         }
         if (glfwGetKey(m_Engine->getWindow(), GLFW_KEY_S) == GLFW_PRESS) {
-            m_Engine->moveCameraForward(-1.0 / 60.0);
+            m_Engine->moveCameraForward(-speed / 60.0);
             std::cout << "Move Backward\n";
         }
         if (glfwGetKey(m_Engine->getWindow(), GLFW_KEY_D) == GLFW_PRESS) {
-            m_Engine->moveCameraRight(1.0 / 60.0);
+            m_Engine->moveCameraRight(speed / 60.0);
             std::cout << "Move Right\n";
         }
     }

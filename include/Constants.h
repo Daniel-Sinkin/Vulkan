@@ -140,6 +140,55 @@ struct Vertex {
         return (this->pos == other.pos) && (this->color == other.color) && (this->texCoord == other.texCoord);
     }
 };
+
+struct VertexN {
+    glm::vec3 pos;      // 12 bytes, aligned to 16 bytes
+    glm::vec2 texCoord; // 8 bytes, aligned to 8 bytes, directly after 'pos'
+    glm::vec3 normal;   // 12 bytes, aligned to 16 bytes
+    glm::vec3 color;    // 12 bytes, aligned to 16 bytes
+
+    // Return binding description
+    static VkVertexInputBindingDescription getBindingDescription() {
+        VkVertexInputBindingDescription bindingDescription{};
+        bindingDescription.binding = 0;
+        bindingDescription.stride = sizeof(VertexN);
+        bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+        return bindingDescription;
+    }
+
+    static std::array<VkVertexInputAttributeDescription, 4> getAttributeDescriptions() {
+        return std::array<VkVertexInputAttributeDescription, 4>{
+            VkVertexInputAttributeDescription{
+                .binding = 0,
+                .location = 0,
+                .format = VK_FORMAT_R32G32B32_SFLOAT, // Position (vec3)
+                .offset = offsetof(VertexN, pos)},
+            VkVertexInputAttributeDescription{
+                .binding = 0,
+                .location = 1,
+                .format = VK_FORMAT_R32G32B32_SFLOAT, // Color (vec3)
+                .offset = offsetof(VertexN, color)},
+            VkVertexInputAttributeDescription{
+                .binding = 0,
+                .location = 2,
+                .format = VK_FORMAT_R32G32_SFLOAT, // TexCoord (vec2)
+                .offset = offsetof(VertexN, texCoord)},
+            VkVertexInputAttributeDescription{
+                .binding = 0,
+                .location = 3,
+                .format = VK_FORMAT_R32G32B32_SFLOAT, // Normal (vec3)
+                .offset = offsetof(VertexN, normal)}};
+    }
+
+    // Equality operator
+    bool operator==(const VertexN &other) const {
+        return pos == other.pos &&
+               color == other.color &&
+               texCoord == other.texCoord &&
+               normal == other.normal;
+    }
+};
+
 namespace std {
 // Implementing our hashing function into the stdlib hash template, for more details see https://en.cppreference.com/w/cpp/utility/hash
 template <>
@@ -150,6 +199,22 @@ struct hash<Vertex> {
         size_t texCoord_hash = hash<glm::vec2>()(vertex.texCoord);
 
         return ((pos_hash ^ (color_hash << 1)) >> 1) ^ (texCoord_hash << 1);
+    }
+};
+
+template <>
+struct hash<VertexN> {
+    size_t operator()(VertexN const &vertexN) const {
+        // Hash the inherited members (pos, color, texCoord)
+        size_t pos_hash = hash<glm::vec3>()(vertexN.pos);
+        size_t color_hash = hash<glm::vec3>()(vertexN.color);
+        size_t texCoord_hash = hash<glm::vec2>()(vertexN.texCoord);
+
+        // Hash the normal vector
+        size_t normal_hash = hash<glm::vec3>()(vertexN.normal);
+
+        // Combine the hashes using XOR and bit shifts (hash combination method)
+        return (((pos_hash ^ (color_hash << 1)) >> 1) ^ (texCoord_hash << 1)) ^ (normal_hash << 1);
     }
 };
 } // namespace std
@@ -195,12 +260,24 @@ struct UniformBufferObject {
 namespace FilePaths {
 constexpr const char *SHADER_VERT = "shaders/compiled/shader.vert.spv";
 constexpr const char *SHADER_FRAG = "shaders/compiled/shader.frag.spv";
+constexpr const char *SHADER_VERT_NORMAL = "shaders/compiled/shader_normal.vert.spv";
+constexpr const char *SHADER_FRAG_NORMAL = "shaders/compiled/shader_normal.frag.spv";
+
+constexpr const char *SHADER_VERT_FANCY = "shaders/compiled/shader_fancy.vert.spv";
+constexpr const char *SHADER_FRAG_FRACTAL = "shaders/compiled/shader_fractal.frag.spv";
+constexpr const char *SHADER_VERT_NICOLE = "shaders/compiled/shader_nicole.vert.spv";
+constexpr const char *SHADER_FRAG_NICOLE = "shaders/compiled/shader_nicole.frag.spv";
 
 constexpr const char *FACE_TEXTURE = "assets/textures/texture.jpg";
 constexpr const char *VIKING_ROOM_TEXTURE = "assets/textures/viking_room.png";
 constexpr const char *VIKING_ROOM_MODEL = "assets/models/viking_room.obj";
 constexpr const char *CHALET_TEXTURE = "assets/textures/chalet.jpg";
 constexpr const char *CHALET_MODEL = "assets/models/chalet.obj";
+
+constexpr const char *PAINTED_PLASTER_DIFFUSE = "assets/textures/painted_plaster_diffuse.png";
+constexpr const char *PAINTED_PLASTER_NORMAL = "assets/textures/painted_plaster_normal.jpg";
+
+constexpr const char *SPHERE_20_MODEL = "assets/models/sphere_20.obj";
 
 // Nicole model source can be found in the credits in README, FBX importing
 // is not (yet?) implemented so I had to convert .obj manually, but will not
@@ -255,7 +332,7 @@ constexpr vec3 CAMERA_EYE(2.0f, 4.0f, 2.0f);
 constexpr vec3 CAMERA_CENTER(0.0f, 0.0f, 0.5f);
 constexpr vec3 CAMERA_UP(0.0f, 0.0f, 1.0f);
 
-constexpr float CAMERA_MAX_PITCH = 80.0f;
+constexpr float CAMERA_MAX_PITCH = 50.0f;
 
 constexpr float CLIPPING_PLANE_NEAR = 0.1f;
 constexpr float CLIPPING_PLANE_FAR = 10.0f;
