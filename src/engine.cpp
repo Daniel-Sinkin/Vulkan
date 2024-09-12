@@ -81,7 +81,10 @@ Engine::Engine()
       m_MSAASamples(VK_SAMPLE_COUNT_1_BIT),
       m_DepthImage(VK_NULL_HANDLE),
       m_DepthImageMemory(VK_NULL_HANDLE),
-      m_DepthImageView(VK_NULL_HANDLE) {}
+      m_DepthImageView(VK_NULL_HANDLE),
+      m_CameraCenter(Settings::CAMERA_CENTER),
+      m_CameraEye(Settings::CAMERA_EYE),
+      m_CameraUp(Settings::CAMERA_UP) {}
 
 Engine::~Engine() {
     fprintf(stdout, "Engine destructor has been called, waiting for the device to idle.\n");
@@ -146,7 +149,7 @@ DEF Engine::validateExtensions(const vector<VkExtensionProperties> &supported_ex
         });
 }
 
-DEF Engine::getWindow() -> GLFWwindow * {
+[[nodiscard]] DEF Engine::getWindow() const -> GLFWwindow * {
     return m_Window;
 }
 
@@ -1667,17 +1670,11 @@ DEF Engine::findQueueFamilies(VkPhysicalDevice device) -> QueueFamilyIndices {
     return indices;
 }
 
-DEF Engine::runIteration(bool saveFrame) -> void {
-    glfwPollEvents();
-    drawFrame(saveFrame);
-
-    m_FrameCounter += 1;
-}
-
 DEF Engine::mainLoop(bool saveFrames) -> void {
     fprintf(stdout, "Starting the main loop.\n");
     while (!glfwWindowShouldClose(m_Window)) {
-        runIteration(saveFrames);
+        glfwPollEvents();
+        drawFrame(saveFrames);
     }
 }
 
@@ -1746,6 +1743,7 @@ DEF Engine::drawFrame(bool saveFrame) -> void {
     }
 
     m_CurrentFrameIdx = (m_CurrentFrameIdx + 1) % Settings::MAX_FRAMES_IN_FLIGHT;
+    m_FrameCounter += 1;
 }
 
 DEF Engine::captureFramebuffer(uint32_t imageIndex) -> void {
@@ -1850,7 +1848,7 @@ DEF Engine::updateUniformBuffer(uint32_t currentImage) -> void {
         .model = glm::rotate(mat4(1.0f),
             delta_time * PI_HALF,
             vec3(0.0f, 0.0f, 1.0f)),
-        .view = glm::lookAt(Settings::CAMERA_EYE, Settings::CAMERA_CENTER, Settings::CAMERA_UP),
+        .view = glm::lookAt(m_CameraEye, m_CameraCenter, m_CameraUp),
         .proj = glm::perspective(PI_QUARTER,
             static_cast<float>(m_SwapChainExtent.width) / static_cast<float>(m_SwapChainExtent.height),
             Settings::CLIPPING_PLANE_NEAR,
@@ -2043,13 +2041,13 @@ DEF Engine::chooseSwapSurfaceFormat(const vector<VkSurfaceFormatKHR> &availableF
 }
 
 DEF Engine::chooseSwapPresentMode(const vector<VkPresentModeKHR> &availablePresentModes) -> VkPresentModeKHR {
-    if (availablePresentModes.empty()) fprintf(stderr, "No presentation modes availiable!");
+    if (availablePresentModes.empty()) throw std::runtime_error("No presentation modes availiable!");
 
     auto found = find_if(
         availablePresentModes.begin(),
         availablePresentModes.end(),
         [](const VkPresentModeKHR &availablePresentMode) {
-            return availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR;
+            return availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR; // Render as quickly as possible
         });
     return (found != availablePresentModes.end()) ? *found : availablePresentModes[0];
 }
@@ -2067,4 +2065,62 @@ DEF Engine::chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities) -> Vk
     };
 
     return actualExtent;
+}
+
+DEF Engine::setCameraPosition(vec3 position) -> void {
+    m_CameraEye = position;
+}
+
+DEF Engine::moveCamera(vec3 direction) -> void {
+    setCameraPosition(m_CameraEye + direction);
+}
+
+DEF Engine::getCameraLookDirection() const -> vec3 {
+    vec3 direction = m_CameraCenter - m_CameraEye;
+
+    return glm::normalize(direction);
+}
+
+DEF Engine::moveCameraForward(float amount) -> void {
+    moveCamera(getCameraLookDirection() * amount);
+}
+
+DEF Engine::moveCameraRightFree(float amount) -> void {
+    // Calculate the right direction using the cross product of the look direction and the up vector
+    vec3 rightDirection = glm::normalize(glm::cross(getCameraLookDirection(), m_CameraUp));
+
+    // Move both the camera eye and the camera center in the right direction
+    vec3 movement = rightDirection * amount;
+    m_CameraEye += movement;
+    m_CameraCenter += movement;
+}
+
+DEF Engine::lookAround(float yawOffset, float pitchOffset) -> void {
+    // Calculate the current look direction
+    vec3 lookDirection = getCameraLookDirection();
+
+    // Calculate the right direction (for pitch calculation)
+    vec3 rightDirection = glm::normalize(glm::cross(lookDirection, m_CameraUp));
+
+    // Apply yaw rotation (around the up vector)
+    // Rotate the look direction around the up vector for left/right movement
+    mat4 yawRotation = glm::rotate(mat4(1.0f), glm::radians(yawOffset), m_CameraUp);
+    lookDirection = vec3(yawRotation * vec4(lookDirection, 0.0f));
+
+    // Apply pitch rotation (around the right direction)
+    // Rotate the look direction around the right vector for up/down movement
+    mat4 pitchRotation = glm::rotate(mat4(1.0f), glm::radians(pitchOffset), rightDirection);
+    lookDirection = vec3(pitchRotation * vec4(lookDirection, 0.0f));
+
+    // Limit the pitch to avoid flipping (gimbal lock)
+    float maxPitch = glm::radians(80.0f);
+    float currentPitch = asin(lookDirection.y); // Check the current pitch angle (vertical angle)
+    if (currentPitch > maxPitch) {
+        lookDirection.y = sin(maxPitch);
+    } else if (currentPitch < -maxPitch) {
+        lookDirection.y = -sin(maxPitch);
+    }
+
+    // Update the camera center based on the new look direction
+    m_CameraCenter = m_CameraEye + glm::normalize(lookDirection);
 }

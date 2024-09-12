@@ -44,6 +44,8 @@
 
 
 # Reminders and things to look out for
+* Apparently Metal has some kind of internal setup which causes Vulkan with MoltenVK to not be able to render more than the display refresh rate, that means that I am capped to 60fps rendering.
+    * This seems to be a well known issue, Path of Exile seems to have the same issue from what I saw.
 * I use a studio display, which has a "retina" display. What it does concretely it renders things at 5k and then downscales it to (in my case 2880x1620, i.e. with a 2x downscaling factor for width and height). Default scale is 2560x1440.
 * (Currently not implemented) Be careful whether you are compiling with DEBUG flag set or not
 * (Currently always on) The runtime sanitizers in compilation settings are VERY slow, active during debug, if things are slow should try to disable those first.

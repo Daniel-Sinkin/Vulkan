@@ -12,18 +12,28 @@ public:
     ~Engine();
 
     DEF initialize() -> void;
-    DEF runIteration(bool saveFrame = false) -> void;
-    DEF mainLoop(bool saveFrames = false) -> void;
 
-    DEF getWindow() -> GLFWwindow *;
+    DEF mainLoop(bool saveFrames = false) -> void;
+    DEF drawFrame(bool saveFrame = false) -> void;
+
+    [[nodiscard]] DEF getWindow() const -> GLFWwindow *;
+
+    DEF setCameraPosition(vec3 position) -> void;
+    DEF moveCamera(vec3 direction) -> void;
+
+    DEF getCameraLookDirection() const -> vec3;
+    DEF moveCameraForward(float amount) -> void;
+    DEF moveCameraRightAroundPivot(float amount) -> void;
+    DEF moveCameraRightFree(float amount) -> void;
+    DEF lookAround(float yawOffset, float pitchOffset) -> void;
 
 private:
-    DEF initWindow() -> void;
+    DEF
+    initWindow() -> void;
     DEF initVulkan() -> void;
     DEF cleanup() -> void;
 
     DEF captureFramebuffer(uint32_t imageIndex) -> void;
-    DEF drawFrame(bool saveFrame) -> void;
     DEF createInstance() -> void;
     DEF setupDebugMessenger() -> void;
     DEF createSurface() -> void;
@@ -145,6 +155,10 @@ private:
     VkImage m_DepthImage;
     VkDeviceMemory m_DepthImageMemory;
     VkImageView m_DepthImageView;
+
+    vec3 m_CameraEye;
+    vec3 m_CameraCenter;
+    vec3 m_CameraUp;
 };
 
 #endif // ENGINE_H

@@ -27,12 +27,14 @@
 #include <sstream>
 #include <stdexcept>
 #include <string_view>
+#include <thread>
 #include <unordered_map>
 #include <vector>
 
 using glm::mat4;
 using glm::vec2;
 using glm::vec3;
+using glm::vec4;
 
 using std::all_of;
 using std::any_of;
@@ -60,6 +62,15 @@ using std::vector;
         auto end = std::chrono::high_resolution_clock::now();                                    \
         std::chrono::duration<double, std::milli> elapsed = end - start;                         \
         fprintf(stdout, "Successfully initialized %s (Took %.2f ms)\n", #func, elapsed.count()); \
+    }
+
+#define TIMED_EXECUTION(func)                                            \
+    {                                                                    \
+        auto start = std::chrono::high_resolution_clock::now();          \
+        func();                                                          \
+        auto end = std::chrono::high_resolution_clock::now();            \
+        std::chrono::duration<double, std::milli> elapsed = end - start; \
+        fprintf(stdout, "%s took %.2f ms\n", #func, elapsed.count());    \
     }
 
 #define PRINT_BOLD_GREEN(text) fprintf(stdout, "\033[1m\033[32m\n%s\n\033[0m", text)
