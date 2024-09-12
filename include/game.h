@@ -31,7 +31,7 @@ private:
         }
 
         // Handle Tab key to toggle mouse lock/unlock
-        if (handleKeyPressReleaseWithBitmask(keyBitmask, KEY_BITMASK_TAB, GLFW_KEY_TAB, m_Engine->getWindow())) {
+        if (handleKeyPressReleaseWithBitmask(keyBitmask, KeyBitmask::TAB, GLFW_KEY_TAB, m_Engine->getWindow())) {
             m_IsMouseLocked = !m_IsMouseLocked;
 
             if (m_IsMouseLocked) {
@@ -55,7 +55,7 @@ private:
             }
         }
 
-        if (handleKeyPressReleaseWithBitmask(keyBitmask, KEY_BITMASK_F12, GLFW_KEY_F12, m_Engine->getWindow())) {
+        if (handleKeyPressReleaseWithBitmask(keyBitmask, KeyBitmask::F12, GLFW_KEY_F12, m_Engine->getWindow())) {
             m_Engine->takeScreenshot();
             std::cout << "Taking screenshot\n";
         }
