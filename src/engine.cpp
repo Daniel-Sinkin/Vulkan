@@ -1751,12 +1751,12 @@ DEF Engine::drawFrame() -> void {
 }
 
 DEF Engine::captureFramebuffer(uint32_t imageIndex) -> void {
-    VkBuffer stagingBuffer;
-    VkDeviceMemory stagingBufferMemory;
+    VkBuffer stagingBuffer = VK_NULL_HANDLE;
+    VkDeviceMemory stagingBufferMemory = VK_NULL_HANDLE;
 
     uint32_t width = m_SwapChainExtent.width;
     uint32_t height = m_SwapChainExtent.height;
-    VkDeviceSize imageSize = width * height * 4;
+    auto imageSize = width * height * 4;
 
     VkImage image = m_SwapChainImages[imageIndex];
 
@@ -1812,17 +1812,17 @@ DEF Engine::captureFramebuffer(uint32_t imageIndex) -> void {
         1);
 
     // Map the buffer memory so we can read from it
-    void *data;
+    void *data = nullptr;
     vkMapMemory(m_Device, stagingBufferMemory, 0, imageSize, 0, &data);
 
-    uint8_t *pixelData = static_cast<uint8_t *>(data);
+    auto *pixelData = static_cast<uint8_t *>(data);
 
     std::ostringstream filename_builder;
     filename_builder << "./Screencaps/Raw/" << m_FrameCounter << ".bin";
 
     std::string filename = filename_builder.str();
 
-    std::cout << "Saving to file: " << filename << std::endl;
+    std::cout << "Saving to file: " << filename << "\n";
     std::ofstream output(filename, std::ios::binary);
 
     if (output.is_open()) {
@@ -1833,7 +1833,7 @@ DEF Engine::captureFramebuffer(uint32_t imageIndex) -> void {
 
         output.close();
     } else {
-        std::cerr << "Failed to open file: " << filename << std::endl;
+        std::cerr << "Failed to open file: " << filename << "\n";
     }
 
     vkUnmapMemory(m_Device, stagingBufferMemory);
@@ -2058,7 +2058,7 @@ DEF Engine::chooseSwapPresentMode(const vector<VkPresentModeKHR> &availablePrese
 
 DEF Engine::chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities) -> VkExtent2D {
     bool isExtentUndefined = capabilities.currentExtent.width == std::numeric_limits<uint32_t>::max();
-    // if (!isExtentUndefined) return capabilities.currentExtent;
+    if (!isExtentUndefined) return capabilities.currentExtent;
 
     int width = 0;
     int height = 0;
@@ -2116,13 +2116,11 @@ DEF Engine::lookAround(float yawOffset, float pitchOffset) -> void {
     mat4 pitchRotation = glm::rotate(mat4(1.0f), glm::radians(pitchOffset), rightDirection);
     lookDirection = vec3(pitchRotation * vec4(lookDirection, 0.0f));
 
-    // Limit the pitch to avoid flipping (gimbal lock)
-    float maxPitch = glm::radians(80.0f);
-    float currentPitch = asin(lookDirection.y); // Check the current pitch angle (vertical angle)
-    if (currentPitch > maxPitch) {
-        lookDirection.y = sin(maxPitch);
-    } else if (currentPitch < -maxPitch) {
-        lookDirection.y = -sin(maxPitch);
+    float currentPitch = asin(lookDirection.y);
+    if (currentPitch > Settings::CAMERA_MAX_PITCH) {
+        lookDirection.y = sin(Settings::CAMERA_MAX_PITCH);
+    } else if (currentPitch < -Settings::CAMERA_MAX_PITCH) {
+        lookDirection.y = -sin(Settings::CAMERA_MAX_PITCH);
     }
 
     // Update the camera center based on the new look direction

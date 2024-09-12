@@ -15,6 +15,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <format>
@@ -62,6 +63,30 @@ constexpr float PI = std::numbers::pi_v<float>;
 constexpr float PI_2 = static_cast<float>(2.0 * std::numbers::pi); // Use static_cast for type conversion
 constexpr float PI_HALF = static_cast<float>(std::numbers::pi / 2);
 constexpr float PI_QUARTER = static_cast<float>(std::numbers::pi / 4);
+
+using Bitmask8 = uint8_t;
+using Bitmask16 = uint16_t;
+using Bitmask32 = uint32_t;
+using Bitmask64 = uint64_t;
+// clang-format off
+namespace KeyBitmask {
+constexpr Bitmask64 TAB   = 1ULL <<  0;
+constexpr Bitmask64 F1    = 1ULL <<  1;
+constexpr Bitmask64 F2    = 1ULL <<  2;
+constexpr Bitmask64 F3    = 1ULL <<  3;
+constexpr Bitmask64 F4    = 1ULL <<  4;
+constexpr Bitmask64 F5    = 1ULL <<  5;
+constexpr Bitmask64 F6    = 1ULL <<  6;
+constexpr Bitmask64 F7    = 1ULL <<  7;
+constexpr Bitmask64 F8    = 1ULL <<  8;
+constexpr Bitmask64 F9    = 1ULL <<  9;
+constexpr Bitmask64 F10   = 1ULL << 10;
+constexpr Bitmask64 F11   = 1ULL << 11;
+constexpr Bitmask64 F12   = 1ULL << 12;
+constexpr Bitmask64 SPACE = 1ULL << 13;
+constexpr Bitmask64 ENTER = 1ULL << 14;
+} // namespace KeyBitmask
+// clang-format on
 
 struct SwapChainSupportDetails {
     VkSurfaceCapabilitiesKHR capabilities;
@@ -229,6 +254,8 @@ constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 constexpr vec3 CAMERA_EYE(2.0f, 4.0f, 2.0f);
 constexpr vec3 CAMERA_CENTER(0.0f, 0.0f, 0.5f);
 constexpr vec3 CAMERA_UP(0.0f, 0.0f, 1.0f);
+
+constexpr float CAMERA_MAX_PITCH = 80.0f;
 
 constexpr float CLIPPING_PLANE_NEAR = 0.1f;
 constexpr float CLIPPING_PLANE_FAR = 10.0f;

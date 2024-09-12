@@ -3,6 +3,35 @@
 
 #include "Constants.h"
 
+// Set the bit corresponding to a key
+inline void setKeyBit(uint64_t &bitmask, int bitPosition) {
+    bitmask |= (1ULL << bitPosition); // Set the bit at the specified position
+}
+
+// Clear the bit corresponding to a key
+inline void clearKeyBit(uint64_t &bitmask, int bitPosition) {
+    bitmask &= ~(1ULL << bitPosition); // Clear the bit at the specified position
+}
+
+// Check if the bit corresponding to a key is set (pressed)
+inline bool isKeyBitSet(uint64_t bitmask, int bitPosition) {
+    return (bitmask & (1ULL << bitPosition)) != 0;
+}
+
+// Generic function to handle key press/release with bitmask
+inline bool handleKeyPressReleaseWithBitmask(uint64_t &bitmask, int bitPosition, int key, GLFWwindow *window) {
+    if (glfwGetKey(window, key) == GLFW_PRESS) {
+        setKeyBit(bitmask, bitPosition);
+    }
+
+    if (glfwGetKey(window, key) == GLFW_RELEASE && isKeyBitSet(bitmask, bitPosition)) {
+        clearKeyBit(bitmask, bitPosition);
+        return true; // Key was pressed and then released
+    }
+
+    return false;
+}
+
 #define VULKAN_SETUP(func)                                                                       \
     {                                                                                            \
         fprintf(stdout, " \033[32m(%zu.) initVulkan Step:\033[0m ", ++initVulkanIteration);      \
