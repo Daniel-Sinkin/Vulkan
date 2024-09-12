@@ -2,6 +2,7 @@
 #define ENGINE_H
 
 #include "Constants.h"
+#include "Util.h"
 
 DEF CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkDebugUtilsMessengerEXT *pDebugMessenger) -> VkResult;
 DEF DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks *pAllocator) -> void;
@@ -9,15 +10,32 @@ DEF DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT 
 class Engine {
 public:
     Engine();
+    ~Engine();
 
-    DEF run() -> void;
+    DEF initialize() -> void;
+
+    DEF mainLoop() -> void;
+    DEF drawFrame() -> void;
+
+    [[nodiscard]] DEF getWindow() const -> GLFWwindow *;
+
+    DEF setCameraPosition(vec3 position) -> void;
+    DEF moveCamera(vec3 direction) -> void;
+
+    DEF getCameraLookDirection() const -> vec3;
+    DEF moveCameraForward(float amount) -> void;
+    DEF moveCameraRight(float amount) -> void;
+    DEF lookAround(float yawOffset, float pitchOffset) -> void;
+
+    DEF takeScreenshot() -> void;
 
 private:
-    DEF initWindow() -> void;
+    DEF
+    initWindow() -> void;
     DEF initVulkan() -> void;
-    DEF mainLoop() -> void;
     DEF cleanup() -> void;
 
+    DEF captureFramebuffer(uint32_t imageIndex) -> void;
     DEF createInstance() -> void;
     DEF setupDebugMessenger() -> void;
     DEF createSurface() -> void;
@@ -51,7 +69,6 @@ private:
     DEF transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels) -> void;
     DEF recreateSwapChain() -> void;
     DEF cleanupSwapChain() -> void;
-    DEF drawFrame() -> void;
     DEF updateUniformBuffer(uint32_t currentImage) -> void;
     DEF beginSingleTimeCommands() -> VkCommandBuffer;
     DEF endSingleTimeCommands(VkCommandBuffer commandBuffer) -> void;
@@ -107,7 +124,8 @@ private:
     vector<VkSemaphore> m_RenderFinishedSemaphores;
     vector<VkFence> m_InFlightFences;
 
-    uint32_t m_CurrentFrameIdx;
+    uint32_t m_CurrentFrameIdx; // 0 <= m_CurrentFrameIdx < Max Frames in Flight
+    uint32_t m_FrameCounter;    // How many frames have been rendered
     bool m_FramebufferResized;
 
     std::vector<Vertex> m_Vertices;
@@ -139,6 +157,12 @@ private:
     VkImage m_DepthImage;
     VkDeviceMemory m_DepthImageMemory;
     VkImageView m_DepthImageView;
+
+    vec3 m_CameraEye;
+    vec3 m_CameraCenter;
+    vec3 m_CameraUp;
+
+    bool m_TakeScreenshotNextFrame;
 };
 
 #endif // ENGINE_H

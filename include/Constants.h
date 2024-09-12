@@ -15,6 +15,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <format>
@@ -24,14 +25,18 @@
 #include <optional>
 #include <set>
 #include <span>
+#include <sstream>
 #include <stdexcept>
 #include <string_view>
+#include <thread>
 #include <unordered_map>
 #include <vector>
 
+using glm::mat3;
 using glm::mat4;
 using glm::vec2;
 using glm::vec3;
+using glm::vec4;
 
 using std::all_of;
 using std::any_of;
@@ -50,19 +55,6 @@ using std::vector;
 // python syntax for functions, which makes it easier to search function definitions.
 #define DEF auto
 
-#define VULKAN_SETUP(func)                                                                       \
-    {                                                                                            \
-        fprintf(stdout, " \033[32m(%zu.) initVulkan Step:\033[0m ", ++initVulkanIteration);      \
-        fprintf(stdout, "Trying to initialize %s\n", #func);                                     \
-        auto start = std::chrono::high_resolution_clock::now();                                  \
-        func();                                                                                  \
-        auto end = std::chrono::high_resolution_clock::now();                                    \
-        std::chrono::duration<double, std::milli> elapsed = end - start;                         \
-        fprintf(stdout, "Successfully initialized %s (Took %.2f ms)\n", #func, elapsed.count()); \
-    }
-
-#define PRINT_BOLD_GREEN(text) fprintf(stdout, "\033[1m\033[32m\n%s\n\033[0m", text)
-
 constexpr unsigned long long NO_TIMEOUT = UINT64_MAX; // Can't disable timeout in Vulkan semaphore, this is a workaround
 constexpr int INVALID_FRAMEBUFFER_SIZE = 0;
 
@@ -71,6 +63,30 @@ constexpr float PI = std::numbers::pi_v<float>;
 constexpr float PI_2 = static_cast<float>(2.0 * std::numbers::pi); // Use static_cast for type conversion
 constexpr float PI_HALF = static_cast<float>(std::numbers::pi / 2);
 constexpr float PI_QUARTER = static_cast<float>(std::numbers::pi / 4);
+
+using Bitmask8 = uint8_t;
+using Bitmask16 = uint16_t;
+using Bitmask32 = uint32_t;
+using Bitmask64 = uint64_t;
+// clang-format off
+namespace KeyBitmask {
+constexpr Bitmask64 TAB   = 1ULL <<  0;
+constexpr Bitmask64 F1    = 1ULL <<  1;
+constexpr Bitmask64 F2    = 1ULL <<  2;
+constexpr Bitmask64 F3    = 1ULL <<  3;
+constexpr Bitmask64 F4    = 1ULL <<  4;
+constexpr Bitmask64 F5    = 1ULL <<  5;
+constexpr Bitmask64 F6    = 1ULL <<  6;
+constexpr Bitmask64 F7    = 1ULL <<  7;
+constexpr Bitmask64 F8    = 1ULL <<  8;
+constexpr Bitmask64 F9    = 1ULL <<  9;
+constexpr Bitmask64 F10   = 1ULL << 10;
+constexpr Bitmask64 F11   = 1ULL << 11;
+constexpr Bitmask64 F12   = 1ULL << 12;
+constexpr Bitmask64 SPACE = 1ULL << 13;
+constexpr Bitmask64 ENTER = 1ULL << 14;
+} // namespace KeyBitmask
+// clang-format on
 
 struct SwapChainSupportDetails {
     VkSurfaceCapabilitiesKHR capabilities;
@@ -224,8 +240,8 @@ static DEF readFile(const string &filename) -> vector<char> {
 } // namespace Util
 
 namespace Settings {
-constexpr uint32_t DEFAULT_WINDOW_WIDTH = 800;
-constexpr uint32_t DEFAULT_WINDOW_HEIGHT = 600;
+constexpr uint32_t DEFAULT_WINDOW_WIDTH = 1920;
+constexpr uint32_t DEFAULT_WINDOW_HEIGHT = 1080;
 
 constexpr auto WINDOW_NAME = "Daniel's 3D Engine";
 
@@ -239,6 +255,8 @@ constexpr vec3 CAMERA_EYE(2.0f, 4.0f, 2.0f);
 constexpr vec3 CAMERA_CENTER(0.0f, 0.0f, 0.5f);
 constexpr vec3 CAMERA_UP(0.0f, 0.0f, 1.0f);
 
+constexpr float CAMERA_MAX_PITCH = 80.0f;
+
 constexpr float CLIPPING_PLANE_NEAR = 0.1f;
 constexpr float CLIPPING_PLANE_FAR = 10.0f;
 
@@ -251,54 +269,3 @@ constexpr VkSurfaceFormatKHR PREFERRED_SURFACE_FORMAT = {
 } // namespace Settings
 
 #endif // CONSTANTS_H
-
-/*
-// clang-format off
-std::string vkResultToString(VkResult result) {
-    switch (result) {
-        case VK_SUCCESS: return "VK_SUCCESS";
-        case VK_NOT_READY: return "VK_NOT_READY";
-        case VK_TIMEOUT: return "VK_TIMEOUT";
-        case VK_EVENT_SET: return "VK_EVENT_SET";
-        case VK_EVENT_RESET: return "VK_EVENT_RESET";
-        case VK_INCOMPLETE: return "VK_INCOMPLETE";
-        case VK_ERROR_OUT_OF_HOST_MEMORY: return "VK_ERROR_OUT_OF_HOST_MEMORY";
-        case VK_ERROR_OUT_OF_DEVICE_MEMORY: return "VK_ERROR_OUT_OF_DEVICE_MEMORY";
-        case VK_ERROR_INITIALIZATION_FAILED: return "VK_ERROR_INITIALIZATION_FAILED";
-        case VK_ERROR_DEVICE_LOST: return "VK_ERROR_DEVICE_LOST";
-        case VK_ERROR_MEMORY_MAP_FAILED: return "VK_ERROR_MEMORY_MAP_FAILED";
-        case VK_ERROR_LAYER_NOT_PRESENT: return "VK_ERROR_LAYER_NOT_PRESENT";
-        case VK_ERROR_EXTENSION_NOT_PRESENT: return "VK_ERROR_EXTENSION_NOT_PRESENT";
-        case VK_ERROR_FEATURE_NOT_PRESENT: return "VK_ERROR_FEATURE_NOT_PRESENT";
-        case VK_ERROR_INCOMPATIBLE_DRIVER: return "VK_ERROR_INCOMPATIBLE_DRIVER";
-        case VK_ERROR_TOO_MANY_OBJECTS: return "VK_ERROR_TOO_MANY_OBJECTS";
-        case VK_ERROR_FORMAT_NOT_SUPPORTED: return "VK_ERROR_FORMAT_NOT_SUPPORTED";
-        case VK_ERROR_FRAGMENTED_POOL: return "VK_ERROR_FRAGMENTED_POOL";
-        case VK_ERROR_OUT_OF_POOL_MEMORY: return "VK_ERROR_OUT_OF_POOL_MEMORY";
-        case VK_ERROR_INVALID_EXTERNAL_HANDLE: return "VK_ERROR_INVALID_EXTERNAL_HANDLE";
-        case VK_ERROR_SURFACE_LOST_KHR: return "VK_ERROR_SURFACE_LOST_KHR";
-        case VK_ERROR_NATIVE_WINDOW_IN_USE_KHR: return "VK_ERROR_NATIVE_WINDOW_IN_USE_KHR";
-        case VK_SUBOPTIMAL_KHR: return "VK_SUBOPTIMAL_KHR";
-        case VK_ERROR_OUT_OF_DATE_KHR: return "VK_ERROR_OUT_OF_DATE_KHR";
-        case VK_ERROR_INCOMPATIBLE_DISPLAY_KHR: return "VK_ERROR_INCOMPATIBLE_DISPLAY_KHR";
-        case VK_ERROR_VALIDATION_FAILED_EXT: return "VK_ERROR_VALIDATION_FAILED_EXT";
-        case VK_ERROR_INVALID_SHADER_NV: return "VK_ERROR_INVALID_SHADER_NV";
-        case VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT: return "VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT";
-        case VK_ERROR_FRAGMENTATION_EXT: return "VK_ERROR_FRAGMENTATION_EXT";
-        case VK_ERROR_NOT_PERMITTED_EXT: return "VK_ERROR_NOT_PERMITTED_EXT";
-        default: return "Unknown Vulkan error";
-    }
-}
-// clang-format on
-
-template <typename VulkanFunction, typename... Args>
-void vkCreationWrapper(const std::string &operationName, VulkanFunction func, Args &&...args) {
-    VkResult result = func(std::forward<Args>(args)...);
-    if (result != VK_SUCCESS) {
-        std::string errorName = vkResultToString(result);
-        std::stringstream ss;
-        ss << "\nFailed to create " << operationName << "! <Error Name: " << errorName << ", Error Code: " << result << ">\n";
-        throw std::runtime_error(ss.str());
-    }
-}
-*/

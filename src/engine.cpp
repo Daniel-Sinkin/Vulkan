@@ -63,6 +63,7 @@ Engine::Engine()
       m_GraphicsPipeline(VK_NULL_HANDLE),
       m_CommandPool(VK_NULL_HANDLE),
       m_CurrentFrameIdx(0), // Not the total frames, 0 <= m_CurrentFrameIdx < Settings::MAX_FRAMES_IN_FLIGHT
+      m_FrameCounter(0),
       m_FramebufferResized(false),
       m_VertexBuffer(VK_NULL_HANDLE),
       m_VertexBufferMemory(VK_NULL_HANDLE),
@@ -80,20 +81,31 @@ Engine::Engine()
       m_MSAASamples(VK_SAMPLE_COUNT_1_BIT),
       m_DepthImage(VK_NULL_HANDLE),
       m_DepthImageMemory(VK_NULL_HANDLE),
-      m_DepthImageView(VK_NULL_HANDLE) {}
+      m_DepthImageView(VK_NULL_HANDLE),
+      m_CameraCenter(Settings::CAMERA_CENTER),
+      m_CameraEye(Settings::CAMERA_EYE),
+      m_CameraUp(Settings::CAMERA_UP),
+      m_TakeScreenshotNextFrame(false) {}
 
-DEF Engine::run() -> void {
-    fprintf(stdout, "Initializing Vulkan application.\n");
+Engine::~Engine() {
+    fprintf(stdout, "Engine destructor has been called, waiting for the device to idle.\n");
+    vkDeviceWaitIdle(m_Device);
+    fprintf(stdout, "Finished waiting.\n");
+
+    fprintf(stdout, "Starting Engine Cleanup\n");
+    cleanup();
+    fprintf(stdout, "Finished Engine Cleanup\n");
+}
+
+DEF Engine::initialize() -> void {
+    fprintf(stdout, "Initializing Engine application.\n");
+    fprintf(stdout, "Initializing GLFW.\n");
     initWindow();
+    fprintf(stdout, "Initializing Engine application.\n");
     initVulkan();
 
     fprintf(stdout, "\nFinished Initializing Vulkan application.\n");
     std::cout << std::flush;
-
-    mainLoop();
-    cleanup();
-
-    fprintf(stdout, "Reached the end of the Vulkan application.\n");
 }
 
 DEF Engine::initWindow() -> void {
@@ -136,6 +148,10 @@ DEF Engine::validateExtensions(const vector<VkExtensionProperties> &supported_ex
                     return string_view(supported_extension.extensionName) == required_extension_view;
                 });
         });
+}
+
+[[nodiscard]] DEF Engine::getWindow() const -> GLFWwindow * {
+    return m_Window;
 }
 
 DEF Engine::createInstance() -> void {
@@ -960,17 +976,37 @@ DEF Engine::transitionImageLayout(
     VkPipelineStageFlags sourceStage = 0;
     VkPipelineStageFlags destinationStage = 0;
     if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
-        barrier.srcAccessMask = 0;
-        barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        // Transition from an undefined layout to a layout that allows for writing by transfer operations
+        barrier.srcAccessMask = 0;                            // No need to wait for anything
+        barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT; // The image will be written to
 
         sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
         destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+
     } else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
-        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        // Transition from a transfer destination layout to a shader-readable layout
+        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT; // Must wait for the transfer to complete
+        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;    // The image will be read by the shader
 
         sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
         destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+
+    } else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) {
+        // Transition from transfer source to presentation layout
+        barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT; // Must wait for transfer reads to complete
+        barrier.dstAccessMask = 0;                           // No need for further synchronization before presenting
+
+        sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        destinationStage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+
+    } else if (oldLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR && newLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL) {
+        // Transition from presentation layout to transfer source layout
+        barrier.srcAccessMask = 0;                           // No need to wait for anything before transitioning
+        barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT; // The image will be read as a source for transfer
+
+        sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+
     } else {
         throw std::invalid_argument("unsupported layout transition!");
     }
@@ -1355,6 +1391,7 @@ DEF Engine::createSwapChain() -> void {
     SwapChainSupportDetails swapChainSupport = querySwapChainSupport(m_PhysicalDevice);
 
     VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
+
     VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
     VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities);
 
@@ -1373,7 +1410,7 @@ DEF Engine::createSwapChain() -> void {
         .imageColorSpace = surfaceFormat.colorSpace,
         .imageExtent = extent,
         .imageArrayLayers = 1,
-        .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+        .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
         .preTransform = swapChainSupport.capabilities.currentTransform,
         .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
         .presentMode = presentMode,
@@ -1640,10 +1677,6 @@ DEF Engine::mainLoop() -> void {
         glfwPollEvents();
         drawFrame();
     }
-
-    fprintf(stdout, "Finished mainLoop, waiting for the device to idle.\n");
-    vkDeviceWaitIdle(m_Device);
-    fprintf(stdout, "Finished waiting.\n");
 }
 
 DEF Engine::drawFrame() -> void {
@@ -1689,6 +1722,11 @@ DEF Engine::drawFrame() -> void {
         throw runtime_error("failed to submit draw command buffer!");
     }
 
+    if (m_TakeScreenshotNextFrame) {
+        captureFramebuffer(imageIndex);
+        m_TakeScreenshotNextFrame = false;
+    }
+
     array<VkSwapchainKHR, 1> swapChains = {m_SwapChain};
     VkPresentInfoKHR presentInfo{
         .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
@@ -1709,6 +1747,98 @@ DEF Engine::drawFrame() -> void {
     }
 
     m_CurrentFrameIdx = (m_CurrentFrameIdx + 1) % Settings::MAX_FRAMES_IN_FLIGHT;
+    m_FrameCounter += 1;
+}
+
+DEF Engine::captureFramebuffer(uint32_t imageIndex) -> void {
+    VkBuffer stagingBuffer = VK_NULL_HANDLE;
+    VkDeviceMemory stagingBufferMemory = VK_NULL_HANDLE;
+
+    uint32_t width = m_SwapChainExtent.width;
+    uint32_t height = m_SwapChainExtent.height;
+    auto imageSize = width * height * 4;
+
+    VkImage image = m_SwapChainImages[imageIndex];
+
+    // Create a staging buffer to copy the image data into
+    createBuffer(
+        imageSize,
+        VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        stagingBuffer,
+        stagingBufferMemory);
+
+    // Transition the image to be copied
+    transitionImageLayout(
+        image,
+        m_SwapChainImageFormat,
+        VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        1);
+
+    VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+
+    VkBufferImageCopy region = {
+        .bufferOffset = 0,
+        .bufferRowLength = width,
+        .bufferImageHeight = height,
+        .imageSubresource = {
+            VK_IMAGE_ASPECT_COLOR_BIT, // aspectMask
+            0,                         // mipLevel
+            0,                         // baseArrayLayer
+            1                          // layerCount
+        },
+        .imageOffset = {0, 0, 0},
+        .imageExtent = {width, height, 1},
+    };
+
+    // Copy the image to the staging buffer
+    vkCmdCopyImageToBuffer(
+        commandBuffer,
+        image,
+        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        stagingBuffer,
+        1,
+        &region);
+
+    endSingleTimeCommands(commandBuffer);
+
+    // Transition the image back to present layout
+    transitionImageLayout(
+        image,
+        m_SwapChainImageFormat,
+        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+        1);
+
+    // Map the buffer memory so we can read from it
+    void *data = nullptr;
+    vkMapMemory(m_Device, stagingBufferMemory, 0, imageSize, 0, &data);
+
+    auto *pixelData = static_cast<uint8_t *>(data);
+
+    std::ostringstream filename_builder;
+    filename_builder << "./Screencaps/Raw/" << m_FrameCounter << ".bin";
+
+    std::string filename = filename_builder.str();
+
+    std::cout << "Saving to file: " << filename << "\n";
+    std::ofstream output(filename, std::ios::binary);
+
+    if (output.is_open()) {
+        output.write(reinterpret_cast<const char *>(&width), sizeof(width));
+        output.write(reinterpret_cast<const char *>(&height), sizeof(height));
+
+        output.write(reinterpret_cast<const char *>(pixelData), imageSize);
+
+        output.close();
+    } else {
+        std::cerr << "Failed to open file: " << filename << "\n";
+    }
+
+    vkUnmapMemory(m_Device, stagingBufferMemory);
+    vkDestroyBuffer(m_Device, stagingBuffer, nullptr);
+    vkFreeMemory(m_Device, stagingBufferMemory, nullptr);
 }
 
 DEF Engine::updateUniformBuffer(uint32_t currentImage) -> void {
@@ -1722,7 +1852,7 @@ DEF Engine::updateUniformBuffer(uint32_t currentImage) -> void {
         .model = glm::rotate(mat4(1.0f),
             delta_time * PI_HALF,
             vec3(0.0f, 0.0f, 1.0f)),
-        .view = glm::lookAt(Settings::CAMERA_EYE, Settings::CAMERA_CENTER, Settings::CAMERA_UP),
+        .view = glm::lookAt(m_CameraEye, m_CameraCenter, m_CameraUp),
         .proj = glm::perspective(PI_QUARTER,
             static_cast<float>(m_SwapChainExtent.width) / static_cast<float>(m_SwapChainExtent.height),
             Settings::CLIPPING_PLANE_NEAR,
@@ -1915,13 +2045,13 @@ DEF Engine::chooseSwapSurfaceFormat(const vector<VkSurfaceFormatKHR> &availableF
 }
 
 DEF Engine::chooseSwapPresentMode(const vector<VkPresentModeKHR> &availablePresentModes) -> VkPresentModeKHR {
-    if (availablePresentModes.empty()) fprintf(stderr, "No presentation modes availiable!");
+    if (availablePresentModes.empty()) throw std::runtime_error("No presentation modes availiable!");
 
     auto found = find_if(
         availablePresentModes.begin(),
         availablePresentModes.end(),
         [](const VkPresentModeKHR &availablePresentMode) {
-            return availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR;
+            return availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR; // Render as quickly as possible
         });
     return (found != availablePresentModes.end()) ? *found : availablePresentModes[0];
 }
@@ -1939,4 +2069,65 @@ DEF Engine::chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities) -> Vk
     };
 
     return actualExtent;
+}
+
+DEF Engine::setCameraPosition(vec3 position) -> void {
+    m_CameraEye = position;
+}
+
+DEF Engine::moveCamera(vec3 direction) -> void {
+    setCameraPosition(m_CameraEye + direction);
+}
+
+DEF Engine::getCameraLookDirection() const -> vec3 {
+    vec3 direction = m_CameraCenter - m_CameraEye;
+
+    return glm::normalize(direction);
+}
+
+DEF Engine::moveCameraForward(float amount) -> void {
+    moveCamera(getCameraLookDirection() * amount);
+}
+
+DEF Engine::moveCameraRight(float amount) -> void {
+    // Calculate the right direction using the cross product of the look direction and the up vector
+    vec3 rightDirection = glm::normalize(glm::cross(getCameraLookDirection(), m_CameraUp));
+
+    // Move both the camera eye and the camera center in the right direction
+    vec3 movement = rightDirection * amount;
+    m_CameraEye += movement;
+    m_CameraCenter += movement;
+}
+
+DEF Engine::lookAround(float yawOffset, float pitchOffset) -> void {
+    // Calculate the current look direction
+    vec3 lookDirection = getCameraLookDirection();
+
+    // Calculate the right direction (for pitch calculation)
+    vec3 rightDirection = glm::normalize(glm::cross(lookDirection, m_CameraUp));
+
+    // Apply yaw rotation (around the up vector)
+    // Rotate the look direction around the up vector for left/right movement
+    mat4 yawRotation = glm::rotate(mat4(1.0f), glm::radians(yawOffset), m_CameraUp);
+    lookDirection = vec3(yawRotation * vec4(lookDirection, 0.0f));
+
+    // Apply pitch rotation (around the right direction)
+    // Rotate the look direction around the right vector for up/down movement
+    mat4 pitchRotation = glm::rotate(mat4(1.0f), glm::radians(pitchOffset), rightDirection);
+    lookDirection = vec3(pitchRotation * vec4(lookDirection, 0.0f));
+
+    float currentPitch = asin(lookDirection.y);
+    if (currentPitch > Settings::CAMERA_MAX_PITCH) {
+        lookDirection.y = sin(Settings::CAMERA_MAX_PITCH);
+    } else if (currentPitch < -Settings::CAMERA_MAX_PITCH) {
+        lookDirection.y = -sin(Settings::CAMERA_MAX_PITCH);
+    }
+
+    // Update the camera center based on the new look direction
+    m_CameraCenter = m_CameraEye + glm::normalize(lookDirection);
+    glmPrint(m_CameraCenter);
+}
+
+DEF Engine::takeScreenshot() -> void {
+    m_TakeScreenshotNextFrame = true;
 }

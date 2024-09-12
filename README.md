@@ -1,49 +1,10 @@
 # Vulcan 3D Engine from scratch
-## Vulkan Tutorial Roadmap
-* [x] Development Environment
-* [x] Drawing a Triangle
-    * [x] Setup
-        * [x] Base Code
-        * [x] Instance
-        * [x] Validation Layers
-        * [x] Physical Devices and queue families
-        * [x] Logical Devices and queues
-    * [x] Presentation
-        * [x] Window Surface
-        * [x] Swap Chain
-        * [x] Image Views
-    * [x] Graphics pipeline basics
-        * [x] Shader modules
-        * [x] Fixed functions
-        * [x] Render passes 
-        * [x] Conclusion
-    * [x] Drawing
-        * [x] Framebuffers
-        * [x] Command Buffers
-        * [x] Rendering and presentation
-        * [x] Frames in flight
-    * [x] Swap chain recreation
-* [x] Vertex Buffers
-    * [x] Vertex Input description
-    * [x] Vertex Buffer Creation
-    * [x] Staging Buffer
-    * [x] Index Buffer
-* [x] Uniform Buffers
-    * [x] Descriptor layout and buffer
-    * [x] Descriptor pool and sets
-* [x] Texture Mapping
-    * [x] Images
-    * [x] Image view and sampler
-    * [x] Combined image sampler 
-* [x] Depth Buffering
-* [x] Loading Models
-* [x] Generating Mipmaps
-* [x] Multisampling
-* [ ] Compute Shader
-
-
+This Repo is my attempt to build a 3D game engine written in C++, using Vulkan as a Low Level graphics card API and GLFW as a window manager.
 
 # Reminders and things to look out for
+* Apparently Metal has some kind of internal setup which causes Vulkan with MoltenVK to not be able to render more than the display refresh rate, that means that I am capped to 60fps rendering.
+    * This seems to be a well known issue, Path of Exile seems to have the same issue from what I saw.
+* I use a studio display, which has a "retina" display. What it does concretely it renders things at 5k and then downscales it to (in my case 2880x1620, i.e. with a 2x downscaling factor for width and height). Default scale is 2560x1440.
 * (Currently not implemented) Be careful whether you are compiling with DEBUG flag set or not
 * (Currently always on) The runtime sanitizers in compilation settings are VERY slow, active during debug, if things are slow should try to disable those first.
 * Regarding MacOS Specific Workarounds
@@ -175,7 +136,7 @@ system_profiler
 ](https://www.youtube.com/watch?v=wGSSUSeaLgA)
         * [Interactive Computer Graphics](https://www.youtube.com/watch?v=UVCuWQV_-Es&list=PLplnkTzzqsZS3R5DjmCQsqupu43oS9CFN&index=1)
         * GSN Compose
-            * [Shaders Monthly Series](https://www.youtube.com/watch?v=mJOqVeiLOf0&list=PL8vNj3osX2PzZ-cNSqhA8G6C1-Li5-Ck8&index=1]
+            * [Shaders Monthly Series](https://www.youtube.com/watch?v=mJOqVeiLOf0&list=PL8vNj3osX2PzZ-cNSqhA8G6C1-Li5-Ck8&index=1])
         * Vulkanised
             * [Vulkanised 2024: Common Mistakes When Learning Vulkan - Charles Giessen](https://www.youtube.com/watch?v=0OqJtPnkfC8)
         * [Game Engine Series](https://www.youtube.com/@GameEngineSeries) (that's the name of the channel)
