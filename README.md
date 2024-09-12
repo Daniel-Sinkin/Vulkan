@@ -1,47 +1,5 @@
 # Vulcan 3D Engine from scratch
-## Vulkan Tutorial Roadmap
-* [x] Development Environment
-* [x] Drawing a Triangle
-    * [x] Setup
-        * [x] Base Code
-        * [x] Instance
-        * [x] Validation Layers
-        * [x] Physical Devices and queue families
-        * [x] Logical Devices and queues
-    * [x] Presentation
-        * [x] Window Surface
-        * [x] Swap Chain
-        * [x] Image Views
-    * [x] Graphics pipeline basics
-        * [x] Shader modules
-        * [x] Fixed functions
-        * [x] Render passes 
-        * [x] Conclusion
-    * [x] Drawing
-        * [x] Framebuffers
-        * [x] Command Buffers
-        * [x] Rendering and presentation
-        * [x] Frames in flight
-    * [x] Swap chain recreation
-* [x] Vertex Buffers
-    * [x] Vertex Input description
-    * [x] Vertex Buffer Creation
-    * [x] Staging Buffer
-    * [x] Index Buffer
-* [x] Uniform Buffers
-    * [x] Descriptor layout and buffer
-    * [x] Descriptor pool and sets
-* [x] Texture Mapping
-    * [x] Images
-    * [x] Image view and sampler
-    * [x] Combined image sampler 
-* [x] Depth Buffering
-* [x] Loading Models
-* [x] Generating Mipmaps
-* [x] Multisampling
-* [ ] Compute Shader
-
-
+This Repo is my attempt to build a 3D game engine written in C++, using Vulkan as a Low Level graphics card API and GLFW as a window manager.
 
 # Reminders and things to look out for
 * Apparently Metal has some kind of internal setup which causes Vulkan with MoltenVK to not be able to render more than the display refresh rate, that means that I am capped to 60fps rendering.
