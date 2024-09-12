@@ -84,7 +84,8 @@ Engine::Engine()
       m_DepthImageView(VK_NULL_HANDLE),
       m_CameraCenter(Settings::CAMERA_CENTER),
       m_CameraEye(Settings::CAMERA_EYE),
-      m_CameraUp(Settings::CAMERA_UP) {}
+      m_CameraUp(Settings::CAMERA_UP),
+      m_TakeScreenshotNextFrame(false) {}
 
 Engine::~Engine() {
     fprintf(stdout, "Engine destructor has been called, waiting for the device to idle.\n");
@@ -1670,15 +1671,15 @@ DEF Engine::findQueueFamilies(VkPhysicalDevice device) -> QueueFamilyIndices {
     return indices;
 }
 
-DEF Engine::mainLoop(bool saveFrames) -> void {
+DEF Engine::mainLoop() -> void {
     fprintf(stdout, "Starting the main loop.\n");
     while (!glfwWindowShouldClose(m_Window)) {
         glfwPollEvents();
-        drawFrame(saveFrames);
+        drawFrame();
     }
 }
 
-DEF Engine::drawFrame(bool saveFrame) -> void {
+DEF Engine::drawFrame() -> void {
     vkWaitForFences(m_Device, 1, &m_InFlightFences[m_CurrentFrameIdx], VK_TRUE, NO_TIMEOUT);
     uint32_t imageIndex = 0;
     VkResult resultNextImage = vkAcquireNextImageKHR(
@@ -1721,7 +1722,10 @@ DEF Engine::drawFrame(bool saveFrame) -> void {
         throw runtime_error("failed to submit draw command buffer!");
     }
 
-    if (saveFrame) captureFramebuffer(imageIndex);
+    if (m_TakeScreenshotNextFrame) {
+        captureFramebuffer(imageIndex);
+        m_TakeScreenshotNextFrame = false;
+    }
 
     array<VkSwapchainKHR, 1> swapChains = {m_SwapChain};
     VkPresentInfoKHR presentInfo{
@@ -2085,7 +2089,7 @@ DEF Engine::moveCameraForward(float amount) -> void {
     moveCamera(getCameraLookDirection() * amount);
 }
 
-DEF Engine::moveCameraRightFree(float amount) -> void {
+DEF Engine::moveCameraRight(float amount) -> void {
     // Calculate the right direction using the cross product of the look direction and the up vector
     vec3 rightDirection = glm::normalize(glm::cross(getCameraLookDirection(), m_CameraUp));
 
@@ -2123,4 +2127,9 @@ DEF Engine::lookAround(float yawOffset, float pitchOffset) -> void {
 
     // Update the camera center based on the new look direction
     m_CameraCenter = m_CameraEye + glm::normalize(lookDirection);
+    glmPrint(m_CameraCenter);
+}
+
+DEF Engine::takeScreenshot() -> void {
+    m_TakeScreenshotNextFrame = true;
 }

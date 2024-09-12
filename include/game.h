@@ -5,7 +5,7 @@ class Game {
 public:
     // Constructor taking the GLFW window as an argument
     Game(Engine *engine)
-        : m_Engine(engine), lastMouseX(0.0), lastMouseY(0.0), firstMouse(true) {}
+        : m_Engine(engine), lastMouseX(0.0), lastMouseY(0.0), initialMouseState(true), m_F12HasBeenPressedBefore(false) {}
 
     // Function to process input and handle game logic
     void handleInput() {
@@ -16,7 +16,9 @@ public:
 private:
     Engine *m_Engine;
     double lastMouseX, lastMouseY; // To track the last known mouse position
-    bool firstMouse;               // To handle the initial mouse movement
+    bool initialMouseState;        // To handle the initial mouse movement
+
+    bool m_F12HasBeenPressedBefore;
 
     // Process keyboard input
     void processKeyboardInput() {
@@ -31,7 +33,7 @@ private:
             std::cout << "Move Forward\n";
         }
         if (glfwGetKey(m_Engine->getWindow(), GLFW_KEY_A) == GLFW_PRESS) {
-            m_Engine->moveCameraRightFree(-1 / 60.0);
+            m_Engine->moveCameraRight(-1 / 60.0);
             std::cout << "Move Left\n";
         }
         if (glfwGetKey(m_Engine->getWindow(), GLFW_KEY_S) == GLFW_PRESS) {
@@ -39,8 +41,19 @@ private:
             std::cout << "Move Backward\n";
         }
         if (glfwGetKey(m_Engine->getWindow(), GLFW_KEY_D) == GLFW_PRESS) {
-            m_Engine->moveCameraRightFree(1 / 60.0);
+            m_Engine->moveCameraRight(1 / 60.0);
             std::cout << "Move Right\n";
+        }
+
+        if (glfwGetKey(m_Engine->getWindow(), GLFW_KEY_F12) == GLFW_PRESS) {
+            m_F12HasBeenPressedBefore = true;
+        }
+        // Take screenshot when F12 is released
+        if ((glfwGetKey(m_Engine->getWindow(), GLFW_KEY_F12) == GLFW_RELEASE) & (m_F12HasBeenPressedBefore)) {
+            m_Engine->takeScreenshot();
+            std::cout << "Taking screenshot\n";
+
+            m_F12HasBeenPressedBefore = false;
         }
     }
 
@@ -62,17 +75,16 @@ private:
         std::cout << "Mouse Position (Vulkan NDC): (" << vulkanX << ", " << vulkanY << ")\n";
     }
 
-    // Process mouse movement and use it to move the camera
     void processMouseMovement() {
         // Get current mouse position in window space
         double mouseX, mouseY;
         glfwGetCursorPos(m_Engine->getWindow(), &mouseX, &mouseY);
 
         // Handle the first mouse event (to avoid a large initial jump)
-        if (firstMouse) {
+        if (initialMouseState) {
             lastMouseX = mouseX;
             lastMouseY = mouseY;
-            firstMouse = false;
+            initialMouseState = false;
         }
 
         // Calculate the mouse offset (delta)
@@ -83,16 +95,24 @@ private:
         lastMouseX = mouseX;
         lastMouseY = mouseY;
 
+        // Get the window size
+        int windowWidth, windowHeight;
+        glfwGetWindowSize(m_Engine->getWindow(), &windowWidth, &windowHeight);
+
         // Sensitivity for the camera movement (adjust to your liking)
-        float sensitivity = 0.02f;
-        // TODO: Fill this up
-        // float normalizedYawSensitivity = sensitivity / static_cast<float>(m_Engine->getWindow());    // Adjust X based on width
-        // float normalizedPitchSensitivity = sensitivity / static_cast<float>(m_Engine->getWindow()); // Adjust Y based on height
+        float sensitivity = 0.15f;
 
-        float yawOffset = static_cast<float>(-offsetX) * sensitivity;  // Horizontal movement
-        float pitchOffset = static_cast<float>(offsetY) * sensitivity; // Vertical movement
+        float aspectRatio = static_cast<float>(windowWidth) / static_cast<float>(windowHeight);
 
-        // Call the lookAround function to update camera based on mouse movement
+        // Normalize the X and Y sensitivity by window dimensions
+        float normalizedYawSensitivity = sensitivity;
+        float normalizedPitchSensitivity = sensitivity / aspectRatio;
+
+        // Invert the yaw direction (horizontal movement)
+        float yawOffset = static_cast<float>(-offsetX) * normalizedYawSensitivity;
+        float pitchOffset = static_cast<float>(offsetY) * normalizedPitchSensitivity;
+
+        // Call the lookAround function to update the camera based on mouse movement
         m_Engine->lookAround(yawOffset, pitchOffset);
     }
 };

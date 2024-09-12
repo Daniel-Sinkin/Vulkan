@@ -2,6 +2,7 @@
 #define ENGINE_H
 
 #include "Constants.h"
+#include "Util.h"
 
 DEF CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkDebugUtilsMessengerEXT *pDebugMessenger) -> VkResult;
 DEF DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks *pAllocator) -> void;
@@ -13,8 +14,8 @@ public:
 
     DEF initialize() -> void;
 
-    DEF mainLoop(bool saveFrames = false) -> void;
-    DEF drawFrame(bool saveFrame = false) -> void;
+    DEF mainLoop() -> void;
+    DEF drawFrame() -> void;
 
     [[nodiscard]] DEF getWindow() const -> GLFWwindow *;
 
@@ -23,9 +24,10 @@ public:
 
     DEF getCameraLookDirection() const -> vec3;
     DEF moveCameraForward(float amount) -> void;
-    DEF moveCameraRightAroundPivot(float amount) -> void;
-    DEF moveCameraRightFree(float amount) -> void;
+    DEF moveCameraRight(float amount) -> void;
     DEF lookAround(float yawOffset, float pitchOffset) -> void;
+
+    DEF takeScreenshot() -> void;
 
 private:
     DEF
@@ -159,6 +161,8 @@ private:
     vec3 m_CameraEye;
     vec3 m_CameraCenter;
     vec3 m_CameraUp;
+
+    bool m_TakeScreenshotNextFrame;
 };
 
 #endif // ENGINE_H

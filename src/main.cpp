@@ -1,4 +1,5 @@
 #include "Constants.h"
+#include "Util.h"
 #include "engine.h"
 #include "game.h"
 
@@ -25,10 +26,7 @@ DEF main() -> int {
             std::cout << ++iterations << ". Iteration\n";
 
             glfwPollEvents();
-
             game.handleInput();
-
-            // TODO: Use a mutex to avoid dirty reads
 
             TIMED_EXECUTION(engine.drawFrame)
         }
