@@ -1291,7 +1291,7 @@ DEF Engine::createGraphicsPipeline() -> void {
     fprintf(stdout, "Trying to create Shader modules.\n");
     fprintf(stdout, "Trying to read .spv files.\n");
     vector<char> vertShaderCode = Util::readFile(FilePaths::SHADER_VERT_NORMAL);
-    vector<char> fragShaderCode = Util::readFile(FilePaths::SHADER_FRAG_NORMAL);
+    vector<char> fragShaderCode = Util::readFile(FilePaths::SHADER_FRAG_NORMAL_RBG_COLORS);
 
     fprintf(stdout, "\tTrying to create Vertex Shader.\n");
     VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
