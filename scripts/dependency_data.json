@@ -41,6 +41,11 @@
             "url": "https://github.com/Overv/VulkanTutorial/raw/72359e2eb5571e238e4f16ac993de979cf21fb55/resources/chalet.obj.zip",
             "expected_md5": "124fe3fa1a60631011c7b4d466a7f0b0",
             "local_file": "./assets/models/chalet.obj.zip"
+        },
+        "suzanne": {
+            "url": "https://raw.githubusercontent.com/OpenGLInsights/OpenGLInsightsCode/master/Chapter%2026%20Indexing%20Multiple%20Vertex%20Arrays/article/suzanne.obj",
+            "expected_md5": "3a4286a71343564624705b9b8863bcfa",
+            "local_file": "./assets/models/suzanne.obj"
         }
     }
 }

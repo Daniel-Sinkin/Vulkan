@@ -262,6 +262,7 @@ constexpr const char *SHADER_VERT = "shaders/compiled/shader.vert.spv";
 constexpr const char *SHADER_FRAG = "shaders/compiled/shader.frag.spv";
 constexpr const char *SHADER_VERT_NORMAL = "shaders/compiled/shader_normal.vert.spv";
 constexpr const char *SHADER_FRAG_NORMAL = "shaders/compiled/shader_normal.frag.spv";
+constexpr const char *SHADER_FRAG_NORMAL_RBG_COLORS = "shaders/compiled/shader_normal_rbg_colors.frag.spv";
 
 constexpr const char *SHADER_VERT_FANCY = "shaders/compiled/shader_fancy.vert.spv";
 constexpr const char *SHADER_FRAG_FRACTAL = "shaders/compiled/shader_fractal.frag.spv";
@@ -273,6 +274,7 @@ constexpr const char *VIKING_ROOM_TEXTURE = "assets/textures/viking_room.png";
 constexpr const char *VIKING_ROOM_MODEL = "assets/models/viking_room.obj";
 constexpr const char *CHALET_TEXTURE = "assets/textures/chalet.jpg";
 constexpr const char *CHALET_MODEL = "assets/models/chalet.obj";
+constexpr const char *SUZANNE_MODEL = "assets/models/suzanne.obj";
 
 constexpr const char *PAINTED_PLASTER_DIFFUSE = "assets/textures/painted_plaster_diffuse.png";
 constexpr const char *PAINTED_PLASTER_NORMAL = "assets/textures/painted_plaster_normal.jpg";
