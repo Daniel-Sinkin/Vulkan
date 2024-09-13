@@ -547,7 +547,7 @@ DEF Engine::createTextureImage() -> void {
     int texWidth = 0;
     int texHeight = 0;
     int texChannels = 0;
-    stbi_uc *pixels = stbi_load(FilePaths::PAINTED_PLASTER_DIFFUSE, &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+    stbi_uc *pixels = stbi_load(FilePaths::METAL_DIFFUSE, &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
     if (!pixels) throw runtime_error("failed to load texture image!");
     VkDeviceSize imageSize = static_cast<VkDeviceSize>(texWidth) * texHeight * 4;
 
@@ -856,7 +856,7 @@ DEF Engine::createDescriptorSetLayout() -> void {
         .binding = 0,
         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
         .descriptorCount = 1,
-        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT};
+        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT};
 
     VkDescriptorSetLayoutBinding samplerLayoutBinding{
         .binding = 1,
@@ -1290,8 +1290,8 @@ DEF Engine::createRenderPass() -> void {
 DEF Engine::createGraphicsPipeline() -> void {
     fprintf(stdout, "Trying to create Shader modules.\n");
     fprintf(stdout, "Trying to read .spv files.\n");
-    vector<char> vertShaderCode = Util::readFile(FilePaths::SHADER_VERT_NORMAL);
-    vector<char> fragShaderCode = Util::readFile(FilePaths::SHADER_FRAG_NORMAL_RBG_COLORS);
+    vector<char> vertShaderCode = Util::readFile(FilePaths::SHADER_VERT_PHONG);
+    vector<char> fragShaderCode = Util::readFile(FilePaths::SHADER_FRAG_PHONG);
 
     fprintf(stdout, "\tTrying to create Vertex Shader.\n");
     VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
@@ -1906,12 +1906,10 @@ DEF Engine::captureFramebuffer(uint32_t imageIndex) -> void {
 }
 
 DEF Engine::updateUniformBuffer(uint32_t currentImage) -> void {
-    // The static here makes it into a global static variable so the next function call will not overwrite it.
     static auto startTime = std::chrono::high_resolution_clock::now();
 
     auto currentTime = std::chrono::high_resolution_clock::now();
     float delta_time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
     UniformBufferObject ubo{
         .model = glm::rotate(mat4(1.0f),
             delta_time * PI_HALF,
@@ -1919,14 +1917,13 @@ DEF Engine::updateUniformBuffer(uint32_t currentImage) -> void {
         .view = glm::lookAt(m_CameraEye, m_CameraCenter, m_CameraUp),
         .proj = glm::perspective(PI_QUARTER,
             static_cast<float>(m_SwapChainExtent.width) / static_cast<float>(m_SwapChainExtent.height),
-            Settings::CLIPPING_PLANE_NEAR,
-            Settings::CLIPPING_PLANE_FAR),
+            Settings::CLIPPING_PLANE_NEAR, Settings::CLIPPING_PLANE_FAR),
         .time = delta_time,
-        ._ = vec3(0.0f, 0.0f, 0.0f)};
+        .cameraEye = m_CameraEye,
+        .cameraCenter = m_CameraCenter,
+        .cameraUp = m_CameraUp};
 
-    // GLM uses OpenGL convention, this fixes that
     ubo.proj[1][1] *= -1;
-
     memcpy(m_UniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
 }
 

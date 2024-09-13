@@ -48,36 +48,38 @@ def save_obj(file_path, vertices, normals, texcoords, faces):
             # OBJ indices are 1-based, so we need to add 1 to all indices
             f.write(f"f {face[0]+1}/{face[0]+1}/{face[0]+1} {face[1]+1}/{face[1]+1}/{face[1]+1} {face[2]+1}/{face[2]+1}/{face[2]+1}\n")
 
-def generate_grid_positions(grid_size, spacing):
+def generate_grid_positions(spacing):
     positions = []
+    grid_size = 3  # Hardcoded grid size of 3x3x3
     offset = (grid_size - 1) * spacing / 2  # To center the grid around the origin
+
     for x in range(grid_size):
         for y in range(grid_size):
             for z in range(grid_size):
-                position = [
-                    x * spacing - offset,
-                    y * spacing - offset,
-                    z * spacing - offset
-                ]
-                positions.append(position)
+                # Only include positions on the outer shell of the 3x3x3 grid
+                if x in [0, 2] or y in [0, 2] or z in [0, 2]:
+                    position = [
+                        x * spacing - offset,
+                        y * spacing - offset,
+                        z * spacing - offset
+                    ]
+                    positions.append(position)
+
     return positions
 
 if __name__ == "__main__":
     radius = 1.0
-    subdivisions = 20  # As specified in the filename
-    grid_size = 3  # 3x3x3 grid
-    num_spheres = grid_size ** 3  # 27 spheres in total
-    
-    # Increase spacing to create more distance between spheres
-    spacing = radius * 4.0  # Increased from 2.2 to 4.0
+    subdivisions = 30  # Number of subdivisions for the sphere
+    spacing = radius * 4.0  # Increased spacing between spheres
     
     output_dir = Path("assets/models")
     output_dir.mkdir(parents=True, exist_ok=True)  # Ensure the directory exists
     output_path = output_dir.joinpath(f"sphere_{subdivisions}.obj")
     
-    positions = generate_grid_positions(grid_size, spacing)
+    # Generate only the outer positions of the 3x3x3 grid (8 positions)
+    positions = generate_grid_positions(spacing)
     
     vertices, normals, texcoords, faces = generate_sphere_mesh(radius, subdivisions, positions)
     
     save_obj(output_path, vertices, normals, texcoords, faces)
-    print(f"OBJ file with {num_spheres} spheres in a {grid_size}x{grid_size}x{grid_size} grid saved as {output_path}")
+    print(f"OBJ file with spheres in the outer shell of a 3x3x3 grid saved as {output_path}")

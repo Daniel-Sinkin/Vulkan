@@ -256,8 +256,10 @@ struct UniformBufferObject {
     mat4 model;
     mat4 view;
     mat4 proj;
+    alignas(16) vec3 cameraEye;
     float time;
-    vec3 _; // Alignment padding
+    alignas(16) vec3 cameraCenter;
+    alignas(16) vec3 cameraUp;
 };
 
 namespace FilePaths {
@@ -266,6 +268,8 @@ constexpr const char *SHADER_FRAG = "shaders/compiled/shader.frag.spv";
 constexpr const char *SHADER_VERT_NORMAL = "shaders/compiled/shader_normal.vert.spv";
 constexpr const char *SHADER_FRAG_NORMAL = "shaders/compiled/shader_normal.frag.spv";
 constexpr const char *SHADER_FRAG_NORMAL_RBG_COLORS = "shaders/compiled/shader_normal_rbg_colors.frag.spv";
+constexpr const char *SHADER_VERT_PHONG = "shaders/compiled/shader_phong.vert.spv";
+constexpr const char *SHADER_FRAG_PHONG = "shaders/compiled/shader_phong.frag.spv";
 
 constexpr const char *SHADER_VERT_FANCY = "shaders/compiled/shader_fancy.vert.spv";
 constexpr const char *SHADER_FRAG_FRACTAL = "shaders/compiled/shader_fractal.frag.spv";
@@ -281,6 +285,9 @@ constexpr const char *SUZANNE_MODEL = "assets/models/suzanne.obj";
 
 constexpr const char *PAINTED_PLASTER_DIFFUSE = "assets/textures/painted_plaster_diffuse.png";
 constexpr const char *PAINTED_PLASTER_NORMAL = "assets/textures/painted_plaster_normal.jpg";
+
+constexpr const char *METAL_DIFFUSE = "assets/textures/metal_diffuse.png";
+constexpr const char *METAL_NORMAL = "assets/textures/metal_normal.png";
 
 constexpr const char *SPHERE_20_MODEL = "assets/models/sphere_20.obj";
 
