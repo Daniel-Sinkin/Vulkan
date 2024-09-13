@@ -335,8 +335,8 @@ constexpr auto WINDOW_NAME = "Daniel's 3D Engine";
 
 constexpr float MOUSE_SENSITIVITY = 2.0f;
 
-constexpr float CAMERA_FLOATING_SPEED = 1.6f;
-constexpr float CAMERA_FLOATING_SPEED_BOOSTED = 2.2f;
+constexpr float CAMERA_FLOATING_SPEED = 2.5f;
+constexpr float CAMERA_FLOATING_SPEED_BOOSTED = 3.75f;
 
 // For example macbooks have integrated graphics cards, so they would be filtered by this
 constexpr bool ALLOW_DEVICE_WITHOUT_INTEGRATED_GPU = true;
@@ -345,7 +345,7 @@ constexpr bool ALLOW_DEVICE_WITHOUT_GEOMETRY_SHADER = true;
 constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 
 constexpr vec3 CAMERA_EYE(2.0f, 4.0f, 2.0f);
-constexpr vec3 CAMERA_CENTER(0.0f, 0.0f, 0.5f);
+constexpr vec3 CAMERA_CENTER(0.0f, 0.0f, 0.0f);
 constexpr vec3 CAMERA_UP(0.0f, 0.0f, 1.0f);
 
 constexpr float CAMERA_MAX_PITCH = 50.0f;

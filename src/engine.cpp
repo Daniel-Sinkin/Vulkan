@@ -1906,9 +1906,9 @@ DEF Engine::captureFramebuffer(uint32_t imageIndex) -> void {
 }
 
 DEF Engine::updateUniformBuffer(uint32_t currentImage) -> void {
-    static auto startTime = std::chrono::high_resolution_clock::now();
+    static std::chrono::time_point startTime = std::chrono::high_resolution_clock::now();
 
-    auto currentTime = std::chrono::high_resolution_clock::now();
+    std::chrono::time_point currentTime = std::chrono::high_resolution_clock::now();
     float delta_time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
     UniformBufferObject ubo{
         .model = glm::rotate(mat4(1.0f),
@@ -1918,8 +1918,8 @@ DEF Engine::updateUniformBuffer(uint32_t currentImage) -> void {
         .proj = glm::perspective(PI_QUARTER,
             static_cast<float>(m_SwapChainExtent.width) / static_cast<float>(m_SwapChainExtent.height),
             Settings::CLIPPING_PLANE_NEAR, Settings::CLIPPING_PLANE_FAR),
-        .time = delta_time,
         .cameraEye = m_CameraEye,
+        .time = delta_time,
         .cameraCenter = m_CameraCenter,
         .cameraUp = m_CameraUp};
 
