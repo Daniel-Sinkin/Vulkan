@@ -10,6 +10,11 @@
             "expected_md5": "845b8b43d7d941890a57a477455558ad",
             "local_file": "./external/stb_image_write.h"
         },
+        "stb_truetype": {
+            "url": "https://raw.githubusercontent.com/nothings/stb/013ac3b/stb_truetype.h",
+            "expected_md5": "589b9e528dfb57a231403fb8e5053b6f",
+            "local_file": "./external/stb_truetype.h"
+        },
         "tiny_obj_loader": {
             "url": "https://raw.githubusercontent.com/tinyobjloader/tinyobjloader/7b3ba0b/tiny_obj_loader.h",
             "expected_md5": "3226a14e4a4c3a51ddbfa87bd6240f6b",
