@@ -2,6 +2,7 @@
 #define CONSTANTS_H
 
 #define GLFW_INCLUDE_VULKAN
+#include <GL/glew.h>
 #include <GLFW/glfw3.h> // Implicitly imports vulkan
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_beta.h> // For VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME
@@ -283,6 +284,11 @@ constexpr const char *CHALET_TEXTURE = "assets/textures/chalet.jpg";
 constexpr const char *CHALET_MODEL = "assets/models/chalet.obj";
 constexpr const char *SUZANNE_MODEL = "assets/models/suzanne.obj";
 
+// Nicole model source can be found in the credits in README, FBX importing
+// is not (yet?) implemented so I had to convert .obj manually, but will not create
+// a fbx->obj conversion script (for now?).
+constexpr const char *NICOLE_MODEL = "assets/models/Nicole.obj";
+
 constexpr const char *PAINTED_PLASTER_DIFFUSE = "assets/textures/painted_plaster_diffuse.png";
 constexpr const char *PAINTED_PLASTER_NORMAL = "assets/textures/painted_plaster_normal.jpg";
 
@@ -291,10 +297,9 @@ constexpr const char *METAL_NORMAL = "assets/textures/metal_normal.png";
 
 constexpr const char *SPHERE_20_MODEL = "assets/models/sphere_20.obj";
 
-// Nicole model source can be found in the credits in README, FBX importing
-// is not (yet?) implemented so I had to convert .obj manually, but will not create
-// a fbx->obj conversion script (for now?).
-constexpr const char *NICOLE_MODEL = "assets/models/Nicole.obj";
+constexpr const char *FONT_MERRIWEATHER_LIGHT = "assets/fonts/Merriweather-Light.ttf";
+constexpr const char *FONT_MONASPACE_ARGON_SEMIBOLD = "assets/fonts/MonaspaceArgon-SemiBold.ttf";
+
 } // namespace FilePaths
 
 namespace Util {
@@ -356,6 +361,10 @@ constexpr float CLIPPING_PLANE_FAR = 100.0f;
 constexpr VkSurfaceFormatKHR PREFERRED_SURFACE_FORMAT = {
     .format = VK_FORMAT_B8G8R8A8_SRGB,
     .colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
+
+constexpr size_t FONT_ATLAS_WIDTH = 512;
+constexpr size_t FONT_ATLAS_HEIGHT = 512;
+constexpr size_t FONT_FONT_SIZE = 32;
 
 } // namespace Settings
 

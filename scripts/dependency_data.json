@@ -51,6 +51,11 @@
             "url": "https://raw.githubusercontent.com/OpenGLInsights/OpenGLInsightsCode/master/Chapter%2026%20Indexing%20Multiple%20Vertex%20Arrays/article/suzanne.obj",
             "expected_md5": "3a4286a71343564624705b9b8863bcfa",
             "local_file": "./assets/models/suzanne.obj"
+        },
+        "monaspaceArgon-SemiBold": {
+            "url": "https://github.com/githubnext/monaspace/raw/e6f6278/fonts/otf/MonaspaceArgon-SemiBold.otf",
+            "expected_md5": "bb26947119b97e31246b425d594e1a5a",
+            "local_file": "./assets/fonts/MonaspaceArgon-SemiBold.otf"
         }
     }
 }
