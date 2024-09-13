@@ -75,11 +75,14 @@ system_profiler
                 Automatically Adjust Brightness: No
 ```
 
-# Credits
+# Credits and Attributions
 * Models used
     * "Viking Room" (https://sketchfab.com/3d-models/viking-room-a49f1b8e4f5c4ecf9e1fe7d81915ad38) by nigelgoh
         * I'm using the clean up version made by Vulkan-Tutorial.com, found [here](https://vulkan-tutorial.com/Loading_models)..
     * "Nicole" (https://skfb.ly/pqvTX) by Voon Hong Liang is licensed under Creative Commons Attribution (http://creativecommons.org/licenses/by/4.0/).
+    * "Suzanne" the famous monkey, from [here](https://github.com/OpenGLInsights/OpenGLInsightsCode/tree/master)
+* Textures used
+    * https://polyhaven.com/a/painted_plaster_wall
 
 # References
 * Dependencies

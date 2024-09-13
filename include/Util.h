@@ -3,32 +3,16 @@
 
 #include "Constants.h"
 
-// Set the bit corresponding to a key
-inline void setKeyBit(uint64_t &bitmask, int bitPosition) {
-    bitmask |= (1ULL << bitPosition); // Set the bit at the specified position
-}
+inline void setKeyBit(uint64_t &bitmask, int bitPosition) { bitmask |= bitPosition; }
+inline void clearKeyBit(uint64_t &bitmask, int bitPosition) { bitmask &= ~bitPosition; }
+inline bool isKeyBitSet(uint64_t bitmask, int bitPosition) { return (bitmask & bitPosition) != 0; }
 
-// Clear the bit corresponding to a key
-inline void clearKeyBit(uint64_t &bitmask, int bitPosition) {
-    bitmask &= ~(1ULL << bitPosition); // Clear the bit at the specified position
-}
-
-// Check if the bit corresponding to a key is set (pressed)
-inline bool isKeyBitSet(uint64_t bitmask, int bitPosition) {
-    return (bitmask & (1ULL << bitPosition)) != 0;
-}
-
-// Generic function to handle key press/release with bitmask
 inline bool handleKeyPressReleaseWithBitmask(uint64_t &bitmask, int bitPosition, int key, GLFWwindow *window) {
-    if (glfwGetKey(window, key) == GLFW_PRESS) {
-        setKeyBit(bitmask, bitPosition);
-    }
-
+    if (glfwGetKey(window, key) == GLFW_PRESS) setKeyBit(bitmask, bitPosition);
     if (glfwGetKey(window, key) == GLFW_RELEASE && isKeyBitSet(bitmask, bitPosition)) {
         clearKeyBit(bitmask, bitPosition);
-        return true; // Key was pressed and then released
+        return true;
     }
-
     return false;
 }
 
@@ -88,54 +72,3 @@ inline void glmPrint(const glm::mat3 &mat) {
 }
 
 #endif // CONSTANTS_H
-
-/*
-// clang-format off
-std::string vkResultToString(VkResult result) {
-    switch (result) {
-        case VK_SUCCESS: return "VK_SUCCESS";
-        case VK_NOT_READY: return "VK_NOT_READY";
-        case VK_TIMEOUT: return "VK_TIMEOUT";
-        case VK_EVENT_SET: return "VK_EVENT_SET";
-        case VK_EVENT_RESET: return "VK_EVENT_RESET";
-        case VK_INCOMPLETE: return "VK_INCOMPLETE";
-        case VK_ERROR_OUT_OF_HOST_MEMORY: return "VK_ERROR_OUT_OF_HOST_MEMORY";
-        case VK_ERROR_OUT_OF_DEVICE_MEMORY: return "VK_ERROR_OUT_OF_DEVICE_MEMORY";
-        case VK_ERROR_INITIALIZATION_FAILED: return "VK_ERROR_INITIALIZATION_FAILED";
-        case VK_ERROR_DEVICE_LOST: return "VK_ERROR_DEVICE_LOST";
-        case VK_ERROR_MEMORY_MAP_FAILED: return "VK_ERROR_MEMORY_MAP_FAILED";
-        case VK_ERROR_LAYER_NOT_PRESENT: return "VK_ERROR_LAYER_NOT_PRESENT";
-        case VK_ERROR_EXTENSION_NOT_PRESENT: return "VK_ERROR_EXTENSION_NOT_PRESENT";
-        case VK_ERROR_FEATURE_NOT_PRESENT: return "VK_ERROR_FEATURE_NOT_PRESENT";
-        case VK_ERROR_INCOMPATIBLE_DRIVER: return "VK_ERROR_INCOMPATIBLE_DRIVER";
-        case VK_ERROR_TOO_MANY_OBJECTS: return "VK_ERROR_TOO_MANY_OBJECTS";
-        case VK_ERROR_FORMAT_NOT_SUPPORTED: return "VK_ERROR_FORMAT_NOT_SUPPORTED";
-        case VK_ERROR_FRAGMENTED_POOL: return "VK_ERROR_FRAGMENTED_POOL";
-        case VK_ERROR_OUT_OF_POOL_MEMORY: return "VK_ERROR_OUT_OF_POOL_MEMORY";
-        case VK_ERROR_INVALID_EXTERNAL_HANDLE: return "VK_ERROR_INVALID_EXTERNAL_HANDLE";
-        case VK_ERROR_SURFACE_LOST_KHR: return "VK_ERROR_SURFACE_LOST_KHR";
-        case VK_ERROR_NATIVE_WINDOW_IN_USE_KHR: return "VK_ERROR_NATIVE_WINDOW_IN_USE_KHR";
-        case VK_SUBOPTIMAL_KHR: return "VK_SUBOPTIMAL_KHR";
-        case VK_ERROR_OUT_OF_DATE_KHR: return "VK_ERROR_OUT_OF_DATE_KHR";
-        case VK_ERROR_INCOMPATIBLE_DISPLAY_KHR: return "VK_ERROR_INCOMPATIBLE_DISPLAY_KHR";
-        case VK_ERROR_VALIDATION_FAILED_EXT: return "VK_ERROR_VALIDATION_FAILED_EXT";
-        case VK_ERROR_INVALID_SHADER_NV: return "VK_ERROR_INVALID_SHADER_NV";
-        case VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT: return "VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT";
-        case VK_ERROR_FRAGMENTATION_EXT: return "VK_ERROR_FRAGMENTATION_EXT";
-        case VK_ERROR_NOT_PERMITTED_EXT: return "VK_ERROR_NOT_PERMITTED_EXT";
-        default: return "Unknown Vulkan error";
-    }
-}
-// clang-format on
-
-template <typename VulkanFunction, typename... Args>
-inline void vkCreationWrapper(const std::string &operationName, VulkanFunction func, Args &&...args) {
-    VkResult result = func(std::forward<Args>(args)...);
-    if (result != VK_SUCCESS) {
-        std::string errorName = vkResultToString(result);
-        std::stringstream ss;
-        ss << "\nFailed to create " << operationName << "! <Error Name: " << errorName << ", Error Code: " << result << ">\n";
-        throw std::runtime_error(ss.str());
-    }
-}
-*/
