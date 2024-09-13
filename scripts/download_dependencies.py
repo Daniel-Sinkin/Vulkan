@@ -1,4 +1,15 @@
-import os
+"""
+Handles dependency downloads based on the accompanying `dependency_data.json` file. If a md5
+is availiable then the file gets checked against it, replacing it if its missing.
+
+If no md5 hash is availiable then it gets computed and written into the json file.
+
+zip files get unzipped automatically with the pattern $1.zip -> $1, in particular this means
+that the expect the zip to already contain the correct file fileextension. For example
+the `chalet.obj.zip` file which gets unzipped into `chalet.obj`.
+"""
+
+import os  
 import json
 import hashlib
 import requests
