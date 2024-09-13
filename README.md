@@ -83,6 +83,7 @@ system_profiler
     * "Suzanne" the famous monkey, from [here](https://github.com/OpenGLInsights/OpenGLInsightsCode/tree/master)
 * Textures used
     * https://polyhaven.com/a/painted_plaster_wall
+    * Metal texture from this group https://www.textures.com/category/metal/169
 
 # References
 * Dependencies
@@ -145,7 +146,8 @@ system_profiler
         * [Game Engine Series](https://www.youtube.com/@GameEngineSeries) (that's the name of the channel)
             * [Game Engine Programming Series](https://www.youtube.com/watch?v=hRL56gXqj-4&list=PLU2nPsAdxKWQYxkmQ3TdbLsyc1l2j25XM)
 
-# Appendix A: YouTube Links to the recorded videos 
+# Appendix A: YouTube Links to the recorded videos
+TODO: Put them all in a single playlist and link that one
 * https://youtu.be/afF579Obqlw (Not in the screencaps folder)
 * https://youtu.be/JDX6OLH_uUA (Not in the screencaps folder)
 * https://youtu.be/Sk9cLoi_Vtk
