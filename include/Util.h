@@ -3,31 +3,16 @@
 
 #include "Constants.h"
 
-inline void setKeyBit(uint64_t &bitmask, int bitPosition) {
-    if (bitPosition < 0 || bitPosition >= 64) throw std::runtime_error("Trying to setKeyBit with invalid bitPosition value: " + std::to_string(bitPosition));
-    bitmask |= (1ULL << bitPosition);
-}
-
-inline void clearKeyBit(uint64_t &bitmask, int bitPosition) {
-    if (bitPosition < 0 || bitPosition >= 64) throw std::runtime_error("Trying to clearKeyBit with invalid bitPosition value: " + std::to_string(bitPosition));
-    bitmask &= ~(1ULL << bitPosition);
-}
-
-inline bool isKeyBitSet(uint64_t bitmask, int bitPosition) {
-    if (bitPosition < 0 || bitPosition >= 64) throw std::runtime_error("Trying to check isKeyBitSet with invalid bitPosition value: " + std::to_string(bitPosition));
-    return (bitmask & (1ULL << bitPosition)) != 0;
-}
+inline void setKeyBit(uint64_t &bitmask, int bitPosition) { bitmask |= bitPosition; }
+inline void clearKeyBit(uint64_t &bitmask, int bitPosition) { bitmask &= ~bitPosition; }
+inline bool isKeyBitSet(uint64_t bitmask, int bitPosition) { return (bitmask & bitPosition) != 0; }
 
 inline bool handleKeyPressReleaseWithBitmask(uint64_t &bitmask, int bitPosition, int key, GLFWwindow *window) {
-    if (glfwGetKey(window, key) == GLFW_PRESS) {
-        setKeyBit(bitmask, bitPosition);
-    }
-
+    if (glfwGetKey(window, key) == GLFW_PRESS) setKeyBit(bitmask, bitPosition);
     if (glfwGetKey(window, key) == GLFW_RELEASE && isKeyBitSet(bitmask, bitPosition)) {
         clearKeyBit(bitmask, bitPosition);
         return true;
     }
-
     return false;
 }
 
