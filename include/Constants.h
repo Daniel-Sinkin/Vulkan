@@ -337,7 +337,7 @@ constexpr vec3 CAMERA_UP(0.0f, 0.0f, 1.0f);
 constexpr float CAMERA_MAX_PITCH = 50.0f;
 
 constexpr float CLIPPING_PLANE_NEAR = 0.1f;
-constexpr float CLIPPING_PLANE_FAR = 10.0f;
+constexpr float CLIPPING_PLANE_FAR = 100.0f;
 
 // Define the preferred surface format as a VkSurfaceFormatKHR struct
 constexpr VkSurfaceFormatKHR PREFERRED_SURFACE_FORMAT = {
