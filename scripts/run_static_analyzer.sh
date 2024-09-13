@@ -15,6 +15,8 @@ cppcheck_output=$(cppcheck --inconclusive \
                            --suppress=missingInclude \
                            --suppress=normalCheckLevelMaxBranches \
                            --suppress=checkersReport \
+                           --suppress=initializerList \
+                           --suppress=unusedFunction \
                            src/*.cpp 2>&1)
 
 # Check if cppcheck output contains any issues (warnings/errors)

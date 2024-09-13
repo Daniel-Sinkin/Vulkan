@@ -70,15 +70,15 @@ Engine::Engine()
       m_IndexBuffer(VK_NULL_HANDLE),
       m_IndexBufferMemory(VK_NULL_HANDLE),
       m_DescriptorPool(VK_NULL_HANDLE),
+      m_MipLevels(1),
       m_TextureImage(VK_NULL_HANDLE),
       m_TextureImageMemory(VK_NULL_HANDLE),
       m_TextureImageView(VK_NULL_HANDLE),
       m_TextureSampler(VK_NULL_HANDLE),
-      m_MipLevels(1),
+      m_MSAASamples(VK_SAMPLE_COUNT_1_BIT),
       m_ColorImage(VK_NULL_HANDLE),
       m_ColorImageMemory(VK_NULL_HANDLE),
       m_ColorImageView(VK_NULL_HANDLE),
-      m_MSAASamples(VK_SAMPLE_COUNT_1_BIT),
       m_DepthImage(VK_NULL_HANDLE),
       m_DepthImageMemory(VK_NULL_HANDLE),
       m_DepthImageView(VK_NULL_HANDLE),
@@ -1879,7 +1879,7 @@ DEF Engine::captureFramebuffer(uint32_t imageIndex) -> void {
     void *data = nullptr;
     vkMapMemory(m_Device, stagingBufferMemory, 0, imageSize, 0, &data);
 
-    auto *pixelData = static_cast<uint8_t *>(data);
+    const auto *pixelData = static_cast<const uint8_t *>(data);
 
     std::ostringstream filename_builder;
     filename_builder << "./Screencaps/Raw/" << m_FrameCounter << ".bin";

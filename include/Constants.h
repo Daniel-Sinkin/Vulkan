@@ -27,6 +27,7 @@
 #include <span>
 #include <sstream>
 #include <stdexcept>
+#include <string>
 #include <string_view>
 #include <thread>
 #include <unordered_map>
@@ -41,6 +42,7 @@ using glm::vec4;
 using std::all_of;
 using std::any_of;
 using std::array;
+using std::cout;
 using std::find_if;
 using std::optional;
 using std::runtime_error;
@@ -55,14 +57,16 @@ using std::vector;
 // python syntax for functions, which makes it easier to search function definitions.
 #define DEF auto
 
-constexpr unsigned long long NO_TIMEOUT = UINT64_MAX; // Can't disable timeout in Vulkan semaphore, this is a workaround
+constexpr unsigned long long NO_TIMEOUT = UINT64_MAX;
 constexpr int INVALID_FRAMEBUFFER_SIZE = 0;
 
 // numbers::pi is much more accurate than numbers::pi_v
 constexpr float PI = std::numbers::pi_v<float>;
-constexpr float PI_2 = static_cast<float>(2.0 * std::numbers::pi); // Use static_cast for type conversion
+constexpr float PI_2 = static_cast<float>(2.0 * std::numbers::pi);
 constexpr float PI_HALF = static_cast<float>(std::numbers::pi / 2);
 constexpr float PI_QUARTER = static_cast<float>(std::numbers::pi / 4);
+
+constexpr float WINDOW_CENTER_FACTOR = 0.5f;
 
 using Bitmask8 = uint8_t;
 using Bitmask16 = uint16_t;
@@ -142,12 +146,11 @@ struct Vertex {
 };
 
 struct VertexN {
-    glm::vec3 pos;      // 12 bytes, aligned to 16 bytes
-    glm::vec2 texCoord; // 8 bytes, aligned to 8 bytes, directly after 'pos'
-    glm::vec3 normal;   // 12 bytes, aligned to 16 bytes
-    glm::vec3 color;    // 12 bytes, aligned to 16 bytes
+    glm::vec3 pos;
+    glm::vec2 texCoord;
+    glm::vec3 normal;
+    glm::vec3 color;
 
-    // Return binding description
     static VkVertexInputBindingDescription getBindingDescription() {
         VkVertexInputBindingDescription bindingDescription{};
         bindingDescription.binding = 0;
@@ -161,22 +164,22 @@ struct VertexN {
             VkVertexInputAttributeDescription{
                 .binding = 0,
                 .location = 0,
-                .format = VK_FORMAT_R32G32B32_SFLOAT, // Position (vec3)
+                .format = VK_FORMAT_R32G32B32_SFLOAT,
                 .offset = offsetof(VertexN, pos)},
             VkVertexInputAttributeDescription{
                 .binding = 0,
                 .location = 1,
-                .format = VK_FORMAT_R32G32B32_SFLOAT, // Color (vec3)
+                .format = VK_FORMAT_R32G32B32_SFLOAT,
                 .offset = offsetof(VertexN, color)},
             VkVertexInputAttributeDescription{
                 .binding = 0,
                 .location = 2,
-                .format = VK_FORMAT_R32G32_SFLOAT, // TexCoord (vec2)
+                .format = VK_FORMAT_R32G32_SFLOAT,
                 .offset = offsetof(VertexN, texCoord)},
             VkVertexInputAttributeDescription{
                 .binding = 0,
                 .location = 3,
-                .format = VK_FORMAT_R32G32B32_SFLOAT, // Normal (vec3)
+                .format = VK_FORMAT_R32G32B32_SFLOAT,
                 .offset = offsetof(VertexN, normal)}};
     }
 
@@ -246,7 +249,7 @@ const vector<Vertex> doublePlaneVertices = {
 const vector<uint16_t> doublePlaneIndices = {
     0, 1, 2, 2, 3, 0,
     4, 5, 6, 6, 7, 4
-}; // Make this uint32_t once we get too many vertices
+};
 // clang-format on
 
 struct UniformBufferObject {
@@ -282,7 +285,7 @@ constexpr const char *PAINTED_PLASTER_NORMAL = "assets/textures/painted_plaster_
 constexpr const char *SPHERE_20_MODEL = "assets/models/sphere_20.obj";
 
 // Nicole model source can be found in the credits in README, FBX importing
-// is not (yet?) implemented so I had to convert .obj manually, but will not
+// is not (yet?) implemented so I had to convert .obj manually, but will not create
 // a fbx->obj conversion script (for now?).
 constexpr const char *NICOLE_MODEL = "assets/models/Nicole.obj";
 } // namespace FilePaths
@@ -309,7 +312,6 @@ static DEF readFile(const string &filename) -> vector<char> {
     vector<char> buffer(fileSize);
     file.seekg(0);
 
-    // Cast fileSize to std::streamsize after checking the range
     file.read(buffer.data(), static_cast<std::streamsize>(fileSize));
     file.close();
 
@@ -324,7 +326,12 @@ constexpr uint32_t DEFAULT_WINDOW_HEIGHT = 1080;
 
 constexpr auto WINDOW_NAME = "Daniel's 3D Engine";
 
-// For example macbooks have integrated graphics cards, so they would be filtered by this, which wouldn't make sense
+constexpr float MOUSE_SENSITIVITY = 2.0f;
+
+constexpr float CAMERA_FLOATING_SPEED = 1.6f;
+constexpr float CAMERA_FLOATING_SPEED_BOOSTED = 2.2f;
+
+// For example macbooks have integrated graphics cards, so they would be filtered by this
 constexpr bool ALLOW_DEVICE_WITHOUT_INTEGRATED_GPU = true;
 constexpr bool ALLOW_DEVICE_WITHOUT_GEOMETRY_SHADER = true;
 
@@ -339,11 +346,9 @@ constexpr float CAMERA_MAX_PITCH = 50.0f;
 constexpr float CLIPPING_PLANE_NEAR = 0.1f;
 constexpr float CLIPPING_PLANE_FAR = 100.0f;
 
-// Define the preferred surface format as a VkSurfaceFormatKHR struct
 constexpr VkSurfaceFormatKHR PREFERRED_SURFACE_FORMAT = {
-    VK_FORMAT_B8G8R8A8_SRGB,          // format
-    VK_COLOR_SPACE_SRGB_NONLINEAR_KHR // colorSpace
-};
+    .format = VK_FORMAT_B8G8R8A8_SRGB,
+    .colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
 
 } // namespace Settings
 
