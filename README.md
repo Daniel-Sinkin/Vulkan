@@ -84,6 +84,9 @@ system_profiler
 * Textures used
     * https://polyhaven.com/a/painted_plaster_wall
     * Metal texture from this group https://www.textures.com/category/metal/169
+* Fonts
+    * [Merriweather](https://fonts.google.com/specimen/Merriweather)
+    * https://github.com/githubnext/monaspace/
 
 # References
 * Dependencies
