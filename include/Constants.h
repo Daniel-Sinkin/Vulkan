@@ -14,12 +14,16 @@
 #include <glm/gtx/hash.hpp>
 
 #include <algorithm>
+#include <array>
 #include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <format>
 #include <fstream>
+#include <functional>
+#include <glm/glm.hpp>
 #include <iostream>
 #include <numbers>
 #include <optional>
@@ -27,11 +31,15 @@
 #include <span>
 #include <sstream>
 #include <stdexcept>
+#include <stdint.h>
 #include <string>
 #include <string_view>
 #include <thread>
+#include <tuple>
+#include <type_traits>
 #include <unordered_map>
 #include <vector>
+#include <vulkan/vulkan.h>
 
 using glm::mat3;
 using glm::mat4;
@@ -105,161 +113,6 @@ struct QueueFamilyIndices {
     DEF isComplete() const -> bool {
         return graphicsFamily.has_value() && presentationFamily.has_value();
     }
-};
-
-struct Vertex {
-    vec3 pos;
-    vec3 color;
-    vec2 texCoord;
-
-    static VkVertexInputBindingDescription getBindingDescription() {
-        VkVertexInputBindingDescription bindingDescription{
-            .binding = 0,
-            .stride = sizeof(Vertex),
-            .inputRate = VK_VERTEX_INPUT_RATE_VERTEX};
-
-        return bindingDescription;
-    }
-
-    static DEF getAttributeDescriptions() -> array<VkVertexInputAttributeDescription, 3> {
-        return array<VkVertexInputAttributeDescription, 3>{
-            VkVertexInputAttributeDescription{
-                .binding = 0,
-                .location = 0,
-                .format = VK_FORMAT_R32G32B32_SFLOAT,
-                .offset = static_cast<uint32_t>(offsetof(Vertex, pos))},
-            VkVertexInputAttributeDescription{
-                .binding = 0,
-                .location = 1,
-                .format = VK_FORMAT_R32G32B32_SFLOAT,
-                .offset = static_cast<uint32_t>(offsetof(Vertex, color))},
-            VkVertexInputAttributeDescription{
-                .binding = 0,
-                .location = 2,
-                .format = VK_FORMAT_R32G32_SFLOAT,
-                .offset = static_cast<uint32_t>(offsetof(Vertex, texCoord))}};
-    }
-
-    DEF operator==(const Vertex &other) const->bool {
-        return (this->pos == other.pos) && (this->color == other.color) && (this->texCoord == other.texCoord);
-    }
-};
-
-struct VertexN {
-    vec3 pos;
-    vec2 texCoord;
-    vec3 normal;
-    vec3 color;
-
-    static VkVertexInputBindingDescription getBindingDescription() {
-        VkVertexInputBindingDescription bindingDescription{};
-        bindingDescription.binding = 0;
-        bindingDescription.stride = sizeof(VertexN);
-        bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-        return bindingDescription;
-    }
-
-    static std::array<VkVertexInputAttributeDescription, 4> getAttributeDescriptions() {
-        return std::array<VkVertexInputAttributeDescription, 4>{
-            VkVertexInputAttributeDescription{
-                .binding = 0,
-                .location = 0,
-                .format = VK_FORMAT_R32G32B32_SFLOAT,
-                .offset = offsetof(VertexN, pos)},
-            VkVertexInputAttributeDescription{
-                .binding = 0,
-                .location = 1,
-                .format = VK_FORMAT_R32G32B32_SFLOAT,
-                .offset = offsetof(VertexN, color)},
-            VkVertexInputAttributeDescription{
-                .binding = 0,
-                .location = 2,
-                .format = VK_FORMAT_R32G32_SFLOAT,
-                .offset = offsetof(VertexN, texCoord)},
-            VkVertexInputAttributeDescription{
-                .binding = 0,
-                .location = 3,
-                .format = VK_FORMAT_R32G32B32_SFLOAT,
-                .offset = offsetof(VertexN, normal)}};
-    }
-
-    // Equality operator
-    bool operator==(const VertexN &other) const {
-        return pos == other.pos &&
-               color == other.color &&
-               texCoord == other.texCoord &&
-               normal == other.normal;
-    }
-};
-
-namespace std {
-// Implementing our hashing function into the stdlib hash template, for more details see https://en.cppreference.com/w/cpp/utility/hash
-template <>
-struct hash<Vertex> {
-    size_t operator()(Vertex const &vertex) const {
-        size_t pos_hash = hash<glm::vec3>()(vertex.pos);
-        size_t color_hash = hash<glm::vec3>()(vertex.color);
-        size_t texCoord_hash = hash<glm::vec2>()(vertex.texCoord);
-
-        return ((pos_hash ^ (color_hash << 1)) >> 1) ^ (texCoord_hash << 1);
-    }
-};
-
-template <>
-struct hash<VertexN> {
-    size_t operator()(VertexN const &vertexN) const {
-        // Hash the inherited members (pos, color, texCoord)
-        size_t pos_hash = hash<glm::vec3>()(vertexN.pos);
-        size_t color_hash = hash<glm::vec3>()(vertexN.color);
-        size_t texCoord_hash = hash<glm::vec2>()(vertexN.texCoord);
-
-        // Hash the normal vector
-        size_t normal_hash = hash<glm::vec3>()(vertexN.normal);
-
-        // Combine the hashes using XOR and bit shifts (hash combination method)
-        return (((pos_hash ^ (color_hash << 1)) >> 1) ^ (texCoord_hash << 1)) ^ (normal_hash << 1);
-    }
-};
-} // namespace std
-
-/* Vertices w/ counter-clockwise winding order
-   3                 2
-     *-----<<<-----*
-     |          __/|
-     v       __/   |
-     v    >>^      ^
-     | __/         ^
-     |/            |
-     *----->>>-----*
-   0                 1
-*/
-// clang-format off
-const vector<Vertex> doublePlaneVertices = {
-    {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-    {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-    {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-    {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
-
-    {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-    {{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-    {{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-    {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
-};
-
-const vector<uint16_t> doublePlaneIndices = {
-    0, 1, 2, 2, 3, 0,
-    4, 5, 6, 6, 7, 4
-};
-// clang-format on
-
-struct UniformBufferObject {
-    mat4 model;
-    mat4 view;
-    mat4 proj;
-    alignas(16) vec3 cameraEye;
-    float time;
-    alignas(16) vec3 cameraCenter;
-    alignas(16) vec3 cameraUp;
 };
 
 namespace FilePaths {

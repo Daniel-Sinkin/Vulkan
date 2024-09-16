@@ -1,4 +1,4 @@
-#include "engine.h"
+#include "engine/engine.h"
 #include "Constants.h"
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -281,52 +281,49 @@ DEF Engine::loadModelN() -> void {
     vector<tinyobj::material_t> materials;
     string warn, err;
 
-    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, FilePaths::MODEL_BASIC_SPHERE_MANY)) {
+    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, FilePaths::VIKING_ROOM_MODEL)) {
         throw std::runtime_error(warn + err);
     }
 
     // Hashes vertices so we can avoid loading duplicated vertices
-    unordered_map<VertexN, uint32_t> uniqueVertices{};
+    unordered_map<VertexNT, uint32_t> uniqueVertices{};
 
     for (const auto &shape : shapes) {
         for (const auto &index : shape.mesh.indices) {
-            VertexN vertexN{};
+            VertexNT VertexNT{};
 
             // Load position
-            vertexN.pos = {
+            VertexNT.pos = {
                 attrib.vertices[3 * index.vertex_index + 0],
                 attrib.vertices[3 * index.vertex_index + 1],
                 attrib.vertices[3 * index.vertex_index + 2]};
 
             // Load normals (check if normal index exists first)
             if (index.normal_index >= 0) {
-                vertexN.normal = {
+                VertexNT.normal = {
                     attrib.normals[3 * index.normal_index + 0],
                     attrib.normals[3 * index.normal_index + 1],
                     attrib.normals[3 * index.normal_index + 2]};
             } else {
-                vertexN.normal = {0.0f, 0.0f, 0.0f}; // Default normal if none provided
+                VertexNT.normal = {0.0f, 0.0f, 0.0f}; // Default normal if none provided
             }
 
             // Load texture coordinates (check if texcoord index exists first)
             if (index.texcoord_index >= 0) {
-                vertexN.texCoord = {
+                VertexNT.texCoord = {
                     attrib.texcoords[2 * index.texcoord_index + 0],
                     1.0f - attrib.texcoords[2 * index.texcoord_index + 1]}; // Flip vertical coordinate
             } else {
-                vertexN.texCoord = {0.0f, 0.0f}; // Default texcoord if none provided
+                VertexNT.texCoord = {0.0f, 0.0f}; // Default texcoord if none provided
             }
-
-            // Set color (default to white in this case)
-            vertexN.color = {1.0f, 1.0f, 1.0f};
 
             // Insert the vertex if it hasn't been added yet
-            if (uniqueVertices.count(vertexN) == 0) {
-                uniqueVertices[vertexN] = static_cast<uint32_t>(m_Vertices.size());
-                m_Vertices.push_back(vertexN);
+            if (uniqueVertices.count(VertexNT) == 0) {
+                uniqueVertices[VertexNT] = static_cast<uint32_t>(m_Vertices.size());
+                m_Vertices.push_back(VertexNT);
             }
 
-            m_VertexIndices.push_back(uniqueVertices[vertexN]);
+            m_VertexIndices.push_back(uniqueVertices[VertexNT]);
         }
     }
 
@@ -1318,8 +1315,8 @@ DEF Engine::createGraphicsPipeline() -> void {
 
     fprintf(stdout, "Trying to Initialize Fixed Functions.\n");
     fprintf(stdout, "\tInitializing Vertex Input.\n");
-    auto bindingDescription = VertexN::getBindingDescription();
-    auto attributeDescriptions = VertexN::getAttributeDescriptions();
+    auto bindingDescription = VertexNT::getBindingDescription();
+    auto attributeDescriptions = VertexNT::getAttributeDescriptions();
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
@@ -1911,7 +1908,7 @@ DEF Engine::updateUniformBuffer(uint32_t currentImage) -> void {
     float delta_time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
     UniformBufferObject ubo{
         .model = glm::rotate(mat4(1.0f),
-            delta_time * PI_HALF,
+            0.0f, /*delta_time * PI_HALF,*/
             vec3(0.0f, 0.0f, 1.0f)),
         .view = glm::lookAt(m_CameraEye, m_CameraCenter, m_CameraUp),
         .proj = glm::perspective(PI_QUARTER,

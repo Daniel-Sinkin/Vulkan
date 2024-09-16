@@ -2,9 +2,20 @@
 
 #include "Constants.h"
 #include "Util.h"
+#include "engine/vertex.h"
 
 DEF CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkDebugUtilsMessengerEXT *pDebugMessenger) -> VkResult;
 DEF DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks *pAllocator) -> void;
+
+struct UniformBufferObject {
+    mat4 model;
+    mat4 view;
+    mat4 proj;
+    alignas(16) vec3 cameraEye;
+    float time;
+    alignas(16) vec3 cameraCenter;
+    alignas(16) vec3 cameraUp;
+};
 
 class Engine {
 public:
@@ -128,7 +139,7 @@ private:
     uint32_t m_FrameCounter;    // How many frames have been rendered
     bool m_FramebufferResized;
 
-    std::vector<VertexN> m_Vertices;
+    std::vector<VertexNT> m_Vertices;
     std::vector<uint32_t> m_VertexIndices;
     VkBuffer m_VertexBuffer;
     VkDeviceMemory m_VertexBufferMemory;
