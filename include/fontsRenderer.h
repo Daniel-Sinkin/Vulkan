@@ -1,11 +1,6 @@
-#ifndef FONTS_H
-#define FONTS_H
+#pragma once
 
 #include "Constants.h"
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
-#include <iostream>
-#include <vector>
 
 #define STB_TRUETYPE_IMPLEMENTATION
 #include "stb_truetype.h"
@@ -77,5 +72,3 @@ vector<unsigned char> createAsciiTextureAtlas(const char *fontPath) {
 
     return atlasBuffer;
 }
-
-#endif // FONTS_H

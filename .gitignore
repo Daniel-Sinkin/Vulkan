@@ -75,3 +75,5 @@ assets
 VulkanEngine
 
 *.bin
+
+*excalidraw*

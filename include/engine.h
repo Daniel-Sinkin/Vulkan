@@ -1,5 +1,4 @@
-#ifndef ENGINE_H
-#define ENGINE_H
+#pragma once
 
 #include "Constants.h"
 #include "Util.h"
@@ -164,6 +163,7 @@ private:
     vec3 m_CameraUp;
 
     bool m_TakeScreenshotNextFrame;
-};
 
-#endif // ENGINE_H
+    uint32_t m_EngineVersion;
+    uint32_t m_ApplicationVersion;
+};

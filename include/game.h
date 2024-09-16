@@ -1,5 +1,4 @@
-#ifndef GAME_H
-#define GAME_H
+#pragma once
 
 #include "engine.h"
 
@@ -18,6 +17,8 @@ private:
     void processMouseMovement(float frameTime);
 
     Engine *m_Engine;
+    GLFWwindow *m_Window;
+
     double m_LastMouseX, m_LastMouseY;
     bool m_InitialMouseState;
     bool m_InMenu;
@@ -28,5 +29,3 @@ private:
     vec3 m_CameraCenter;
     vec3 m_CameraUp;
 };
-
-#endif // GAME_H
