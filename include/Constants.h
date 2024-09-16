@@ -285,7 +285,7 @@ constexpr auto SUZANNE_MODEL = "assets/models/suzanne.obj";
 constexpr auto MODEL_BASIC_TETRAHEDRON = "assets/models/tetrahedron.obj";
 constexpr auto MODEL_BASIC_TORUS = "assets/models/torus.obj";
 constexpr auto MODEL_BASIC_SPHERE = "assets/models/sphere.obj";
-constexpr auto MODEL_BASIC_SPHERE_MANY = "assets/models/sphere_30.obj";
+constexpr auto MODEL_BASIC_SPHERE_MANY = "assets/models/sphere_grid.obj";
 
 // Nicole model source can be found in the credits in README, FBX importing
 // is not (yet?) implemented so I had to convert .obj manually, but will not create
