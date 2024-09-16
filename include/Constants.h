@@ -1,5 +1,4 @@
-#ifndef CONSTANTS_H
-#define CONSTANTS_H
+#pragma once
 
 #define GLFW_INCLUDE_VULKAN
 #include <GL/glew.h>
@@ -64,8 +63,8 @@ constexpr int INVALID_FRAMEBUFFER_SIZE = 0;
 // numbers::pi is much more accurate than numbers::pi_v
 constexpr float PI = std::numbers::pi_v<float>;
 constexpr float PI_2 = static_cast<float>(2.0 * std::numbers::pi);
-constexpr float PI_HALF = static_cast<float>(std::numbers::pi / 2);
-constexpr float PI_QUARTER = static_cast<float>(std::numbers::pi / 4);
+constexpr float PI_HALF = static_cast<float>(std::numbers::pi / 2.0);
+constexpr float PI_QUARTER = static_cast<float>(std::numbers::pi / 4.0);
 
 constexpr float WINDOW_CENTER_FACTOR = 0.5f;
 
@@ -147,10 +146,10 @@ struct Vertex {
 };
 
 struct VertexN {
-    glm::vec3 pos;
-    glm::vec2 texCoord;
-    glm::vec3 normal;
-    glm::vec3 color;
+    vec3 pos;
+    vec2 texCoord;
+    vec3 normal;
+    vec3 color;
 
     static VkVertexInputBindingDescription getBindingDescription() {
         VkVertexInputBindingDescription bindingDescription{};
@@ -264,42 +263,40 @@ struct UniformBufferObject {
 };
 
 namespace FilePaths {
-constexpr const char *SHADER_VERT = "shaders/compiled/shader.vert.spv";
-constexpr const char *SHADER_FRAG = "shaders/compiled/shader.frag.spv";
-constexpr const char *SHADER_VERT_NORMAL = "shaders/compiled/shader_normal.vert.spv";
-constexpr const char *SHADER_FRAG_NORMAL = "shaders/compiled/shader_normal.frag.spv";
-constexpr const char *SHADER_FRAG_NORMAL_RBG_COLORS = "shaders/compiled/shader_normal_rbg_colors.frag.spv";
-constexpr const char *SHADER_VERT_PHONG = "shaders/compiled/shader_phong.vert.spv";
-constexpr const char *SHADER_FRAG_PHONG = "shaders/compiled/shader_phong.frag.spv";
+constexpr auto SHADER_VERT = "shaders/compiled/shader.vert.spv";
+constexpr auto SHADER_FRAG = "shaders/compiled/shader.frag.spv";
+constexpr auto SHADER_VERT_NORMAL = "shaders/compiled/shader_normal.vert.spv";
+constexpr auto SHADER_FRAG_NORMAL = "shaders/compiled/shader_normal.frag.spv";
+constexpr auto SHADER_FRAG_NORMAL_RBG_COLORS = "shaders/compiled/shader_normal_rbg_colors.frag.spv";
+constexpr auto SHADER_VERT_PHONG = "shaders/compiled/shader_phong.vert.spv";
+constexpr auto SHADER_FRAG_PHONG = "shaders/compiled/shader_phong.frag.spv";
+constexpr auto SHADER_VERT_FANCY = "shaders/compiled/shader_fancy.vert.spv";
+constexpr auto SHADER_FRAG_FRACTAL = "shaders/compiled/shader_fractal.frag.spv";
+constexpr auto SHADER_VERT_NICOLE = "shaders/compiled/shader_nicole.vert.spv";
+constexpr auto SHADER_FRAG_NICOLE = "shaders/compiled/shader_nicole.frag.spv";
 
-constexpr const char *SHADER_VERT_FANCY = "shaders/compiled/shader_fancy.vert.spv";
-constexpr const char *SHADER_FRAG_FRACTAL = "shaders/compiled/shader_fractal.frag.spv";
-constexpr const char *SHADER_VERT_NICOLE = "shaders/compiled/shader_nicole.vert.spv";
-constexpr const char *SHADER_FRAG_NICOLE = "shaders/compiled/shader_nicole.frag.spv";
+constexpr auto FACE_TEXTURE = "assets/textures/texture.jpg";
+constexpr auto VIKING_ROOM_TEXTURE = "assets/textures/viking_room.png";
+constexpr auto VIKING_ROOM_MODEL = "assets/models/viking_room.obj";
+constexpr auto CHALET_TEXTURE = "assets/textures/chalet.jpg";
+constexpr auto CHALET_MODEL = "assets/models/chalet.obj";
+constexpr auto SUZANNE_MODEL = "assets/models/suzanne.obj";
 
-constexpr const char *FACE_TEXTURE = "assets/textures/texture.jpg";
-constexpr const char *VIKING_ROOM_TEXTURE = "assets/textures/viking_room.png";
-constexpr const char *VIKING_ROOM_MODEL = "assets/models/viking_room.obj";
-constexpr const char *CHALET_TEXTURE = "assets/textures/chalet.jpg";
-constexpr const char *CHALET_MODEL = "assets/models/chalet.obj";
-constexpr const char *SUZANNE_MODEL = "assets/models/suzanne.obj";
+constexpr auto MODEL_BASIC_TETRAHEDRON = "assets/models/tetrahedron.obj";
+constexpr auto MODEL_BASIC_TORUS = "assets/models/torus.obj";
+constexpr auto MODEL_BASIC_SPHERE = "assets/models/sphere.obj";
+constexpr auto MODEL_BASIC_SPHERE_MANY = "assets/models/sphere_30.obj";
 
 // Nicole model source can be found in the credits in README, FBX importing
 // is not (yet?) implemented so I had to convert .obj manually, but will not create
 // a fbx->obj conversion script (for now?).
-constexpr const char *NICOLE_MODEL = "assets/models/Nicole.obj";
-
-constexpr const char *PAINTED_PLASTER_DIFFUSE = "assets/textures/painted_plaster_diffuse.png";
-constexpr const char *PAINTED_PLASTER_NORMAL = "assets/textures/painted_plaster_normal.jpg";
-
-constexpr const char *METAL_DIFFUSE = "assets/textures/metal_diffuse.png";
-constexpr const char *METAL_NORMAL = "assets/textures/metal_normal.png";
-
-constexpr const char *SPHERE_20_MODEL = "assets/models/sphere_20.obj";
-
-constexpr const char *FONT_MERRIWEATHER_LIGHT = "assets/fonts/Merriweather-Light.ttf";
-constexpr const char *FONT_MONASPACE_ARGON_SEMIBOLD = "assets/fonts/MonaspaceArgon-SemiBold.ttf";
-
+constexpr auto NICOLE_MODEL = "assets/models/Nicole.obj";
+constexpr auto PAINTED_PLASTER_DIFFUSE = "assets/textures/painted_plaster_diffuse.png";
+constexpr auto PAINTED_PLASTER_NORMAL = "assets/textures/painted_plaster_normal.jpg";
+constexpr auto METAL_DIFFUSE = "assets/textures/metal_diffuse.png";
+constexpr auto METAL_NORMAL = "assets/textures/metal_normal.png";
+constexpr auto FONT_MERRIWEATHER_LIGHT = "assets/fonts/Merriweather-Light.ttf";
+constexpr auto FONT_MONASPACE_ARGON_SEMIBOLD = "assets/fonts/MonaspaceArgon-SemiBold.ttf";
 } // namespace FilePaths
 
 namespace Util {
@@ -336,7 +333,7 @@ namespace Settings {
 constexpr uint32_t DEFAULT_WINDOW_WIDTH = 1920;
 constexpr uint32_t DEFAULT_WINDOW_HEIGHT = 1080;
 
-constexpr auto WINDOW_NAME = "Daniel's 3D Engine";
+constexpr auto PROJECT_NAME = "Daniel's 3D Engine";
 
 constexpr float MOUSE_SENSITIVITY = 2.0f;
 
@@ -367,5 +364,3 @@ constexpr size_t FONT_ATLAS_HEIGHT = 512;
 constexpr size_t FONT_FONT_SIZE = 32;
 
 } // namespace Settings
-
-#endif // CONSTANTS_H

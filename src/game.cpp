@@ -11,7 +11,8 @@ Game::Game(Engine *engine)
       m_InMenu(false),
       m_KeyBitmask(0),
       m_ShiftPressed(false) {
-    glfwSetInputMode(m_Engine->getWindow(), GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+    m_Window = m_Engine->getWindow();
+    glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 }
 
 void Game::update(float frameTime) {
@@ -25,61 +26,46 @@ void Game::handleInput(float frameTime) {
 }
 
 void Game::processKeyboardInput(float frameTime) {
-    if (glfwGetKey(m_Engine->getWindow(), GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-        glfwSetWindowShouldClose(m_Engine->getWindow(), true);
+    if (glfwGetKey(m_Window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+        glfwSetWindowShouldClose(m_Window, true);
     }
 
-    if (handleKeyPressReleaseWithBitmask(m_KeyBitmask, KeyBitmask::F12, GLFW_KEY_F12, m_Engine->getWindow())) {
+    if (handleKeyPressReleaseWithBitmask(m_KeyBitmask, KeyBitmask::F12, GLFW_KEY_F12, m_Window)) {
         m_Engine->takeScreenshot();
         std::cout << "Taking screenshot\n";
     }
 
-    if (glfwGetKey(m_Engine->getWindow(), GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ||
-        glfwGetKey(m_Engine->getWindow(), GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS) {
-        m_ShiftPressed = true;
-    } else {
-        m_ShiftPressed = false;
-    }
+    bool leftShiftPressed = glfwGetKey(m_Window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS;
+    bool rightShiftPressed = glfwGetKey(m_Window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
+    m_ShiftPressed = rightShiftPressed || leftShiftPressed;
 
     float speed = m_ShiftPressed ? Settings::CAMERA_FLOATING_SPEED_BOOSTED : Settings::CAMERA_FLOATING_SPEED;
     speed *= frameTime;
 
-    if (glfwGetKey(m_Engine->getWindow(), GLFW_KEY_W) == GLFW_PRESS) {
-        m_Engine->moveCameraForward(speed);
-        std::cout << "Move Forward\n";
-    }
-    if (glfwGetKey(m_Engine->getWindow(), GLFW_KEY_A) == GLFW_PRESS) {
-        m_Engine->moveCameraRight(-speed);
-        std::cout << "Move Left\n";
-    }
-    if (glfwGetKey(m_Engine->getWindow(), GLFW_KEY_S) == GLFW_PRESS) {
-        m_Engine->moveCameraForward(-speed);
-        std::cout << "Move Backward\n";
-    }
-    if (glfwGetKey(m_Engine->getWindow(), GLFW_KEY_D) == GLFW_PRESS) {
-        m_Engine->moveCameraRight(speed);
-        std::cout << "Move Right\n";
-    }
+    if (glfwGetKey(m_Window, GLFW_KEY_W) == GLFW_PRESS) m_Engine->moveCameraForward(speed);
+    if (glfwGetKey(m_Window, GLFW_KEY_A) == GLFW_PRESS) m_Engine->moveCameraRight(-speed);
+    if (glfwGetKey(m_Window, GLFW_KEY_S) == GLFW_PRESS) m_Engine->moveCameraForward(-speed);
+    if (glfwGetKey(m_Window, GLFW_KEY_D) == GLFW_PRESS) m_Engine->moveCameraRight(speed);
 }
 
 void Game::checkMenuState() {
-    if (handleKeyPressReleaseWithBitmask(m_KeyBitmask, KeyBitmask::TAB, GLFW_KEY_TAB, m_Engine->getWindow())) {
+    if (handleKeyPressReleaseWithBitmask(m_KeyBitmask, KeyBitmask::TAB, GLFW_KEY_TAB, m_Window)) {
         m_InMenu = !m_InMenu;
 
         if (m_InMenu) {
-            glfwSetInputMode(m_Engine->getWindow(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         } else {
-            glfwSetInputMode(m_Engine->getWindow(), GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+            glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
             int windowWidth = 0;
             int windowHeight = 0;
-            glfwGetWindowSize(m_Engine->getWindow(), &windowWidth, &windowHeight);
+            glfwGetWindowSize(m_Window, &windowWidth, &windowHeight);
             double centerX = static_cast<double>(windowWidth) * WINDOW_CENTER_FACTOR;
             double centerY = static_cast<double>(windowHeight) * WINDOW_CENTER_FACTOR;
 
             m_LastMouseX = centerX;
             m_LastMouseY = centerY;
-            glfwSetCursorPos(m_Engine->getWindow(), centerX, centerY);
+            glfwSetCursorPos(m_Window, centerX, centerY);
 
             m_InitialMouseState = true;
         }
@@ -89,19 +75,19 @@ void Game::checkMenuState() {
 void Game::processMouseMovement(float frameTime) {
     int windowWidth = 0;
     int windowHeight = 0;
-    glfwGetWindowSize(m_Engine->getWindow(), &windowWidth, &windowHeight);
+    glfwGetWindowSize(m_Window, &windowWidth, &windowHeight);
 
     double centerX = static_cast<double>(windowWidth) * WINDOW_CENTER_FACTOR;
     double centerY = static_cast<double>(windowHeight) * WINDOW_CENTER_FACTOR;
 
     double mouseX = 0.0;
     double mouseY = 0.0;
-    glfwGetCursorPos(m_Engine->getWindow(), &mouseX, &mouseY);
+    glfwGetCursorPos(m_Window, &mouseX, &mouseY);
 
     if (m_InitialMouseState) {
         m_LastMouseX = centerX;
         m_LastMouseY = centerY;
-        glfwSetCursorPos(m_Engine->getWindow(), centerX, centerY);
+        glfwSetCursorPos(m_Window, centerX, centerY);
         m_InitialMouseState = false;
     }
 
@@ -118,5 +104,5 @@ void Game::processMouseMovement(float frameTime) {
 
     m_Engine->lookAround(yawOffset, pitchOffset);
 
-    glfwSetCursorPos(m_Engine->getWindow(), centerX, centerY);
+    glfwSetCursorPos(m_Window, centerX, centerY);
 }

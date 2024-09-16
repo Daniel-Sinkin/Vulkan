@@ -124,6 +124,8 @@ system_profiler
     * Tutorials
         * [Vulkan Tutorial](https://vulkan-tutorial.com)
         * [Learn OpenGL](https://learnopengl.com)
+            * [Advanced Lighting](https://learnopengl.com/Advanced-Lighting/Advanced-Lighting)
+                * Noteably introduces the (Blinn-)Phong reflection model we use.
         * [VulkanGuide](https://vkguide.dev)
     * YouTube
         * MollyRocket

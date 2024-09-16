@@ -25,6 +25,9 @@ def main(build_type="Debug"):
     # Compile shaders
     run_command("./scripts/compile_shaders.sh")
 
+    # Create Basic Shapes
+    run_command("python3 scripts/generate_shapes.py")
+
     # Clean and prepare the build directory
     build_dir = script_dir.joinpath("build")
     if build_dir.exists():

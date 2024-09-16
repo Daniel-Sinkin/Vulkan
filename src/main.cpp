@@ -21,14 +21,12 @@ DEF main() -> int {
     fprintf(stdout, "\nStarting mainloop.\n");
 
     using clock = std::chrono::high_resolution_clock;
-    auto previousTime = clock::now();
+    std::chrono::time_point previousTime = clock::now();
 
     try {
         size_t iterations = 0;
         while (!glfwWindowShouldClose(mainWindow)) {
-            std::cout << ++iterations << ". Iteration\n";
-
-            auto currentTime = clock::now();
+            std::chrono::time_point currentTime = clock::now();
             std::chrono::duration<float> elapsed = currentTime - previousTime;
             float frameTime = elapsed.count();
             previousTime = currentTime;
@@ -36,7 +34,7 @@ DEF main() -> int {
             glfwPollEvents();
             game.update(frameTime);
 
-            TIMED_EXECUTION(engine.drawFrame)
+            TIMED_EXECUTION(engine.drawFrame);
         }
     } catch (const std::exception &e) {
         std::cerr << e.what() << "\n";

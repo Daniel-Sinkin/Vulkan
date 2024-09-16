@@ -1,5 +1,4 @@
-#ifndef UTIL_H
-#define UTIL_H
+#pragma once
 
 #include "Constants.h"
 
@@ -38,7 +37,6 @@ inline bool handleKeyPressReleaseWithBitmask(uint64_t &bitmask, int bitPosition,
 
 #define PRINT_BOLD_GREEN(text) fprintf(stdout, "\033[1m\033[32m\n%s\n\033[0m", text)
 
-// Overloaded glmPrint for mat4
 inline void glmPrint(const glm::mat4 &mat) {
     std::cout << "mat4(" << std::endl;
     for (int i = 0; i < 4; ++i) {
@@ -47,22 +45,18 @@ inline void glmPrint(const glm::mat4 &mat) {
     std::cout << ")" << std::endl;
 }
 
-// Overloaded glmPrint for vec2
 inline void glmPrint(const glm::vec2 &vec) {
     std::cout << "vec2(" << vec.x << ", " << vec.y << ")" << std::endl;
 }
 
-// Overloaded glmPrint for vec3
 inline void glmPrint(const glm::vec3 &vec) {
     std::cout << "vec3(" << vec.x << ", " << vec.y << ", " << vec.z << ")" << std::endl;
 }
 
-// Overloaded glmPrint for vec4
 inline void glmPrint(const glm::vec4 &vec) {
     std::cout << "vec4(" << vec.x << ", " << vec.y << ", " << vec.z << ", " << vec.w << ")" << std::endl;
 }
 
-// Overloaded glmPrint for mat3
 inline void glmPrint(const glm::mat3 &mat) {
     std::cout << "mat3(" << std::endl;
     for (int i = 0; i < 3; ++i) {
@@ -70,5 +64,3 @@ inline void glmPrint(const glm::mat3 &mat) {
     }
     std::cout << ")" << std::endl;
 }
-
-#endif // CONSTANTS_H

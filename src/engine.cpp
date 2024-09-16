@@ -47,6 +47,8 @@ DEF DestroyDebugUtilsMessengerEXT(
 
 Engine::Engine()
     : m_Window(nullptr),
+      m_ApplicationVersion(VK_MAKE_VERSION(1, 0, 0)),
+      m_EngineVersion(VK_MAKE_VERSION(1, 0, 0)),
       m_Instance(VK_NULL_HANDLE),
       m_DebugMessenger(VK_NULL_HANDLE),
       m_PhysicalDevice(VK_NULL_HANDLE),
@@ -122,7 +124,7 @@ DEF Engine::initWindow() -> void {
     m_Window = glfwCreateWindow(
         Settings::DEFAULT_WINDOW_WIDTH,
         Settings::DEFAULT_WINDOW_HEIGHT,
-        Settings::WINDOW_NAME,
+        Settings::PROJECT_NAME,
         nullptr,
         nullptr);
     glfwSetWindowUserPointer(m_Window, this);
@@ -159,13 +161,17 @@ DEF Engine::createInstance() -> void {
         throw runtime_error("Validation layers requested, but not available!");
     }
 
+    uint32_t apiVersion = 0;
+    if (vkEnumerateInstanceVersion(&apiVersion) != VK_SUCCESS) throw runtime_error("Couldn't query InstanceVersion.");
+    if (apiVersion < VK_API_VERSION_1_3) throw runtime_error("Vulkan Version is too low!");
+
     VkApplicationInfo appInfo = {
         .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
         .pNext = nullptr,
-        .pApplicationName = "Hello Triangle",
-        .applicationVersion = VK_MAKE_VERSION(1, 0, 0),
+        .pApplicationName = Settings::PROJECT_NAME,
+        .applicationVersion = m_ApplicationVersion,
         .pEngineName = "No Engine",
-        .engineVersion = VK_MAKE_VERSION(1, 0, 0),
+        .engineVersion = m_EngineVersion,
         .apiVersion = VK_API_VERSION_1_3};
 
     VkInstanceCreateInfo createInfo = {
@@ -183,6 +189,13 @@ DEF Engine::createInstance() -> void {
     createInfo.enabledExtensionCount = static_cast<uint32_t>(requiredExtensions.size());
     createInfo.ppEnabledExtensionNames = requiredExtensions.data();
 
+    uint32_t extensionCount = 0;
+    vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
+    vector<VkExtensionProperties> extensions(extensionCount);
+    vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
+
+    if (!validateExtensions(extensions, requiredExtensions)) throw runtime_error("Required extensions are not supported!");
+
     VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
     if (enableValidationLayers) {
         createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
@@ -197,16 +210,7 @@ DEF Engine::createInstance() -> void {
     }
 
     if (vkCreateInstance(&createInfo, nullptr, &m_Instance) != VK_SUCCESS) {
-        throw runtime_error("failed to create instance!");
-    }
-
-    uint32_t extensionCount = 0;
-    vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
-    vector<VkExtensionProperties> extensions(extensionCount);
-    vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
-
-    if (!validateExtensions(extensions, requiredExtensions)) {
-        throw runtime_error("Required extensions are not supported!");
+        throw runtime_error("Failed to create instance!");
     }
 }
 
@@ -241,14 +245,16 @@ DEF Engine::initVulkan() -> void {
     VULKAN_SETUP(createCommandPool);
     VULKAN_SETUP(createColorResources);
     VULKAN_SETUP(createDepthResources);
-
     VULKAN_SETUP(createFramebuffers);
+
     VULKAN_SETUP(createTextureImage);
     VULKAN_SETUP(createTextureImageView);
     VULKAN_SETUP(createTextureSampler);
+
     VULKAN_SETUP(loadModelN);
     VULKAN_SETUP(createVertexBuffer);
     VULKAN_SETUP(createIndexBuffer);
+
     VULKAN_SETUP(createUniformBuffers);
 
     PRINT_BOLD_GREEN("Descriptor Pool and Sets Setup");
@@ -275,7 +281,7 @@ DEF Engine::loadModelN() -> void {
     vector<tinyobj::material_t> materials;
     string warn, err;
 
-    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, FilePaths::SPHERE_20_MODEL)) {
+    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, FilePaths::MODEL_BASIC_SPHERE_MANY)) {
         throw std::runtime_error(warn + err);
     }
 
@@ -391,8 +397,7 @@ DEF Engine::findDepthFormat() -> VkFormat {
 DEF Engine::findSupportedFormat(
     const vector<VkFormat> &candidates,
     VkImageTiling tiling,
-    VkFormatFeatureFlags features)
-    -> VkFormat {
+    VkFormatFeatureFlags features) -> VkFormat {
 
     for (VkFormat format : candidates) {
         VkFormatProperties props;
@@ -414,7 +419,6 @@ DEF Engine::findSupportedFormat(
 
 DEF Engine::createDepthResources() -> void {
     VkFormat depthFormat = findDepthFormat();
-
     createImage(
         m_SwapChainExtent.width,
         m_SwapChainExtent.height,
@@ -444,33 +448,6 @@ DEF Engine::createColorResources() -> void {
         m_ColorImage,
         m_ColorImageMemory);
     m_ColorImageView = createImageView(m_ColorImage, colorFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
-}
-
-DEF Engine::createTextureSampler() -> void {
-    VkPhysicalDeviceProperties properties{};
-    vkGetPhysicalDeviceProperties(m_PhysicalDevice, &properties);
-
-    VkSamplerCreateInfo samplerInfo{
-        .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
-        .magFilter = VK_FILTER_LINEAR,
-        .minFilter = VK_FILTER_LINEAR,
-        .mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
-        .addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-        .addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-        .addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-        .mipLodBias = 0.0f,
-        .anisotropyEnable = VK_TRUE,
-        .maxAnisotropy = properties.limits.maxSamplerAnisotropy,
-        .compareEnable = VK_FALSE,
-        .compareOp = VK_COMPARE_OP_ALWAYS,
-        .minLod = 0,
-        .maxLod = static_cast<float>(m_MipLevels),
-        .borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
-        .unnormalizedCoordinates = VK_FALSE};
-
-    if (vkCreateSampler(m_Device, &samplerInfo, nullptr, &m_TextureSampler) != VK_SUCCESS) {
-        throw runtime_error("failed to create texture sampler!");
-    }
 }
 
 DEF Engine::createImage(
@@ -539,15 +516,11 @@ DEF Engine::createImageView(VkImage image, VkFormat format, VkImageAspectFlags a
     return imageView;
 }
 
-DEF Engine::createTextureImageView() -> void {
-    m_TextureImageView = createImageView(m_TextureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, m_MipLevels);
-}
-
 DEF Engine::createTextureImage() -> void {
     int texWidth = 0;
     int texHeight = 0;
     int texChannels = 0;
-    stbi_uc *pixels = stbi_load(FilePaths::METAL_DIFFUSE, &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+    stbi_uc *pixels = stbi_load(FilePaths::PAINTED_PLASTER_DIFFUSE, &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
     if (!pixels) throw runtime_error("failed to load texture image!");
     VkDeviceSize imageSize = static_cast<VkDeviceSize>(texWidth) * texHeight * 4;
 
@@ -597,6 +570,37 @@ DEF Engine::createTextureImage() -> void {
     vkFreeMemory(m_Device, stagingBufferMemory, nullptr);
 
     generateMipmaps(m_TextureImage, VK_FORMAT_R8G8B8A8_SRGB, texWidth, texHeight, m_MipLevels);
+}
+
+DEF Engine::createTextureImageView() -> void {
+    m_TextureImageView = createImageView(m_TextureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, m_MipLevels);
+}
+
+DEF Engine::createTextureSampler() -> void {
+    VkPhysicalDeviceProperties properties{};
+    vkGetPhysicalDeviceProperties(m_PhysicalDevice, &properties);
+
+    VkSamplerCreateInfo samplerInfo{
+        .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+        .magFilter = VK_FILTER_LINEAR,
+        .minFilter = VK_FILTER_LINEAR,
+        .mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+        .addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+        .addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+        .addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+        .mipLodBias = 0.0f,
+        .anisotropyEnable = VK_TRUE,
+        .maxAnisotropy = properties.limits.maxSamplerAnisotropy,
+        .compareEnable = VK_FALSE,
+        .compareOp = VK_COMPARE_OP_ALWAYS,
+        .minLod = 0,
+        .maxLod = static_cast<float>(m_MipLevels),
+        .borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
+        .unnormalizedCoordinates = VK_FALSE};
+
+    if (vkCreateSampler(m_Device, &samplerInfo, nullptr, &m_TextureSampler) != VK_SUCCESS) {
+        throw runtime_error("failed to create texture sampler!");
+    }
 }
 
 DEF Engine::generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels) -> void {
@@ -722,7 +726,6 @@ DEF Engine::getMaxUsableSampleCount() -> VkSampleCountFlagBits {
     if (counts & VK_SAMPLE_COUNT_8_BIT) return VK_SAMPLE_COUNT_8_BIT;
     if (counts & VK_SAMPLE_COUNT_4_BIT) return VK_SAMPLE_COUNT_4_BIT;
     if (counts & VK_SAMPLE_COUNT_2_BIT) return VK_SAMPLE_COUNT_2_BIT;
-
     return VK_SAMPLE_COUNT_1_BIT;
 }
 
@@ -875,6 +878,7 @@ DEF Engine::createDescriptorSetLayout() -> void {
         throw runtime_error("failed to create descriptor set layout!");
     }
 }
+
 DEF Engine::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) -> uint32_t {
     VkPhysicalDeviceMemoryProperties memProperties;
     vkGetPhysicalDeviceMemoryProperties(m_PhysicalDevice, &memProperties);
@@ -1611,9 +1615,7 @@ DEF Engine::createLogicalDevice() -> void {
 DEF Engine::pickPhysicalDevice() -> void {
     uint32_t deviceCount = 0;
     vkEnumeratePhysicalDevices(m_Instance, &deviceCount, nullptr);
-    if (deviceCount == 0) {
-        throw runtime_error("failed to find GPUs with Vulkan support!");
-    }
+    if (deviceCount == 0) throw runtime_error("failed to find GPUs with Vulkan support!");
     vector<VkPhysicalDevice> devices(deviceCount);
     vkEnumeratePhysicalDevices(m_Instance, &deviceCount, devices.data());
 
@@ -1841,7 +1843,6 @@ DEF Engine::captureFramebuffer(uint32_t imageIndex) -> void {
         1);
 
     VkCommandBuffer commandBuffer = beginSingleTimeCommands();
-
     VkBufferImageCopy region = {
         .bufferOffset = 0,
         .bufferRowLength = width,
@@ -1892,9 +1893,7 @@ DEF Engine::captureFramebuffer(uint32_t imageIndex) -> void {
     if (output.is_open()) {
         output.write(reinterpret_cast<const char *>(&width), sizeof(width));
         output.write(reinterpret_cast<const char *>(&height), sizeof(height));
-
         output.write(reinterpret_cast<const char *>(pixelData), imageSize);
-
         output.close();
     } else {
         std::cerr << "Failed to open file: " << filename << "\n";
@@ -2132,29 +2131,13 @@ DEF Engine::chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities) -> Vk
     return actualExtent;
 }
 
-DEF Engine::setCameraPosition(vec3 position) -> void {
-    m_CameraEye = position;
-}
-
-DEF Engine::moveCamera(vec3 direction) -> void {
-    setCameraPosition(m_CameraEye + direction);
-}
-
-DEF Engine::getCameraLookDirection() const -> vec3 {
-    vec3 direction = m_CameraCenter - m_CameraEye;
-
-    return glm::normalize(direction);
-}
-
-DEF Engine::moveCameraForward(float amount) -> void {
-    moveCamera(getCameraLookDirection() * amount);
-}
+DEF Engine::setCameraPosition(vec3 position) -> void { m_CameraEye = position; }
+DEF Engine::moveCamera(vec3 direction) -> void { setCameraPosition(m_CameraEye + direction); }
+DEF Engine::getCameraLookDirection() const -> vec3 { return glm::normalize(m_CameraCenter - m_CameraEye); }
+DEF Engine::moveCameraForward(float amount) -> void { moveCamera(getCameraLookDirection() * amount); }
 
 DEF Engine::moveCameraRight(float amount) -> void {
-    // Calculate the right direction using the cross product of the look direction and the up vector
     vec3 rightDirection = glm::normalize(glm::cross(getCameraLookDirection(), m_CameraUp));
-
-    // Move both the camera eye and the camera center in the right direction
     vec3 movement = rightDirection * amount;
     m_CameraEye += movement;
     m_CameraCenter += movement;
