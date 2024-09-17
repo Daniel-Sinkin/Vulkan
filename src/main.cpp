@@ -33,6 +33,7 @@ DEF main() -> int {
 
             glfwPollEvents();
             game.update(frameTime);
+            engine.update(frameTime);
 
             engine.drawFrame();
         }

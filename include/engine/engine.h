@@ -33,7 +33,7 @@ public:
     [[nodiscard]] DEF getDescriptorSets() const -> vector<VkDescriptorSet> { return m_DescriptorSets; }
     [[nodiscard]] DEF getCurrentFrameIdx() const -> uint32_t { return m_CurrentFrameIdx; }
 
-    DEF takeScreenshot() -> void;
+    DEF takeScreenshot() -> void { m_TakeScreenshotNextFrame = true; }
 
     DEF createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer, VkDeviceMemory &bufferMemory) -> void;
     DEF copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) -> void;
@@ -49,6 +49,8 @@ public:
 
     DEF setStage(int stage) -> void { m_Stage = stage; }
     DEF getStage() -> int { return m_Stage; }
+
+    DEF update(float frameTime) -> void;
 
 private:
     DEF
@@ -86,7 +88,6 @@ private:
     DEF transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels) -> void;
     DEF recreateSwapChain() -> void;
     DEF cleanupSwapChain() -> void;
-    DEF updateUniformBuffers(uint32_t currentImage) -> void;
     DEF beginSingleTimeCommands() -> VkCommandBuffer;
     DEF endSingleTimeCommands(VkCommandBuffer commandBuffer) -> void;
     DEF createImageViews() -> void;
@@ -99,6 +100,7 @@ private:
     DEF findSupportedFormat(const vector<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features) -> VkFormat;
     DEF createDepthResources() -> void;
     DEF findDepthFormat() -> VkFormat;
+    DEF updatePushConstants() -> void;
 
     static DEF getRequiredExtensions() -> vector<const char *>;
     static DEF checkValidationLayerSupport() -> bool;
@@ -175,4 +177,8 @@ private:
     vector<std::unique_ptr<ModelNT>> m_Models;
 
     int m_Stage;
+
+    PushConstants m_PushConstants;
+
+    std::chrono::time_point<std::chrono::high_resolution_clock> m_StartTime;
 };

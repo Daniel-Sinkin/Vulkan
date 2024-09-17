@@ -100,6 +100,8 @@ DEF Engine::initialize() -> void {
 
     fprintf(stdout, "\nFinished Initializing Vulkan application.\n");
     std::cout << std::flush;
+
+    auto m_StartTime = std::chrono::high_resolution_clock::now();
 }
 
 DEF Engine::initWindow() -> void {
@@ -108,7 +110,7 @@ DEF Engine::initWindow() -> void {
         throw runtime_error("Failed to instantiate GLFW window!");
     }
 
-    // GLFW defaults to creating OpenGL context if we don't pass GLFW_NO_APP explicitly
+    // GLFW defaults to creating OpenGL context otherwise
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     // Disables window resizing
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
@@ -244,7 +246,9 @@ DEF Engine::initVulkan() -> void {
         glm::vec3(0.0f, 0.0f, 0.0f),
         glm::vec3(90.0f, 0.0f, 0.0f),
         glm::vec3(1.0f, 1.0f, 1.0f)};
-    m_Models.push_back(std::make_unique<ModelNT>(this, FilePaths::MODEL_BASIC_TORUS, m_Models.size(), torusTransform));
+    auto torusModel = std::make_unique<ModelNT>(this, FilePaths::MODEL_BASIC_TORUS, m_Models.size(), torusTransform);
+    torusModel->setRotationAnimationVector(vec3(1.0f, 0.5f, 0.0f));
+    m_Models.push_back(std::move(torusModel));
 
     Transform sphereTransform{
         glm::vec3(3.0f, 0.0f, 0.0f),
@@ -1017,6 +1021,15 @@ void Engine::recordCommandBuffers(VkCommandBuffer commandBuffer, uint32_t imageI
         .extent = m_SwapChainExtent};
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
+    updatePushConstants();
+    vkCmdPushConstants(
+        commandBuffer,
+        m_PipelineLayout,
+        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+        0,
+        sizeof(PushConstants),
+        &m_PushConstants);
+
     for (size_t j = 0; j < m_Models.size(); j++) {
         size_t descriptorSetIndex = m_CurrentFrameIdx * m_Models.size() + j;
         VkDescriptorSet descriptorSet = m_DescriptorSets[descriptorSetIndex];
@@ -1249,11 +1262,19 @@ DEF Engine::createGraphicsPipeline() -> void {
         .pAttachments = &colorBlendAttachment,
         .blendConstants = {0.0F, 0.0F, 0.0F, 0.0F}};
 
+    // Define the push constant range
+    VkPushConstantRange pushConstantRange = {
+        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+        .offset = 0,
+        .size = sizeof(PushConstants)};
+
     fprintf(stdout, "\tInitializing Render Pipeline.\n");
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
         .setLayoutCount = 1,
-        .pSetLayouts = &m_DescriptorSetLayout};
+        .pSetLayouts = &m_DescriptorSetLayout,
+        .pushConstantRangeCount = 1,
+        .pPushConstantRanges = &pushConstantRange};
 
     if (vkCreatePipelineLayout(m_Device, &pipelineLayoutInfo, nullptr, &m_PipelineLayout) != VK_SUCCESS) {
         throw runtime_error("failed to create pipeline layout!");
@@ -1389,8 +1410,11 @@ void Engine::cleanupSwapChain() {
     }
     m_SwapChainFramebuffers.clear();
 
-    vkFreeCommandBuffers(m_Device, m_CommandPool, static_cast<uint32_t>(m_CommandBuffers.size()), m_CommandBuffers.data());
-    m_CommandBuffers.clear();
+    uint32_t commandBufferCount = static_cast<uint32_t>(m_CommandBuffers.size());
+    if (commandBufferCount > 0) {
+        vkFreeCommandBuffers(m_Device, m_CommandPool, commandBufferCount, m_CommandBuffers.data());
+        m_CommandBuffers.clear();
+    }
 
     vkDestroyPipeline(m_Device, m_GraphicsPipeline, nullptr);
     m_GraphicsPipeline = VK_NULL_HANDLE;
@@ -1671,8 +1695,6 @@ void Engine::drawFrame() {
     vkResetCommandBuffer(m_CommandBuffers[m_CurrentFrameIdx], 0);
     recordCommandBuffers(m_CommandBuffers[m_CurrentFrameIdx], imageIndex);
 
-    updateUniformBuffers(m_CurrentFrameIdx);
-
     for (size_t i = 0; i < m_Models.size(); i++) {
         UniformBufferObject ubo = m_Models[i]->getUBO();
         size_t bufferIndex = getCurrentFrameIdx() * m_Models.size() + i;
@@ -1806,36 +1828,6 @@ DEF Engine::captureFramebuffer(uint32_t imageIndex) -> void {
     vkUnmapMemory(m_Device, stagingBufferMemory);
     vkDestroyBuffer(m_Device, stagingBuffer, nullptr);
     vkFreeMemory(m_Device, stagingBufferMemory, nullptr);
-}
-
-void Engine::updateUniformBuffers(uint32_t currentFrame) {
-    static auto startTime = std::chrono::high_resolution_clock::now();
-    auto currentTime = std::chrono::high_resolution_clock::now();
-    float delta_time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
-    glm::mat4 view = glm::lookAt(m_CameraEye, m_CameraCenter, m_CameraUp);
-    glm::mat4 proj = glm::perspective(
-        PI_QUARTER,
-        static_cast<float>(m_SwapChainExtent.width) / static_cast<float>(m_SwapChainExtent.height),
-        Settings::CLIPPING_PLANE_NEAR, Settings::CLIPPING_PLANE_FAR);
-
-    proj[1][1] *= -1;
-
-    for (size_t j = 0; j < m_Models.size(); j++) {
-        glm::mat4 modelMatrix = m_Models[j]->getMatrix();
-
-        UniformBufferObject ubo{
-            .model = modelMatrix,
-            .view = view,
-            .proj = proj,
-            .cameraEye = m_CameraEye,
-            .time = delta_time,
-            .cameraCenter = m_CameraCenter,
-            .cameraUp = m_CameraUp};
-
-        size_t bufferIndex = currentFrame * m_Models.size() + j;
-        memcpy(m_UniformBuffersMapped[bufferIndex], &ubo, sizeof(ubo));
-    }
 }
 
 void Engine::cleanup() {
@@ -2096,6 +2088,20 @@ DEF Engine::lookAround(float yawOffset, float pitchOffset) -> void {
     m_CameraCenter = m_CameraEye + glm::normalize(lookDirection);
 }
 
-DEF Engine::takeScreenshot() -> void {
-    m_TakeScreenshotNextFrame = true;
+DEF Engine::updatePushConstants() -> void {
+    m_PushConstants.cameraCenter = m_CameraCenter;
+    m_PushConstants.cameraEye = m_CameraEye;
+    m_PushConstants.cameraUp = m_CameraUp;
+    m_PushConstants.stage = m_Stage;
+
+    std::chrono::time_point currentTime = std::chrono::high_resolution_clock::now();
+    float deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - m_StartTime).count();
+
+    m_PushConstants.time = deltaTime;
+}
+
+DEF Engine::update(float frameTime) -> void {
+    for (auto &model : m_Models) {
+        model->update(frameTime);
+    }
 }

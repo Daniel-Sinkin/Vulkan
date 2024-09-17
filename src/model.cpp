@@ -13,7 +13,8 @@ ModelNT::ModelNT(Engine *engine, const char *meshFilepath, uint32_t modelID)
       m_Mesh(nullptr),
       m_MeshFilepath(meshFilepath),
       m_InitialTransform(),
-      m_CurrentTransform() {
+      m_CurrentTransform(),
+      m_RotationAnimationVector(vec3(0.0f, 0.0f, 0.0f)) {
     m_Mesh = std::make_unique<MeshNT>(engine, meshFilepath);
     m_ModelID = modelID;
     validate();
@@ -77,6 +78,7 @@ DEF ModelNT::getUBO() -> UniformBufferObject {
     float delta_time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
     glm::mat4 view = glm::lookAt(m_Engine->m_CameraEye, m_Engine->m_CameraCenter, m_Engine->m_CameraUp);
+    // TODO: Read those values from constants
     glm::mat4 proj = glm::perspective(
         PI_QUARTER,
         static_cast<float>(m_Engine->getSwapchainExtent().width) / static_cast<float>(m_Engine->getSwapchainExtent().height),
@@ -89,15 +91,6 @@ DEF ModelNT::getUBO() -> UniformBufferObject {
     UniformBufferObject ubo{
         .model = modelMatrix,
         .view = view,
-        .proj = proj,
-        .cameraEye = m_Engine->m_CameraEye,
-        .time = delta_time,
-        .cameraCenter = m_Engine->m_CameraCenter,
-        .cameraUp = m_Engine->m_CameraUp,
-        .stage = m_Engine->getStage()};
+        .proj = proj};
     return ubo;
-}
-
-DEF ModelNT::getMatrix() const -> mat4 {
-    return m_CurrentTransform.getMatrix();
 }

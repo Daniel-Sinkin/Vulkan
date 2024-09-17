@@ -90,29 +90,29 @@ using Bitmask32 = uint32_t;
 using Bitmask64 = uint64_t;
 // clang-format off
 namespace KeyBitmask {
-constexpr Bitmask64 num0    = 1ULL <<  0;
-constexpr Bitmask64 num1    = 1ULL <<  1;
-constexpr Bitmask64 num2    = 1ULL <<  2;
-constexpr Bitmask64 num3    = 1ULL <<  3;
-constexpr Bitmask64 num4    = 1ULL <<  4;
-constexpr Bitmask64 num5    = 1ULL <<  5;
-constexpr Bitmask64 num6    = 1ULL <<  6;
-constexpr Bitmask64 num7    = 1ULL <<  7;
-constexpr Bitmask64 num8    = 1ULL <<  8;
-constexpr Bitmask64 num9    = 1ULL <<  9;
-constexpr Bitmask64 F1    = 1ULL <<  11;
-constexpr Bitmask64 F2    = 1ULL <<  12;
-constexpr Bitmask64 F3    = 1ULL <<  13;
-constexpr Bitmask64 F4    = 1ULL <<  14;
-constexpr Bitmask64 F5    = 1ULL <<  15;
-constexpr Bitmask64 F6    = 1ULL <<  16;
-constexpr Bitmask64 F7    = 1ULL <<  17;
-constexpr Bitmask64 F8    = 1ULL <<  18;
-constexpr Bitmask64 F9    = 1ULL <<  19;
+constexpr Bitmask64 num0  = 1ULL <<  0;
+constexpr Bitmask64 num1  = 1ULL <<  1;
+constexpr Bitmask64 num2  = 1ULL <<  2;
+constexpr Bitmask64 num3  = 1ULL <<  3;
+constexpr Bitmask64 num4  = 1ULL <<  4;
+constexpr Bitmask64 num5  = 1ULL <<  5;
+constexpr Bitmask64 num6  = 1ULL <<  6;
+constexpr Bitmask64 num7  = 1ULL <<  7;
+constexpr Bitmask64 num8  = 1ULL <<  8;
+constexpr Bitmask64 num9  = 1ULL <<  9;
+constexpr Bitmask64 F1    = 1ULL << 11;
+constexpr Bitmask64 F2    = 1ULL << 12;
+constexpr Bitmask64 F3    = 1ULL << 13;
+constexpr Bitmask64 F4    = 1ULL << 14;
+constexpr Bitmask64 F5    = 1ULL << 15;
+constexpr Bitmask64 F6    = 1ULL << 16;
+constexpr Bitmask64 F7    = 1ULL << 17;
+constexpr Bitmask64 F8    = 1ULL << 18;
+constexpr Bitmask64 F9    = 1ULL << 19;
 constexpr Bitmask64 F10   = 1ULL << 20;
 constexpr Bitmask64 F11   = 1ULL << 21;
 constexpr Bitmask64 F12   = 1ULL << 22;
-constexpr Bitmask64 TAB   = 1ULL <<  23;
+constexpr Bitmask64 TAB   = 1ULL << 23;
 constexpr Bitmask64 SPACE = 1ULL << 24;
 constexpr Bitmask64 ENTER = 1ULL << 25;
 } // namespace KeyBitmask
@@ -137,12 +137,13 @@ struct UniformBufferObject {
     mat4 model;
     mat4 view;
     mat4 proj;
-    vec3 cameraEye;
+};
+
+struct PushConstants {
+    alignas(16) vec3 cameraEye;
+    alignas(16) vec3 cameraCenter;
+    alignas(16) vec3 cameraUp;
     float time;
-    vec3 cameraCenter;
-    float padding1;
-    vec3 cameraUp;
-    float padding2;
     int stage;
 };
 

@@ -6,19 +6,22 @@ layout(location = 2) in vec3 fragNormal;
 layout(location = 3) in vec3 viewDir;
 layout(location = 4) flat in int triangleID;
 
+
 layout(binding = 0) uniform UniformBufferObject {
     mat4 model;
     mat4 view;
     mat4 proj;
-    vec3 cameraEye;
-    float time;           // Align to 16 bytes
-    vec3 cameraCenter;
-    float padding1;       // Alignment padding
-    vec3 cameraUp;
-    float padding2;       // Alignment padding
-    int stage;            // Added the stage variable
 };
 layout(binding = 1) uniform sampler2D texSampler;
+
+// Push constant block
+layout(push_constant) uniform PushConstants {
+    vec3 cameraEye; 
+    vec3 cameraCenter;
+    vec3 cameraUp;
+    float time;
+    int stage;
+} pc; 
 
 layout(location = 0) out vec4 outColor;
 
@@ -112,26 +115,26 @@ void renderStage6And7(vec3 lightPosition) {
 
 // Main entry point
 void main() {
-    if (stage == 0) {
+    if (pc.stage == 0) {
         renderStage0();
         return;
-    } else if (stage == 1) {
+    } else if (pc.stage == 1) {
         renderStage1();
         return;
-    } else if (stage == 2) {
+    } else if (pc.stage == 2) {
         renderStage2();
         return;
-    } else if (stage == 3) {
+    } else if (pc.stage == 3) {
         renderStage3();
         return;
-    } else if (stage == 4) {
+    } else if (pc.stage == 4) {
         renderStage4();
         return;
-    } else if (stage == 5) {
+    } else if (pc.stage == 5) {
         renderStage5(vec3(15.0, 0.0, 0.0));  // Static light position
         return;
-    } else if (stage == 6 || stage == 7) {
-        vec3 lightPosition = (stage == 6) ? vec3(15.0, 0.0, 0.0) : vec3(15.0 * sin(time), 0.0, 0.0);
+    } else if (pc.stage == 6 || pc.stage == 7) {
+        vec3 lightPosition = (pc.stage == 6) ? vec3(15.0, 0.0, 0.0) : vec3(15.0 * sin(pc.time), 0.0, 0.0);
         renderStage6And7(lightPosition);
         return;
     }

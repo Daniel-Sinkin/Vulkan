@@ -20,10 +20,14 @@ public:
     DEF resetTransform() -> void;
 
     DEF getMesh() const -> MeshNT *;
-    [[nodiscard]] DEF getMatrix() const -> mat4;
+    [[nodiscard]] DEF getMatrix() const -> mat4 { return m_CurrentTransform.getMatrix(); }
 
     DEF enqueueIntoCommandBuffer(VkCommandBuffer commandBuffer, VkDescriptorSet descriptorSet) -> void;
-    DEF getUBO() -> UniformBufferObject;
+    [[nodiscard]] DEF getUBO() -> UniformBufferObject;
+
+    DEF setRotationAnimationVector(vec3 rotationAnimationVector) -> void { m_RotationAnimationVector = rotationAnimationVector; }
+
+    DEF update(float frameTime) -> void { rotate(m_RotationAnimationVector * frameTime); }
 
     Transform m_CurrentTransform;
 
@@ -35,4 +39,6 @@ private:
     Transform m_InitialTransform;
 
     uint32_t m_ModelID;
+
+    vec3 m_RotationAnimationVector;
 };
