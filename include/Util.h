@@ -37,6 +37,13 @@ inline bool handleKeyPressReleaseWithBitmask(uint64_t &bitmask, int bitPosition,
 
 #define PRINT_BOLD_GREEN(text) fprintf(stdout, "\033[1m\033[32m\n%s\n\033[0m", text)
 
+// Workaround to nums not concatenating properly
+#define HANDLE_STAGE_INPUT(number)                                                                              \
+    if (handleKeyPressReleaseWithBitmask(m_KeyBitmask, KeyBitmask::num##number, GLFW_KEY_##number, m_Window)) { \
+        m_Engine->setStage(number);                                                                             \
+        cout << "Set the stage to " << number << ".\n";                                                         \
+    }
+
 inline void glmPrint(const glm::mat4 &mat) {
     std::cout << "mat4(" << std::endl;
     for (int i = 0; i < 4; ++i) {

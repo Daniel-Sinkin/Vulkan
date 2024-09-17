@@ -1,6 +1,85 @@
 import numpy as np
 from pathlib import Path
 
+def generate_square(size=1.0, clockwise=False):
+    # Vertices for a square on the XY plane
+    vertices = np.array([
+        [-size / 2, -size / 2, 0],
+        [size / 2, -size / 2, 0],
+        [size / 2, size / 2, 0],
+        [-size / 2, size / 2, 0]
+    ])
+
+    # Texture coordinates
+    texcoords = np.array([
+        [0, 0],
+        [1, 0],
+        [1, 1],
+        [0, 1]
+    ])
+
+    # Face (two triangles to make a square)
+    if clockwise:
+        faces = np.array([
+            [0, 1, 2],  # Triangle 1
+            [0, 2, 3]   # Triangle 2
+        ])
+    else:
+        faces = np.array([
+            [0, 2, 1],  # Triangle 1 (counterclockwise)
+            [0, 3, 2]   # Triangle 2 (counterclockwise)
+        ])
+
+    # Normals (all pointing in the z-direction)
+    normals = np.array([
+        [0, 0, 1],
+        [0, 0, 1],
+        [0, 0, 1],
+        [0, 0, 1]
+    ])
+
+    return vertices, normals, texcoords, faces
+
+def generate_mobius_strip(radius=1.0, width=0.1, segments=100, twists=1, clockwise=False):
+    vertices = []
+    normals = []
+    texcoords = []
+    faces = []
+
+    for i in range(segments + 1):
+        # Fraction of way around the circle
+        theta = 2 * np.pi * i / segments
+        x = radius * np.cos(theta)
+        y = radius * np.sin(theta)
+
+        for j in [-1, 1]:
+            # Create width along the strip, twisted by a fraction of the circle
+            offset = (j * width / 2) * np.sin(twists * theta)
+            z = j * (width / 2) * np.cos(twists * theta)
+            vertices.append([x + offset * np.cos(theta), y + offset * np.sin(theta), z])
+
+            # Approximate normal
+            normals.append([np.cos(theta), np.sin(theta), 0])
+
+            # Texture coordinates
+            texcoords.append([i / segments, (j + 1) / 2])
+
+    # Faces (quads split into two triangles)
+    for i in range(segments):
+        v1 = i * 2
+        v2 = v1 + 1
+        v3 = v1 + 2
+        v4 = v1 + 3
+
+        if clockwise:
+            faces.append([v1, v2, v4])  # Triangle 1 (reversed winding)
+            faces.append([v1, v4, v3])  # Triangle 2 (reversed winding)
+        else:
+            faces.append([v1, v3, v4])  # Triangle 1
+            faces.append([v1, v4, v2])  # Triangle 2
+
+    return np.array(vertices), np.array(normals), np.array(texcoords), np.array(faces)
+
 def generate_sphere(radius, subdivisions, clockwise=False):
     vertices = []
     normals = []
@@ -79,7 +158,7 @@ def generate_torus(outer_radius, inner_radius, radial_subdivisions, tubular_subd
             v3 = ((i + 1) % radial_subdivisions) * tubular_subdivisions + j
             v4 = (v3 + 1) % tubular_subdivisions + ((i + 1) % radial_subdivisions) * tubular_subdivisions
 
-            if not clockwise:
+            if clockwise:
                 faces.append([v1, v3, v2])  # Triangle 1 (reversed order)
                 faces.append([v2, v3, v4])  # Triangle 2 (reversed order)
             else:

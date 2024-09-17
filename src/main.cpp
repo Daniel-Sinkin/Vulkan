@@ -1,6 +1,6 @@
 #include "Constants.h"
 #include "Util.h"
-#include "engine.h"
+#include "engine/engine.h"
 #include "game.h"
 
 DEF main() -> int {
@@ -33,8 +33,9 @@ DEF main() -> int {
 
             glfwPollEvents();
             game.update(frameTime);
+            engine.update(frameTime);
 
-            TIMED_EXECUTION(engine.drawFrame);
+            engine.drawFrame();
         }
     } catch (const std::exception &e) {
         std::cerr << e.what() << "\n";

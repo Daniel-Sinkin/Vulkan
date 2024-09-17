@@ -1,10 +1,9 @@
 #version 450
 
 layout(location = 0) in vec3 fragPosition;
-layout(location = 1) in vec3 fragColor;
-layout(location = 2) in vec2 fragTexCoord;
-layout(location = 3) in vec3 fragNormal;
-layout(location = 4) in vec3 viewDir;
+layout(location = 1) in vec2 fragTexCoord;
+layout(location = 2) in vec3 fragNormal;
+layout(location = 3) in vec3 viewDir;
 
 
 layout(binding = 0) uniform UniformBufferObject {
@@ -12,7 +11,11 @@ layout(binding = 0) uniform UniformBufferObject {
     mat4 view;
     mat4 proj;
     vec3 cameraEye;
-    float time;
+    float time;           // Align to 16 bytes
+    vec3 cameraCenter;
+    float padding1;       // Alignment padding
+    vec3 cameraUp;
+    float padding2;       // Alignment padding
 };
 layout(binding = 1) uniform sampler2D texSampler;
 
@@ -57,7 +60,7 @@ void main() {
     vec4 sampledColor = texture(texSampler, fragTexCoord);
 
     // Combine the lighting components with the texture color and fragment color
-    vec3 finalColor = (ambient + diffuse + specular) * lightIntensity * sampledColor.rgb * fragColor;
+    vec3 finalColor = (ambient + diffuse + specular) * lightIntensity * sampledColor.rgb;
 
     // Apply gamma correction
     float gamma = 2.2;

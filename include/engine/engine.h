@@ -2,6 +2,7 @@
 
 #include "Constants.h"
 #include "Util.h"
+#include "engine/model.h"
 
 DEF CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkDebugUtilsMessengerEXT *pDebugMessenger) -> VkResult;
 DEF DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks *pAllocator) -> void;
@@ -16,17 +17,40 @@ public:
     DEF mainLoop() -> void;
     DEF drawFrame() -> void;
 
-    [[nodiscard]] DEF getWindow() const -> GLFWwindow *;
+    [[nodiscard]] DEF getWindow() const -> GLFWwindow * { return m_Window; };
+    [[nodiscard]] DEF getDevice() const -> VkDevice { return m_Device; };
 
     DEF setCameraPosition(vec3 position) -> void;
     DEF moveCamera(vec3 direction) -> void;
 
-    DEF getCameraLookDirection() const -> vec3;
     DEF moveCameraForward(float amount) -> void;
     DEF moveCameraRight(float amount) -> void;
     DEF lookAround(float yawOffset, float pitchOffset) -> void;
 
-    DEF takeScreenshot() -> void;
+    [[nodiscard]] DEF getCameraLookDirection() const -> vec3;
+
+    [[nodiscard]] DEF getPipelineLayout() const -> VkPipelineLayout { return m_PipelineLayout; }
+    [[nodiscard]] DEF getDescriptorSets() const -> vector<VkDescriptorSet> { return m_DescriptorSets; }
+    [[nodiscard]] DEF getCurrentFrameIdx() const -> uint32_t { return m_CurrentFrameIdx; }
+
+    DEF takeScreenshot() -> void { m_TakeScreenshotNextFrame = true; }
+
+    DEF createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer, VkDeviceMemory &bufferMemory) -> void;
+    DEF copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) -> void;
+
+    vec3 m_CameraEye;
+    vec3 m_CameraCenter;
+    vec3 m_CameraUp;
+
+    [[nodiscard]] DEF getSwapchainExtent() const -> VkExtent2D { return m_SwapChainExtent; }
+    [[nodiscard]] DEF getNumModels() const -> size_t { return m_Models.size(); }
+
+    DEF getUniformBuffersMapped() -> auto { return m_UniformBuffersMapped; }
+
+    DEF setStage(int stage) -> void { m_Stage = stage; }
+    DEF getStage() -> int { return m_Stage; }
+
+    DEF update(float frameTime) -> void;
 
 private:
     DEF
@@ -50,8 +74,6 @@ private:
     DEF createFramebuffers() -> void;
     DEF createCommandPool() -> void;
     DEF createSyncObjects() -> void;
-    DEF createVertexBuffer() -> void;
-    DEF createIndexBuffer() -> void;
     DEF createUniformBuffers() -> void;
     DEF createDescriptorPool() -> void;
     DEF createDescriptorSets() -> void;
@@ -62,13 +84,10 @@ private:
     DEF createColorResources() -> void;
     DEF getMaxUsableSampleCount() -> VkSampleCountFlagBits;
     DEF createCommandBuffers() -> void;
-    DEF createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer, VkDeviceMemory &bufferMemory) -> void;
-    DEF copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) -> void;
     DEF copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) -> void;
     DEF transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels) -> void;
     DEF recreateSwapChain() -> void;
     DEF cleanupSwapChain() -> void;
-    DEF updateUniformBuffer(uint32_t currentImage) -> void;
     DEF beginSingleTimeCommands() -> VkCommandBuffer;
     DEF endSingleTimeCommands(VkCommandBuffer commandBuffer) -> void;
     DEF createImageViews() -> void;
@@ -81,8 +100,7 @@ private:
     DEF findSupportedFormat(const vector<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features) -> VkFormat;
     DEF createDepthResources() -> void;
     DEF findDepthFormat() -> VkFormat;
-    DEF loadModel() -> void;
-    DEF loadModelN() -> void;
+    DEF updatePushConstants() -> void;
 
     static DEF getRequiredExtensions() -> vector<const char *>;
     static DEF checkValidationLayerSupport() -> bool;
@@ -128,13 +146,6 @@ private:
     uint32_t m_FrameCounter;    // How many frames have been rendered
     bool m_FramebufferResized;
 
-    std::vector<VertexN> m_Vertices;
-    std::vector<uint32_t> m_VertexIndices;
-    VkBuffer m_VertexBuffer;
-    VkDeviceMemory m_VertexBufferMemory;
-    VkBuffer m_IndexBuffer;
-    VkDeviceMemory m_IndexBufferMemory;
-
     vector<VkBuffer> m_UniformBuffers;
     vector<VkDeviceMemory> m_UniformBuffersMemory;
     vector<void *> m_UniformBuffersMapped;
@@ -158,12 +169,16 @@ private:
     VkDeviceMemory m_DepthImageMemory;
     VkImageView m_DepthImageView;
 
-    vec3 m_CameraEye;
-    vec3 m_CameraCenter;
-    vec3 m_CameraUp;
-
     bool m_TakeScreenshotNextFrame;
 
     uint32_t m_EngineVersion;
     uint32_t m_ApplicationVersion;
+
+    vector<std::unique_ptr<ModelNT>> m_Models;
+
+    int m_Stage;
+
+    PushConstants m_PushConstants;
+
+    std::chrono::time_point<std::chrono::high_resolution_clock> m_StartTime;
 };

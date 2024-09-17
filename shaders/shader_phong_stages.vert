@@ -8,18 +8,22 @@ layout(binding = 0) uniform UniformBufferObject {
     mat4 model;
     mat4 view;
     mat4 proj;
-    vec3 cameraEye;
-    float time;           // Align to 16 bytes
-    vec3 cameraCenter;
-    float padding1;       // Alignment padding
-    vec3 cameraUp;
-    float padding2;       // Alignment padding
 };
+
+// Push constant block
+layout(push_constant) uniform PushConstants {
+    vec3 cameraEye; 
+    vec3 cameraCenter;
+    vec3 cameraUp;
+    float time;
+    int stage;
+} pc; 
 
 layout(location = 0) out vec3 fragPosition;
 layout(location = 1) out vec2 fragTexCoord;
 layout(location = 2) out vec3 fragNormal;
 layout(location = 3) out vec3 viewDir;
+layout(location = 4) flat out int triangleID;  // Flat shading for triangle IDs
 
 void main() {
     // Define the rotation angle (22.5 degrees in radians)
@@ -45,7 +49,9 @@ void main() {
     fragNormal = mat3(transpose(inverse(model))) * inNormal;
 
     // Calculate view direction
-    viewDir = normalize(cameraEye - fragPosition);
+    viewDir = normalize(pc.cameraEye - fragPosition);
+
+    triangleID = gl_VertexIndex;
 
     // Final position in clip space
     gl_Position = proj * view * worldPosition;
