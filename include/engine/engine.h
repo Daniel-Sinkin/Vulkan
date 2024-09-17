@@ -8,13 +8,15 @@ DEF CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessenge
 DEF DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks *pAllocator) -> void;
 
 struct UniformBufferObject {
-    mat4 model;
-    mat4 view;
-    mat4 proj;
-    alignas(16) vec3 cameraEye;
+    glm::mat4 model;
+    glm::mat4 view;
+    glm::mat4 proj;
+    glm::vec3 cameraEye;
     float time;
-    alignas(16) vec3 cameraCenter;
-    alignas(16) vec3 cameraUp;
+    glm::vec3 cameraCenter;
+    float padding1;
+    glm::vec3 cameraUp;
+    float padding2;
 };
 
 class Engine {
@@ -84,7 +86,7 @@ private:
     DEF transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels) -> void;
     DEF recreateSwapChain() -> void;
     DEF cleanupSwapChain() -> void;
-    DEF updateUniformBuffer(uint32_t currentImage) -> void;
+    DEF updateUniformBuffers(uint32_t currentImage) -> void;
     DEF beginSingleTimeCommands() -> VkCommandBuffer;
     DEF endSingleTimeCommands(VkCommandBuffer commandBuffer) -> void;
     DEF createImageViews() -> void;

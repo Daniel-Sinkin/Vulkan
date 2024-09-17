@@ -19,8 +19,9 @@ public:
     void resetTransform();
 
     DEF getMesh() const -> MeshNT *;
+    [[nodiscard]] DEF getMatrix() const -> mat4;
 
-    void enqueueIntoCommandBuffer(VkCommandBuffer commandBuffer);
+    void enqueueIntoCommandBuffer(VkCommandBuffer commandBuffer, VkDescriptorSet descriptorSet);
 
 private:
     Engine *m_Engine;

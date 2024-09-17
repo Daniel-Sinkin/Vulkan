@@ -196,7 +196,7 @@ constexpr uint32_t DEFAULT_WINDOW_HEIGHT = 1080;
 
 constexpr auto PROJECT_NAME = "Daniel's 3D Engine";
 
-constexpr float MOUSE_SENSITIVITY = 2.0f;
+constexpr float MOUSE_SENSITIVITY = 5.0f;
 
 constexpr float CAMERA_FLOATING_SPEED = 2.5f;
 constexpr float CAMERA_FLOATING_SPEED_BOOSTED = 3.75f;

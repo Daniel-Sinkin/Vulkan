@@ -31,7 +31,7 @@ DEF ModelNT::resetTransform() -> void { m_CurrentTransform = m_InitialTransform;
 
 DEF ModelNT::getMesh() const -> MeshNT * { return m_Mesh.get(); }
 
-void ModelNT::enqueueIntoCommandBuffer(VkCommandBuffer commandBuffer) {
+DEF ModelNT::enqueueIntoCommandBuffer(VkCommandBuffer commandBuffer, VkDescriptorSet descriptorSet) -> void {
     std::array<VkBuffer, 1> vertexBuffers = {this->getMesh()->getVertexBuffer()};
     std::array<VkDeviceSize, 1> offsets = {0};
     vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers.data(), offsets.data());
@@ -44,7 +44,7 @@ void ModelNT::enqueueIntoCommandBuffer(VkCommandBuffer commandBuffer) {
         m_Engine->getPipelineLayout(),
         0,
         1,
-        &m_Engine->getDescriptorSets()[m_Engine->getCurrentFrameIdx()],
+        &descriptorSet,
         0,
         nullptr);
 
@@ -55,4 +55,8 @@ void ModelNT::enqueueIntoCommandBuffer(VkCommandBuffer commandBuffer) {
         0,
         0,
         0);
+}
+
+DEF ModelNT::getMatrix() const -> mat4 {
+    return m_CurrentTransform.getMatrix();
 }

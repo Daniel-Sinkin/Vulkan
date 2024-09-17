@@ -11,7 +11,11 @@ layout(binding = 0) uniform UniformBufferObject {
     mat4 view;
     mat4 proj;
     vec3 cameraEye;
-    float time;
+    float time;           // Align to 16 bytes
+    vec3 cameraCenter;
+    float padding1;       // Alignment padding
+    vec3 cameraUp;
+    float padding2;       // Alignment padding
 };
 layout(binding = 1) uniform sampler2D texSampler;
 
