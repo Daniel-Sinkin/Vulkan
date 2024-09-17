@@ -79,7 +79,7 @@ def generate_torus(outer_radius, inner_radius, radial_subdivisions, tubular_subd
             v3 = ((i + 1) % radial_subdivisions) * tubular_subdivisions + j
             v4 = (v3 + 1) % tubular_subdivisions + ((i + 1) % radial_subdivisions) * tubular_subdivisions
 
-            if not clockwise:
+            if clockwise:
                 faces.append([v1, v3, v2])  # Triangle 1 (reversed order)
                 faces.append([v2, v3, v4])  # Triangle 2 (reversed order)
             else:

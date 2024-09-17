@@ -1,10 +1,9 @@
 #version 450
 
 layout(location = 0) in vec3 fragPosition;
-layout(location = 1) in vec3 fragColor;
-layout(location = 2) in vec2 fragTexCoord;
-layout(location = 3) in vec3 fragNormal;
-layout(location = 4) in vec3 viewDir;
+layout(location = 1) in vec2 fragTexCoord;
+layout(location = 2) in vec3 fragNormal;
+layout(location = 3) in vec3 viewDir;
 
 
 layout(binding = 0) uniform UniformBufferObject {
@@ -57,7 +56,7 @@ void main() {
     vec4 sampledColor = texture(texSampler, fragTexCoord);
 
     // Combine the lighting components with the texture color and fragment color
-    vec3 finalColor = (ambient + diffuse + specular) * lightIntensity * sampledColor.rgb * fragColor;
+    vec3 finalColor = (ambient + diffuse + specular) * lightIntensity * sampledColor.rgb;
 
     // Apply gamma correction
     float gamma = 2.2;

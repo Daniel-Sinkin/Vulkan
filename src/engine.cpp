@@ -1,10 +1,10 @@
-#include "engine/engine.h"
 #include "Constants.h"
+
+#include "engine/engine.h"
+#include "engine/mesh.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
-#define TINYOBJLOADER_IMPLEMENTATION
-#include "tiny_obj_loader.h"
 
 const vector<const char *> validationLayers = {"VK_LAYER_KHRONOS_validation"};
 // VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME is a MacOS specific workaround
@@ -67,10 +67,6 @@ Engine::Engine()
       m_CurrentFrameIdx(0), // Not the total frames, 0 <= m_CurrentFrameIdx < Settings::MAX_FRAMES_IN_FLIGHT
       m_FrameCounter(0),
       m_FramebufferResized(false),
-      m_VertexBuffer(VK_NULL_HANDLE),
-      m_VertexBufferMemory(VK_NULL_HANDLE),
-      m_IndexBuffer(VK_NULL_HANDLE),
-      m_IndexBufferMemory(VK_NULL_HANDLE),
       m_DescriptorPool(VK_NULL_HANDLE),
       m_MipLevels(1),
       m_TextureImage(VK_NULL_HANDLE),
@@ -150,10 +146,6 @@ DEF Engine::validateExtensions(const vector<VkExtensionProperties> &supported_ex
                     return string_view(supported_extension.extensionName) == required_extension_view;
                 });
         });
-}
-
-[[nodiscard]] DEF Engine::getWindow() const -> GLFWwindow * {
-    return m_Window;
 }
 
 DEF Engine::createInstance() -> void {
@@ -251,9 +243,10 @@ DEF Engine::initVulkan() -> void {
     VULKAN_SETUP(createTextureImageView);
     VULKAN_SETUP(createTextureSampler);
 
-    VULKAN_SETUP(loadModelN);
-    VULKAN_SETUP(createVertexBuffer);
-    VULKAN_SETUP(createIndexBuffer);
+    cout << "Instantiating Meshes!\n";
+    m_Meshes.push_back(new MeshNT(this, FilePaths::MODEL_BASIC_TORUS));
+    m_Meshes.push_back(new MeshNT(this, FilePaths::MODEL_BASIC_SPHERE));
+    cout << "Successfully instantiated Meshes!\n";
 
     VULKAN_SETUP(createUniformBuffers);
 
@@ -274,111 +267,6 @@ DEF Engine::initVulkan() -> void {
 
     fprintf(stdout, "\033[32mTotal Vulkan setup time: %.2f ms\n\033[0m", totalElapsed.count());
 }
-
-DEF Engine::loadModelN() -> void {
-    tinyobj::attrib_t attrib;
-    vector<tinyobj::shape_t> shapes;
-    vector<tinyobj::material_t> materials;
-    string warn, err;
-
-    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, FilePaths::VIKING_ROOM_MODEL)) {
-        throw std::runtime_error(warn + err);
-    }
-
-    // Hashes vertices so we can avoid loading duplicated vertices
-    unordered_map<VertexNT, uint32_t> uniqueVertices{};
-
-    for (const auto &shape : shapes) {
-        for (const auto &index : shape.mesh.indices) {
-            VertexNT VertexNT{};
-
-            // Load position
-            VertexNT.pos = {
-                attrib.vertices[3 * index.vertex_index + 0],
-                attrib.vertices[3 * index.vertex_index + 1],
-                attrib.vertices[3 * index.vertex_index + 2]};
-
-            // Load normals (check if normal index exists first)
-            if (index.normal_index >= 0) {
-                VertexNT.normal = {
-                    attrib.normals[3 * index.normal_index + 0],
-                    attrib.normals[3 * index.normal_index + 1],
-                    attrib.normals[3 * index.normal_index + 2]};
-            } else {
-                VertexNT.normal = {0.0f, 0.0f, 0.0f}; // Default normal if none provided
-            }
-
-            // Load texture coordinates (check if texcoord index exists first)
-            if (index.texcoord_index >= 0) {
-                VertexNT.texCoord = {
-                    attrib.texcoords[2 * index.texcoord_index + 0],
-                    1.0f - attrib.texcoords[2 * index.texcoord_index + 1]}; // Flip vertical coordinate
-            } else {
-                VertexNT.texCoord = {0.0f, 0.0f}; // Default texcoord if none provided
-            }
-
-            // Insert the vertex if it hasn't been added yet
-            if (uniqueVertices.count(VertexNT) == 0) {
-                uniqueVertices[VertexNT] = static_cast<uint32_t>(m_Vertices.size());
-                m_Vertices.push_back(VertexNT);
-            }
-
-            m_VertexIndices.push_back(uniqueVertices[VertexNT]);
-        }
-    }
-
-    std::cout << "\tNumber of vertices: " << attrib.vertices.size() / 3 << "\n"; // Dividing by 3 as each vertex has x, y, z
-    std::cout << "\tNumber of unique vertices: " << uniqueVertices.size() << "\n";
-    std::cout << "\tNumber of indices: " << m_VertexIndices.size() << "\n";
-    std::cout << "\tNumber of shapes: " << shapes.size() << "\n";
-    std::cout << "\tNumber of materials: " << materials.size() << "\n";
-}
-
-/*
-DEF Engine::loadModel() -> void {
-    tinyobj::attrib_t attrib;
-    vector<tinyobj::shape_t> shapes;
-    vector<tinyobj::material_t> materials;
-    string warn, err;
-
-    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, FilePaths::SPHERE_20_MODEL)) {
-        throw std::runtime_error(warn + err);
-    }
-
-    // Hashes vertices so we can avoid loading duplicated vertices
-    unordered_map<Vertex, uint32_t> uniqueVertices{};
-
-    for (const auto &shape : shapes) {
-        for (const auto &index : shape.mesh.indices) {
-            Vertex vertex{};
-
-            vertex.pos = {
-                attrib.vertices[3 * index.vertex_index + 0],
-                attrib.vertices[3 * index.vertex_index + 1],
-                attrib.vertices[3 * index.vertex_index + 2]};
-
-            // Have to flip coordinate because the object uses the OpenGL direction for vertical coordinate
-            vertex.texCoord = {
-                attrib.texcoords[2 * index.texcoord_index + 0],
-                1.0f - attrib.texcoords[2 * index.texcoord_index + 1]};
-
-            vertex.color = {1.0f, 1.0f, 1.0f};
-
-            if (uniqueVertices.count(vertex) == 0) {
-                uniqueVertices[vertex] = static_cast<uint32_t>(m_Vertices.size());
-                m_Vertices.push_back(vertex);
-            }
-
-            m_VertexIndices.push_back(uniqueVertices[vertex]);
-        }
-    }
-    std::cout << "\tNumber of vertices: " << attrib.vertices.size() / 3 << "\n"; // Dividing by 3 as each vertex has x, y, z
-    std::cout << "\tNumber of unique vertices: " << uniqueVertices.size() << "\n";
-    std::cout << "\tNumber of indices: " << m_VertexIndices.size() << "\n";
-    std::cout << "\tNumber of shapes: " << shapes.size() << "\n";
-    std::cout << "\tNumber of materials: " << materials.size() << "\n";
-}
-*/
 
 DEF Engine::hasStencilComponent(VkFormat format) -> bool {
     return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
@@ -888,66 +776,6 @@ DEF Engine::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties
     throw runtime_error("Couldn't determine the memory type.");
 }
 
-DEF Engine::createIndexBuffer() -> void {
-    VkDeviceSize bufferSize = sizeof(m_VertexIndices[0]) * m_VertexIndices.size();
-
-    VkBuffer stagingBuffer = VK_NULL_HANDLE;
-    VkDeviceMemory stagingBufferMemory = VK_NULL_HANDLE;
-    createBuffer(
-        bufferSize,
-        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        stagingBuffer,
-        stagingBufferMemory);
-
-    void *data = nullptr;
-    vkMapMemory(m_Device, stagingBufferMemory, 0, bufferSize, 0, &data);
-    memcpy(data, m_VertexIndices.data(), (size_t)bufferSize);
-    vkUnmapMemory(m_Device, stagingBufferMemory);
-
-    createBuffer(
-        bufferSize,
-        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-        m_IndexBuffer,
-        m_IndexBufferMemory);
-
-    copyBuffer(stagingBuffer, m_IndexBuffer, bufferSize);
-
-    vkDestroyBuffer(m_Device, stagingBuffer, nullptr);
-    vkFreeMemory(m_Device, stagingBufferMemory, nullptr);
-}
-
-DEF Engine::createVertexBuffer() -> void {
-    VkDeviceSize bufferSize = sizeof(m_Vertices[0]) * m_Vertices.size();
-
-    VkBuffer stagingBuffer = VK_NULL_HANDLE;
-    VkDeviceMemory stagingBufferMemory = VK_NULL_HANDLE;
-    createBuffer(
-        bufferSize,
-        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        stagingBuffer,
-        stagingBufferMemory);
-
-    void *data = nullptr;
-    vkMapMemory(m_Device, stagingBufferMemory, 0, bufferSize, 0, &data);
-    memcpy(data, m_Vertices.data(), static_cast<size_t>(bufferSize));
-    vkUnmapMemory(m_Device, stagingBufferMemory);
-
-    createBuffer(
-        bufferSize,
-        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-        m_VertexBuffer,
-        m_VertexBufferMemory);
-
-    copyBuffer(stagingBuffer, m_VertexBuffer, bufferSize);
-
-    vkDestroyBuffer(m_Device, stagingBuffer, nullptr);
-    vkFreeMemory(m_Device, stagingBufferMemory, nullptr);
-}
-
 DEF Engine::createBuffer(
     VkDeviceSize size,
     VkBufferUsageFlags usage,
@@ -1163,14 +991,17 @@ DEF Engine::recordCommandBuffers(VkCommandBuffer commandBuffer, uint32_t imageIn
     VkRect2D scissor{.offset = {0, 0}, .extent = m_SwapChainExtent};
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-    array<VkBuffer, 1> vertexBuffers = {m_VertexBuffer};
-    array<VkDeviceSize, 1> offsets = {0};
+    // Iterate over all meshes
+    for (size_t i = 0; i < m_Meshes.size(); ++i) {
+        array<VkBuffer, 1> vertexBuffers = {m_Meshes[i]->getVertexBuffer()};
+        array<VkDeviceSize, 1> offsets = {0};
 
-    vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers.data(), offsets.data());
-    vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers.data(), offsets.data());
+        vkCmdBindIndexBuffer(commandBuffer, m_Meshes[i]->getVertexIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
 
-    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &m_DescriptorSets[m_CurrentFrameIdx], 0, nullptr);
-    vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_VertexIndices.size()), 1, 0, 0, 0);
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &m_DescriptorSets[m_CurrentFrameIdx], 0, nullptr);
+        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_Meshes[i]->getVertexIndices().size()), 1, 0, 0, 0);
+    }
 
     vkCmdEndRenderPass(commandBuffer);
 
@@ -1352,7 +1183,7 @@ DEF Engine::createGraphicsPipeline() -> void {
         .rasterizerDiscardEnable = VK_FALSE,
         .polygonMode = VK_POLYGON_MODE_FILL,
         .cullMode = VK_CULL_MODE_BACK_BIT,
-        .frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE,
+        .frontFace = VK_FRONT_FACE_CLOCKWISE,
         .depthBiasEnable = VK_FALSE,
         .depthBiasConstantFactor = 0.0f,
         .depthBiasClamp = 0.0f,
@@ -1943,10 +1774,10 @@ DEF Engine::cleanup() -> void {
     vkDestroyDescriptorPool(m_Device, m_DescriptorPool, nullptr);
     vkDestroyDescriptorSetLayout(m_Device, m_DescriptorSetLayout, nullptr);
 
-    vkDestroyBuffer(m_Device, m_IndexBuffer, nullptr);
-    vkFreeMemory(m_Device, m_IndexBufferMemory, nullptr);
-    vkDestroyBuffer(m_Device, m_VertexBuffer, nullptr);
-    vkFreeMemory(m_Device, m_VertexBufferMemory, nullptr);
+    for (MeshNT *mesh : m_Meshes) {
+        delete mesh;
+    }
+    m_Meshes.clear();
 
     for (size_t i = 0; i < Settings::MAX_FRAMES_IN_FLIGHT; i++) {
         vkDestroyBuffer(m_Device, m_UniformBuffers[i], nullptr);
