@@ -34,7 +34,7 @@ DEF main() -> int {
             glfwPollEvents();
             game.update(frameTime);
 
-            TIMED_EXECUTION(engine.drawFrame);
+            engine.drawFrame();
         }
     } catch (const std::exception &e) {
         std::cerr << e.what() << "\n";

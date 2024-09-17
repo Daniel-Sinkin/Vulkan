@@ -47,6 +47,9 @@ public:
 
     DEF getUniformBuffersMapped() -> auto { return m_UniformBuffersMapped; }
 
+    DEF setStage(int stage) -> void { m_Stage = stage; }
+    DEF getStage() -> int { return m_Stage; }
+
 private:
     DEF
     initWindow() -> void;
@@ -170,4 +173,6 @@ private:
     uint32_t m_ApplicationVersion;
 
     vector<std::unique_ptr<ModelNT>> m_Models;
+
+    int m_Stage;
 };

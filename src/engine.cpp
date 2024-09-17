@@ -1138,8 +1138,8 @@ DEF Engine::createRenderPass() -> void {
 DEF Engine::createGraphicsPipeline() -> void {
     fprintf(stdout, "Trying to create Shader modules.\n");
     fprintf(stdout, "Trying to read .spv files.\n");
-    vector<char> vertShaderCode = Util::readFile(FilePaths::SHADER_VERT_PHONG);
-    vector<char> fragShaderCode = Util::readFile(FilePaths::SHADER_FRAG_PHONG);
+    vector<char> vertShaderCode = Util::readFile(FilePaths::SHADER_VERT_PHONG_STAGES);
+    vector<char> fragShaderCode = Util::readFile(FilePaths::SHADER_FRAG_PHONG_STAGES);
 
     fprintf(stdout, "\tTrying to create Vertex Shader.\n");
     VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);

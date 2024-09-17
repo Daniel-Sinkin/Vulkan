@@ -4,6 +4,7 @@
 #include "engine/engine.h"
 #include "engine/mesh.h"
 #include "engine/model.h"
+#include "game.h"
 
 using namespace std;
 
@@ -78,9 +79,10 @@ DEF ModelNT::getUBO() -> UniformBufferObject {
         .view = view,
         .proj = proj,
         .cameraEye = m_Engine->m_CameraEye,
-        .time = delta_time * (1.0f - 2.0f * m_ModelID),
+        .time = delta_time,
         .cameraCenter = m_Engine->m_CameraCenter,
-        .cameraUp = m_Engine->m_CameraUp};
+        .cameraUp = m_Engine->m_CameraUp,
+        .stage = m_Engine->getStage()};
     return ubo;
 }
 

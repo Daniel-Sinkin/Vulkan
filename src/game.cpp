@@ -46,6 +46,17 @@ void Game::processKeyboardInput(float frameTime) {
     if (glfwGetKey(m_Window, GLFW_KEY_A) == GLFW_PRESS) m_Engine->moveCameraRight(-speed);
     if (glfwGetKey(m_Window, GLFW_KEY_S) == GLFW_PRESS) m_Engine->moveCameraForward(-speed);
     if (glfwGetKey(m_Window, GLFW_KEY_D) == GLFW_PRESS) m_Engine->moveCameraRight(speed);
+
+    HANDLE_STAGE_INPUT(0);
+    HANDLE_STAGE_INPUT(1);
+    HANDLE_STAGE_INPUT(2);
+    HANDLE_STAGE_INPUT(3);
+    HANDLE_STAGE_INPUT(4);
+    HANDLE_STAGE_INPUT(5);
+    HANDLE_STAGE_INPUT(6);
+    HANDLE_STAGE_INPUT(7);
+    HANDLE_STAGE_INPUT(8);
+    HANDLE_STAGE_INPUT(9);
 }
 
 void Game::checkMenuState() {
