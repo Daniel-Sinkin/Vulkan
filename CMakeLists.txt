@@ -21,11 +21,13 @@ include_directories(${VULKAN_INCLUDE_DIR})
 # Find required packages
 find_package(Vulkan REQUIRED)
 find_package(glfw3 3.3 REQUIRED)
+find_package(glm REQUIRED)
 
 file(GLOB SOURCES "src/*.cpp")
 
 include_directories(include)
 include_directories(SYSTEM external) # Suppresses warnings from external libraries
+include_directories(${GLM_INCLUDE_DIRS})
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR})
 add_executable(VulkanEngine ${SOURCES})

@@ -2,7 +2,7 @@
 
 #include "Constants.h"
 #include "Util.h"
-#include "engine/mesh.h"
+#include "engine/model.h"
 
 DEF CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkDebugUtilsMessengerEXT *pDebugMessenger) -> VkResult;
 DEF DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks *pAllocator) -> void;
@@ -169,5 +169,5 @@ private:
     uint32_t m_EngineVersion;
     uint32_t m_ApplicationVersion;
 
-    vector<MeshNT *> m_Meshes;
+    vector<std::unique_ptr<ModelNT>> m_Models;
 };

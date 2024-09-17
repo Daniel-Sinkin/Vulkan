@@ -1,7 +1,7 @@
 #include "Constants.h"
 
 #include "engine/engine.h"
-#include "engine/mesh.h"
+#include "engine/model.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -243,10 +243,10 @@ DEF Engine::initVulkan() -> void {
     VULKAN_SETUP(createTextureImageView);
     VULKAN_SETUP(createTextureSampler);
 
-    cout << "Instantiating Meshes!\n";
-    m_Meshes.push_back(new MeshNT(this, FilePaths::MODEL_BASIC_TORUS));
-    m_Meshes.push_back(new MeshNT(this, FilePaths::MODEL_BASIC_SPHERE));
-    cout << "Successfully instantiated Meshes!\n";
+    cout << "Instantiating Models!\n";
+    m_Models.push_back(std::make_unique<ModelNT>(this, FilePaths::MODEL_BASIC_TORUS));
+    m_Models.push_back(std::make_unique<ModelNT>(this, FilePaths::MODEL_BASIC_SPHERE));
+    cout << "Successfully instantiated Models!\n";
 
     VULKAN_SETUP(createUniformBuffers);
 
@@ -991,16 +991,15 @@ DEF Engine::recordCommandBuffers(VkCommandBuffer commandBuffer, uint32_t imageIn
     VkRect2D scissor{.offset = {0, 0}, .extent = m_SwapChainExtent};
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-    // Iterate over all meshes
-    for (size_t i = 0; i < m_Meshes.size(); ++i) {
-        array<VkBuffer, 1> vertexBuffers = {m_Meshes[i]->getVertexBuffer()};
+    for (size_t i = 0; i < m_Models.size(); ++i) {
+        array<VkBuffer, 1> vertexBuffers = {m_Models[i]->getMesh()->getVertexBuffer()};
         array<VkDeviceSize, 1> offsets = {0};
 
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers.data(), offsets.data());
-        vkCmdBindIndexBuffer(commandBuffer, m_Meshes[i]->getVertexIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+        vkCmdBindIndexBuffer(commandBuffer, m_Models[i]->getMesh()->getVertexIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
 
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &m_DescriptorSets[m_CurrentFrameIdx], 0, nullptr);
-        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_Meshes[i]->getVertexIndices().size()), 1, 0, 0, 0);
+        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_Models[i]->getMesh()->getVertexIndices().size()), 1, 0, 0, 0);
     }
 
     vkCmdEndRenderPass(commandBuffer);
@@ -1774,10 +1773,12 @@ DEF Engine::cleanup() -> void {
     vkDestroyDescriptorPool(m_Device, m_DescriptorPool, nullptr);
     vkDestroyDescriptorSetLayout(m_Device, m_DescriptorSetLayout, nullptr);
 
-    for (MeshNT *mesh : m_Meshes) {
-        delete mesh;
+    // $HERE
+
+    for (auto &model : m_Models) {
+        model.reset();
     }
-    m_Meshes.clear();
+    m_Models.clear();
 
     for (size_t i = 0; i < Settings::MAX_FRAMES_IN_FLIGHT; i++) {
         vkDestroyBuffer(m_Device, m_UniformBuffers[i], nullptr);

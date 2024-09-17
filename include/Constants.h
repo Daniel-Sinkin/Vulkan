@@ -6,12 +6,28 @@
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_beta.h> // For VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME
 
+/*
+    GLM START
+*/
 #define GLM_FORCE_RADIANS
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-
+#include "glm/ext.hpp"
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtc/quaternion.hpp"
 #define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/euler_angles.hpp>
 #include <glm/gtx/hash.hpp>
+
+using glm::mat3;
+using glm::mat4;
+using glm::vec2;
+using glm::vec3;
+using glm::vec4;
+/*
+    GLM END
+*/
+
+#include "transform.h"
 
 #include <algorithm>
 #include <array>
@@ -23,7 +39,6 @@
 #include <format>
 #include <fstream>
 #include <functional>
-#include <glm/glm.hpp>
 #include <iostream>
 #include <numbers>
 #include <optional>
@@ -39,13 +54,6 @@
 #include <type_traits>
 #include <unordered_map>
 #include <vector>
-#include <vulkan/vulkan.h>
-
-using glm::mat3;
-using glm::mat4;
-using glm::vec2;
-using glm::vec3;
-using glm::vec4;
 
 using std::all_of;
 using std::any_of;
