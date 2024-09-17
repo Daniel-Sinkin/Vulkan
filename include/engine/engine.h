@@ -33,10 +33,15 @@ public:
     DEF setCameraPosition(vec3 position) -> void;
     DEF moveCamera(vec3 direction) -> void;
 
-    DEF getCameraLookDirection() const -> vec3;
     DEF moveCameraForward(float amount) -> void;
     DEF moveCameraRight(float amount) -> void;
     DEF lookAround(float yawOffset, float pitchOffset) -> void;
+
+    [[nodiscard]] DEF getCameraLookDirection() const -> vec3;
+
+    [[nodiscard]] DEF getPipelineLayout() const -> VkPipelineLayout { return m_PipelineLayout; }
+    [[nodiscard]] DEF getDescriptorSets() const -> vector<VkDescriptorSet> { return m_DescriptorSets; }
+    [[nodiscard]] DEF getCurrentFrameIdx() const -> uint32_t { return m_CurrentFrameIdx; }
 
     DEF takeScreenshot() -> void;
 

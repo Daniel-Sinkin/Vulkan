@@ -991,15 +991,8 @@ DEF Engine::recordCommandBuffers(VkCommandBuffer commandBuffer, uint32_t imageIn
     VkRect2D scissor{.offset = {0, 0}, .extent = m_SwapChainExtent};
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-    for (size_t i = 0; i < m_Models.size(); ++i) {
-        array<VkBuffer, 1> vertexBuffers = {m_Models[i]->getMesh()->getVertexBuffer()};
-        array<VkDeviceSize, 1> offsets = {0};
-
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers.data(), offsets.data());
-        vkCmdBindIndexBuffer(commandBuffer, m_Models[i]->getMesh()->getVertexIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
-
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &m_DescriptorSets[m_CurrentFrameIdx], 0, nullptr);
-        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_Models[i]->getMesh()->getVertexIndices().size()), 1, 0, 0, 0);
+    for (auto &model : m_Models) {
+        model->enqueueIntoCommandBuffer(commandBuffer);
     }
 
     vkCmdEndRenderPass(commandBuffer);

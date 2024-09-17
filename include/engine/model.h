@@ -18,7 +18,9 @@ public:
 
     void resetTransform();
 
-    const MeshNT *getMesh() const;
+    DEF getMesh() const -> MeshNT *;
+
+    void enqueueIntoCommandBuffer(VkCommandBuffer commandBuffer);
 
 private:
     Engine *m_Engine;
