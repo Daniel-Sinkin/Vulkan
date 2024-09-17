@@ -7,13 +7,14 @@
 
 using namespace std;
 
-ModelNT::ModelNT(Engine *engine, const char *meshFilepath)
+ModelNT::ModelNT(Engine *engine, const char *meshFilepath, uint32_t modelID)
     : m_Engine(engine),
       m_Mesh(nullptr),
       m_MeshFilepath(meshFilepath),
       m_InitialTransform(),
       m_CurrentTransform() {
     m_Mesh = std::make_unique<MeshNT>(engine, meshFilepath);
+    m_ModelID = modelID;
     validate();
 }
 
@@ -55,6 +56,32 @@ DEF ModelNT::enqueueIntoCommandBuffer(VkCommandBuffer commandBuffer, VkDescripto
         0,
         0,
         0);
+}
+
+DEF ModelNT::getUBO() -> UniformBufferObject {
+    static auto startTime = std::chrono::high_resolution_clock::now();
+    auto currentTime = std::chrono::high_resolution_clock::now();
+    float delta_time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+    glm::mat4 view = glm::lookAt(m_Engine->m_CameraEye, m_Engine->m_CameraCenter, m_Engine->m_CameraUp);
+    glm::mat4 proj = glm::perspective(
+        PI_QUARTER,
+        static_cast<float>(m_Engine->getSwapchainExtent().width) / static_cast<float>(m_Engine->getSwapchainExtent().height),
+        Settings::CLIPPING_PLANE_NEAR, Settings::CLIPPING_PLANE_FAR);
+
+    proj[1][1] *= -1;
+
+    glm::mat4 modelMatrix = this->getMatrix();
+
+    UniformBufferObject ubo{
+        .model = modelMatrix,
+        .view = view,
+        .proj = proj,
+        .cameraEye = m_Engine->m_CameraEye,
+        .time = delta_time * (1.0f - 2.0f * m_ModelID),
+        .cameraCenter = m_Engine->m_CameraCenter,
+        .cameraUp = m_Engine->m_CameraUp};
+    return ubo;
 }
 
 DEF ModelNT::getMatrix() const -> mat4 {

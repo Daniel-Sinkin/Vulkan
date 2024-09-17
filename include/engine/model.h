@@ -6,22 +6,23 @@
 class Engine; // Forward declaration of Engine class to avoid circular dependency
 class ModelNT {
 public:
-    ModelNT(Engine *engine, const char *meshFilepath);
+    ModelNT(Engine *engine, const char *meshFilepath, uint32_t modelID);
 
     ~ModelNT() = default;
 
-    void validate();
+    DEF validate() -> void;
 
-    void translate(const glm::vec3 &deltaPosition);
-    void rotate(const glm::vec3 &deltaRotation);
-    void scaleBy(const glm::vec3 &scaleFactor);
+    DEF translate(const glm::vec3 &deltaPosition) -> void;
+    DEF rotate(const glm::vec3 &deltaRotation) -> void;
+    DEF scaleBy(const glm::vec3 &scaleFactor) -> void;
 
-    void resetTransform();
+    DEF resetTransform() -> void;
 
     DEF getMesh() const -> MeshNT *;
     [[nodiscard]] DEF getMatrix() const -> mat4;
 
-    void enqueueIntoCommandBuffer(VkCommandBuffer commandBuffer, VkDescriptorSet descriptorSet);
+    DEF enqueueIntoCommandBuffer(VkCommandBuffer commandBuffer, VkDescriptorSet descriptorSet) -> void;
+    DEF getUBO() -> UniformBufferObject;
 
 private:
     Engine *m_Engine;
@@ -30,4 +31,6 @@ private:
 
     Transform m_InitialTransform;
     Transform m_CurrentTransform;
+
+    uint32_t m_ModelID;
 };

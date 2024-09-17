@@ -123,6 +123,18 @@ struct QueueFamilyIndices {
     }
 };
 
+struct UniformBufferObject {
+    glm::mat4 model;
+    glm::mat4 view;
+    glm::mat4 proj;
+    glm::vec3 cameraEye;
+    float time;
+    glm::vec3 cameraCenter;
+    float padding1;
+    glm::vec3 cameraUp;
+    float padding2;
+};
+
 namespace FilePaths {
 constexpr auto SHADER_VERT = "shaders/compiled/shader.vert.spv";
 constexpr auto SHADER_FRAG = "shaders/compiled/shader.frag.spv";

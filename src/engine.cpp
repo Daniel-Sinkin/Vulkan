@@ -240,8 +240,8 @@ DEF Engine::initVulkan() -> void {
     VULKAN_SETUP(createTextureSampler);
 
     cout << "Instantiating Models!\n";
-    m_Models.push_back(std::make_unique<ModelNT>(this, FilePaths::MODEL_BASIC_TORUS));
-    m_Models.push_back(std::make_unique<ModelNT>(this, FilePaths::MODEL_BASIC_SPHERE));
+    m_Models.push_back(std::make_unique<ModelNT>(this, FilePaths::MODEL_BASIC_TORUS, m_Models.size()));
+    m_Models.push_back(std::make_unique<ModelNT>(this, FilePaths::MODEL_BASIC_SPHERE, m_Models.size()));
     cout << "Successfully instantiated Models!\n";
 
     VULKAN_SETUP(createUniformBuffers);
@@ -1662,8 +1662,13 @@ void Engine::drawFrame() {
     vkResetCommandBuffer(m_CommandBuffers[m_CurrentFrameIdx], 0);
     recordCommandBuffers(m_CommandBuffers[m_CurrentFrameIdx], imageIndex);
 
-    // Update uniform buffers using current frame index
     updateUniformBuffers(m_CurrentFrameIdx);
+
+    for (size_t i = 0; i < m_Models.size(); i++) {
+        UniformBufferObject ubo = m_Models[i]->getUBO();
+        size_t bufferIndex = getCurrentFrameIdx() * m_Models.size() + i;
+        memcpy(m_UniformBuffersMapped[bufferIndex], &ubo, sizeof(ubo));
+    }
 
     VkSemaphore waitSemaphores[] = {m_ImageAvailableSemaphores[m_CurrentFrameIdx]};
     VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};

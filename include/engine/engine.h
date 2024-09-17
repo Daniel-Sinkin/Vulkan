@@ -7,18 +7,6 @@
 DEF CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkDebugUtilsMessengerEXT *pDebugMessenger) -> VkResult;
 DEF DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks *pAllocator) -> void;
 
-struct UniformBufferObject {
-    glm::mat4 model;
-    glm::mat4 view;
-    glm::mat4 proj;
-    glm::vec3 cameraEye;
-    float time;
-    glm::vec3 cameraCenter;
-    float padding1;
-    glm::vec3 cameraUp;
-    float padding2;
-};
-
 class Engine {
 public:
     Engine();
@@ -49,6 +37,15 @@ public:
 
     DEF createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer, VkDeviceMemory &bufferMemory) -> void;
     DEF copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) -> void;
+
+    vec3 m_CameraEye;
+    vec3 m_CameraCenter;
+    vec3 m_CameraUp;
+
+    [[nodiscard]] DEF getSwapchainExtent() const -> VkExtent2D { return m_SwapChainExtent; }
+    [[nodiscard]] DEF getNumModels() const -> size_t { return m_Models.size(); }
+
+    DEF getUniformBuffersMapped() -> auto { return m_UniformBuffersMapped; }
 
 private:
     DEF
@@ -166,10 +163,6 @@ private:
     VkImage m_DepthImage;
     VkDeviceMemory m_DepthImageMemory;
     VkImageView m_DepthImageView;
-
-    vec3 m_CameraEye;
-    vec3 m_CameraCenter;
-    vec3 m_CameraUp;
 
     bool m_TakeScreenshotNextFrame;
 
