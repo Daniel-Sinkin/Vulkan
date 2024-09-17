@@ -8,6 +8,8 @@ struct Transform {
     vec3 scale;
 
     Transform();
+    Transform(const vec3 &pos, const glm::quat &rot, const vec3 &scl);
+    Transform(const vec3 &pos, const vec3 &rotEuler, const vec3 &scl);
 
     mat4 getMatrix() const;
 

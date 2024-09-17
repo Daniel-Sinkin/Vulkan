@@ -7,6 +7,7 @@ class Engine; // Forward declaration of Engine class to avoid circular dependenc
 class ModelNT {
 public:
     ModelNT(Engine *engine, const char *meshFilepath, uint32_t modelID);
+    ModelNT(Engine *engine, const char *meshFilepath, uint32_t modelID, Transform initialTransform);
 
     ~ModelNT() = default;
 
@@ -24,13 +25,14 @@ public:
     DEF enqueueIntoCommandBuffer(VkCommandBuffer commandBuffer, VkDescriptorSet descriptorSet) -> void;
     DEF getUBO() -> UniformBufferObject;
 
+    Transform m_CurrentTransform;
+
 private:
     Engine *m_Engine;
     std::unique_ptr<MeshNT> m_Mesh;
     const char *m_MeshFilepath;
 
     Transform m_InitialTransform;
-    Transform m_CurrentTransform;
 
     uint32_t m_ModelID;
 };

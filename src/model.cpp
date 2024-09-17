@@ -19,6 +19,18 @@ ModelNT::ModelNT(Engine *engine, const char *meshFilepath, uint32_t modelID)
     validate();
 }
 
+ModelNT::ModelNT(Engine *engine, const char *meshFilepath, uint32_t modelID, Transform initialTransform)
+    : m_Engine(engine),
+      m_Mesh(nullptr),
+      m_MeshFilepath(meshFilepath),
+      m_InitialTransform(initialTransform),
+      m_CurrentTransform(initialTransform) {
+    m_Mesh = std::make_unique<MeshNT>(engine, meshFilepath);
+    m_ModelID = modelID;
+
+    validate();
+}
+
 void ModelNT::validate() {
     cout << "Validating mesh.\n";
     if (!m_Mesh) throw runtime_error("Mesh of Model not set!");

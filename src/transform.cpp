@@ -7,6 +7,12 @@ Transform::Transform()
       rotation(glm::quat(1.0f, 0.0f, 0.0f, 0.0f)),
       scale(1.0f, 1.0f, 1.0f) {}
 
+Transform::Transform(const vec3 &pos, const glm::quat &rot, const vec3 &scl)
+    : position(pos), rotation(rot), scale(scl) {}
+
+Transform::Transform(const vec3 &pos, const vec3 &rotEuler, const vec3 &scl)
+    : position(pos), rotation(glm::quat(rotEuler)), scale(scl) {}
+
 glm::mat4 Transform::getMatrix() const {
     glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), position);
     glm::mat4 rotationMatrix = glm::mat4_cast(rotation);

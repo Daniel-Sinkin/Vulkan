@@ -240,8 +240,17 @@ DEF Engine::initVulkan() -> void {
     VULKAN_SETUP(createTextureSampler);
 
     cout << "Instantiating Models!\n";
-    m_Models.push_back(std::make_unique<ModelNT>(this, FilePaths::MODEL_BASIC_TORUS, m_Models.size()));
-    m_Models.push_back(std::make_unique<ModelNT>(this, FilePaths::MODEL_BASIC_SPHERE, m_Models.size()));
+    Transform torusTransform{
+        glm::vec3(0.0f, 0.0f, 0.0f),
+        glm::vec3(90.0f, 0.0f, 0.0f),
+        glm::vec3(1.0f, 1.0f, 1.0f)};
+    m_Models.push_back(std::make_unique<ModelNT>(this, FilePaths::MODEL_BASIC_TORUS, m_Models.size(), torusTransform));
+
+    Transform sphereTransform{
+        glm::vec3(3.0f, 0.0f, 0.0f),
+        glm::vec3(0.0f, 0.0f, 0.0f),
+        glm::vec3(1.0f, 1.0f, 1.0f)};
+    m_Models.push_back(std::make_unique<ModelNT>(this, FilePaths::MODEL_BASIC_SPHERE, m_Models.size(), sphereTransform));
     cout << "Successfully instantiated Models!\n";
 
     VULKAN_SETUP(createUniformBuffers);
