@@ -113,6 +113,8 @@ system_profiler
         * [The Art of writing Efficient Programs](https://github.com/ssloy/tinyraytracer/wiki)
     * Repositories
         * [tinyraytracer](https://github.com/ssloy/tinyraytracer/wiki)
+        * https://github.com/SaschaWillems/Vulkan
+        * [Unity Engine Bloom Implementation](https://github.com/Unity-Technologies/Graphics/blob/master/com.unity.postprocessing/PostProcessing/Shaders/Builtins/Bloom.shader)
     * Blogs
         * [The Essential Resources for Vulkan development](https://www.vulkan.org/learn)
         * [Nvidia's GPU Gems series](https://developer.nvidia.com/gpugems/gpugems/contributors)
@@ -150,6 +152,9 @@ system_profiler
             * [Vulkanised 2024: Common Mistakes When Learning Vulkan - Charles Giessen](https://www.youtube.com/watch?v=0OqJtPnkfC8)
         * [Game Engine Series](https://www.youtube.com/@GameEngineSeries) (that's the name of the channel)
             * [Game Engine Programming Series](https://www.youtube.com/watch?v=hRL56gXqj-4&list=PLU2nPsAdxKWQYxkmQ3TdbLsyc1l2j25XM)
+   * Conferences
+      * SIGGRAPH
+         * [2014](https://advances.realtimerendering.com/s2014/index.html)
 
 # Appendix A: YouTube Links to the recorded videos
 TODO: Put them all in a single playlist and link that one
