@@ -96,7 +96,8 @@ system_profiler
                 * https://developer.apple.com/documentation/apple-silicon/porting-your-macos-apps-to-apple-silicon
                 * https://support.apple.com/en-ca/101525
     * [GLFW](https://www.glfw.org)
-    * [STB Image](https://github.com/nothings/stb)
+    * [STB](https://github.com/nothings/stb)
+       * Image, Image Write and Truetype
     * [tinyobjloader](https://github.com/tinyobjloader/tinyobjloader)
 * Documentation
     * [CPPReference](https://en.cppreference.com/w/)
@@ -138,24 +139,26 @@ system_profiler
                 * [Multithreading Playlist](https://www.youtube.com/watch?v=qkugPXGeX58&list=PLEMXAbCVnmY7me6j4VtpCYMuZX3QpcBBH)
             * [Performanc-Aware Programming Playlist](https://www.youtube.com/watch?v=pZ0MF1q_LUE&list=PLEMXAbCVnmY7t29i_rd3mnALWu-aZr_42)
         * [Acerola](https://www.youtube.com/@Acerola_t)
-            * Post-Processind with Shaders
+            * Post-Processing with Shaders
         * [GetIntoGameDev's Vulkan 2024 Series](https://www.youtube.com/watch?v=Est5AvResbE&list=PLn3eTxaOtL2Nr89hYzKPib7tvce-ZO4yB)
-        * CppCon 2021
-            * [Back to Basics Series](https://www.youtube.com/watch?v=Bt3zcJZIalk&list=PLHTh1InhhwT4TJaHBVWzvBOYhp27UO7mI)
-        * C++Now 2024
-            * [Unlocking Modern CPU Power - Next-Gen C++ Optimization Techniques - Fedor G Pikus - C++Now 2024
 ](https://www.youtube.com/watch?v=wGSSUSeaLgA)
         * [Interactive Computer Graphics](https://www.youtube.com/watch?v=UVCuWQV_-Es&list=PLplnkTzzqsZS3R5DjmCQsqupu43oS9CFN&index=1)
         * GSN Compose
             * [Shaders Monthly Series](https://www.youtube.com/watch?v=mJOqVeiLOf0&list=PL8vNj3osX2PzZ-cNSqhA8G6C1-Li5-Ck8&index=1])
-        * Vulkanised
-            * [Vulkanised 2024: Common Mistakes When Learning Vulkan - Charles Giessen](https://www.youtube.com/watch?v=0OqJtPnkfC8)
         * [Game Engine Series](https://www.youtube.com/@GameEngineSeries) (that's the name of the channel)
             * [Game Engine Programming Series](https://www.youtube.com/watch?v=hRL56gXqj-4&list=PLU2nPsAdxKWQYxkmQ3TdbLsyc1l2j25XM)
    * Conferences
       * SIGGRAPH
          * [2014](https://advances.realtimerendering.com/s2014/index.html)
-
+      * Vulkanised
+         * 2024
+            * [Common Mistakes When Learning Vulkan - Charles Giessen](https://www.youtube.com/watch?v=0OqJtPnkfC8)
+     * CppCon
+        * 2021
+            * [Back to Basics Series](https://www.youtube.com/watch?v=Bt3zcJZIalk&list=PLHTh1InhhwT4TJaHBVWzvBOYhp27UO7mI)
+     * C++Now
+         * 2024
+             * [Unlocking Modern CPU Power - Next-Gen C++ Optimization Techniques - Fedor G Pikus - C++Now 2024
 # Appendix A: YouTube Links to the recorded videos
 TODO: Put them all in a single playlist and link that one
 * https://youtu.be/afF579Obqlw (Not in the screencaps folder)
