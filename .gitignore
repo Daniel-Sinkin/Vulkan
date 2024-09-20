@@ -38,6 +38,7 @@
 /cmake_install.cmake
 /Makefile
 /progress.make
+/cmake-build-debug
 
 # Ignore Visual Studio Code settings and files
 .vscode/
@@ -77,3 +78,6 @@ VulkanEngine
 *.bin
 
 *excalidraw*
+
+# CLion specific
+/.idea
