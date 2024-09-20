@@ -31,12 +31,14 @@ EXTERNAL_INCLUDE_DIR = Path("./external")
 ASSETS_FOLDER = Path("./assets")
 TEXTURE_FOLDER = ASSETS_FOLDER.joinpath("textures")
 MODELS_FOLDER = ASSETS_FOLDER.joinpath("models")
+FONTS_FOLDER = ASSETS_FOLDER.joinpath("fonts")
 SCRIPTS_FOLDER = Path("./scripts")
 DATA_FILE = SCRIPTS_FOLDER.joinpath("dependency_data.json")
 
 EXTERNAL_INCLUDE_DIR.mkdir(parents=True, exist_ok=True)
 TEXTURE_FOLDER.mkdir(parents=True, exist_ok=True)
 MODELS_FOLDER.mkdir(parents=True, exist_ok=True)
+FONTS_FOLDER.mkdir(parents=True, exist_ok=True)
 
 def load_data_from_json(json_file: Path) -> Data:
     with json_file.open("r") as f:
