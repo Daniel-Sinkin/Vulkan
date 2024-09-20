@@ -54,6 +54,8 @@ using glm::vec4;
 #include <type_traits>
 #include <unordered_map>
 #include <vector>
+#include <filesystem>
+#include <cmath>
 
 using std::all_of;
 using std::any_of;
@@ -78,9 +80,9 @@ constexpr int INVALID_FRAMEBUFFER_SIZE = 0;
 
 // numbers::pi is much more accurate than numbers::pi_v
 constexpr float PI = std::numbers::pi_v<float>;
-constexpr float PI_2 = static_cast<float>(2.0 * std::numbers::pi);
-constexpr float PI_HALF = static_cast<float>(std::numbers::pi / 2.0);
-constexpr float PI_QUARTER = static_cast<float>(std::numbers::pi / 4.0);
+constexpr float PI_2 = 2.0 * std::numbers::pi;
+constexpr float PI_HALF = std::numbers::pi / 2.0;
+constexpr float PI_QUARTER = std::numbers::pi / 4.0;
 
 constexpr float WINDOW_CENTER_FACTOR = 0.5f;
 
@@ -88,35 +90,33 @@ using Bitmask8 = uint8_t;
 using Bitmask16 = uint16_t;
 using Bitmask32 = uint32_t;
 using Bitmask64 = uint64_t;
-// clang-format off
 namespace KeyBitmask {
-constexpr Bitmask64 num0  = 1ULL <<  0;
-constexpr Bitmask64 num1  = 1ULL <<  1;
-constexpr Bitmask64 num2  = 1ULL <<  2;
-constexpr Bitmask64 num3  = 1ULL <<  3;
-constexpr Bitmask64 num4  = 1ULL <<  4;
-constexpr Bitmask64 num5  = 1ULL <<  5;
-constexpr Bitmask64 num6  = 1ULL <<  6;
-constexpr Bitmask64 num7  = 1ULL <<  7;
-constexpr Bitmask64 num8  = 1ULL <<  8;
-constexpr Bitmask64 num9  = 1ULL <<  9;
-constexpr Bitmask64 F1    = 1ULL << 11;
-constexpr Bitmask64 F2    = 1ULL << 12;
-constexpr Bitmask64 F3    = 1ULL << 13;
-constexpr Bitmask64 F4    = 1ULL << 14;
-constexpr Bitmask64 F5    = 1ULL << 15;
-constexpr Bitmask64 F6    = 1ULL << 16;
-constexpr Bitmask64 F7    = 1ULL << 17;
-constexpr Bitmask64 F8    = 1ULL << 18;
-constexpr Bitmask64 F9    = 1ULL << 19;
-constexpr Bitmask64 F10   = 1ULL << 20;
-constexpr Bitmask64 F11   = 1ULL << 21;
-constexpr Bitmask64 F12   = 1ULL << 22;
-constexpr Bitmask64 TAB   = 1ULL << 23;
-constexpr Bitmask64 SPACE = 1ULL << 24;
-constexpr Bitmask64 ENTER = 1ULL << 25;
-} // namespace KeyBitmask
-// clang-format on
+    constexpr Bitmask64 num0  = 1ULL <<  0;
+    constexpr Bitmask64 num1  = 1ULL <<  1;
+    constexpr Bitmask64 num2  = 1ULL <<  2;
+    constexpr Bitmask64 num3  = 1ULL <<  3;
+    constexpr Bitmask64 num4  = 1ULL <<  4;
+    constexpr Bitmask64 num5  = 1ULL <<  5;
+    constexpr Bitmask64 num6  = 1ULL <<  6;
+    constexpr Bitmask64 num7  = 1ULL <<  7;
+    constexpr Bitmask64 num8  = 1ULL <<  8;
+    constexpr Bitmask64 num9  = 1ULL <<  9;
+    constexpr Bitmask64 F1    = 1ULL << 11;
+    constexpr Bitmask64 F2    = 1ULL << 12;
+    constexpr Bitmask64 F3    = 1ULL << 13;
+    constexpr Bitmask64 F4    = 1ULL << 14;
+    constexpr Bitmask64 F5    = 1ULL << 15;
+    constexpr Bitmask64 F6    = 1ULL << 16;
+    constexpr Bitmask64 F7    = 1ULL << 17;
+    constexpr Bitmask64 F8    = 1ULL << 18;
+    constexpr Bitmask64 F9    = 1ULL << 19;
+    constexpr Bitmask64 F10   = 1ULL << 20;
+    constexpr Bitmask64 F11   = 1ULL << 21;
+    constexpr Bitmask64 F12   = 1ULL << 22;
+    constexpr Bitmask64 TAB   = 1ULL << 23;
+    constexpr Bitmask64 SPACE = 1ULL << 24;
+    constexpr Bitmask64 ENTER = 1ULL << 25;
+}
 
 struct SwapChainSupportDetails {
     VkSurfaceCapabilitiesKHR capabilities;
@@ -200,7 +200,7 @@ static DEF readFile(const string &filename) -> vector<char> {
         throw runtime_error("failed to open file!");
     }
 
-    size_t fileSize = static_cast<size_t>(file.tellg());
+    const size_t fileSize = static_cast<size_t>(file.tellg());
     if (fileSize > std::numeric_limits<std::streamsize>::max()) {
         throw runtime_error("File size exceeds the maximum supported size.");
     }
@@ -227,7 +227,7 @@ constexpr float MOUSE_SENSITIVITY = 5.0f;
 constexpr float CAMERA_FLOATING_SPEED = 2.5f;
 constexpr float CAMERA_FLOATING_SPEED_BOOSTED = 3.75f;
 
-// For example macbooks have integrated graphics cards, so they would be filtered by this
+// For example MacBooks have integrated graphics cards, so they would be filtered by this
 constexpr bool ALLOW_DEVICE_WITHOUT_INTEGRATED_GPU = true;
 constexpr bool ALLOW_DEVICE_WITHOUT_GEOMETRY_SHADER = true;
 

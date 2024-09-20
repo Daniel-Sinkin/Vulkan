@@ -2,11 +2,11 @@
 
 #include "Constants.h"
 
-inline void setKeyBit(uint64_t &bitmask, int bitPosition) { bitmask |= bitPosition; }
-inline void clearKeyBit(uint64_t &bitmask, int bitPosition) { bitmask &= ~bitPosition; }
-inline bool isKeyBitSet(uint64_t bitmask, int bitPosition) { return (bitmask & bitPosition) != 0; }
+inline void setKeyBit(uint64_t &bitmask, const int bitPosition) { bitmask |= bitPosition; }
+inline void clearKeyBit(uint64_t &bitmask, const int bitPosition) { bitmask &= ~bitPosition; }
+inline bool isKeyBitSet(const uint64_t bitmask, const int bitPosition) { return (bitmask & bitPosition) != 0; }
 
-inline bool handleKeyPressReleaseWithBitmask(uint64_t &bitmask, int bitPosition, int key, GLFWwindow *window) {
+inline bool handleKeyPressReleaseWithBitmask(uint64_t &bitmask, const int bitPosition, const int key, GLFWwindow *window) {
     if (glfwGetKey(window, key) == GLFW_PRESS) setKeyBit(bitmask, bitPosition);
     if (glfwGetKey(window, key) == GLFW_RELEASE && isKeyBitSet(bitmask, bitPosition)) {
         clearKeyBit(bitmask, bitPosition);
@@ -44,30 +44,30 @@ inline bool handleKeyPressReleaseWithBitmask(uint64_t &bitmask, int bitPosition,
         cout << "Set the stage to " << number << ".\n";                                                         \
     }
 
-inline void glmPrint(const glm::mat4 &mat) {
-    std::cout << "mat4(" << std::endl;
+inline void glmPrint(const mat4 &mat) {
+    std::cout << "mat4(" << "\n";
     for (int i = 0; i < 4; ++i) {
-        std::cout << "  " << mat[i][0] << ", " << mat[i][1] << ", " << mat[i][2] << ", " << mat[i][3] << std::endl;
+        std::cout << "  " << mat[i][0] << ", " << mat[i][1] << ", " << mat[i][2] << ", " << mat[i][3] << "\n";
     }
-    std::cout << ")" << std::endl;
+    std::cout << ")" << "\n";
 }
 
-inline void glmPrint(const glm::vec2 &vec) {
-    std::cout << "vec2(" << vec.x << ", " << vec.y << ")" << std::endl;
+inline void glmPrint(const vec2 &vec) {
+    std::cout << "vec2(" << vec.x << ", " << vec.y << ")" << "\n";
 }
 
-inline void glmPrint(const glm::vec3 &vec) {
-    std::cout << "vec3(" << vec.x << ", " << vec.y << ", " << vec.z << ")" << std::endl;
+inline void glmPrint(const vec3 &vec) {
+    std::cout << "vec3(" << vec.x << ", " << vec.y << ", " << vec.z << ")" << "\n";
 }
 
-inline void glmPrint(const glm::vec4 &vec) {
-    std::cout << "vec4(" << vec.x << ", " << vec.y << ", " << vec.z << ", " << vec.w << ")" << std::endl;
+inline void glmPrint(const vec4 &vec) {
+    std::cout << "vec4(" << vec.x << ", " << vec.y << ", " << vec.z << ", " << vec.w << ")" << "\n";
 }
 
-inline void glmPrint(const glm::mat3 &mat) {
-    std::cout << "mat3(" << std::endl;
+inline void glmPrint(const mat3 &mat) {
+    std::cout << "mat3(" << "\n";
     for (int i = 0; i < 3; ++i) {
-        std::cout << "  " << mat[i][0] << ", " << mat[i][1] << ", " << mat[i][2] << std::endl;
+        std::cout << "  " << mat[i][0] << ", " << mat[i][1] << ", " << mat[i][2] << "\n";
     }
-    std::cout << ")" << std::endl;
+    std::cout << ")" << "\n";
 }

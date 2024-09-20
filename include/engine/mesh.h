@@ -5,30 +5,29 @@
 
 class Engine; // Forward declaration of Engine class to avoid circular dependency
 struct MeshNT {
-public:
     MeshNT(Engine *engine, const char *assetFilepath);
 
     ~MeshNT();
 
-    [[nodiscard]] VkBuffer getVertexBuffer() const;
-    [[nodiscard]] VkBuffer getVertexIndexBuffer() const;
-    [[nodiscard]] VkDeviceMemory getVertexBufferMemory() const;
-    [[nodiscard]] VkDeviceMemory getVertexIndexBufferMemory() const;
+    [[nodiscard]] DEF getVertexBuffer() const -> VkBuffer;
+    [[nodiscard]] DEF getVertexIndexBuffer() const -> VkBuffer;
+    [[nodiscard]] DEF getVertexBufferMemory() const -> VkDeviceMemory;
+    [[nodiscard]] DEF getVertexIndexBufferMemory() const -> VkDeviceMemory;
 
-    [[nodiscard]] std::vector<VertexNT> getVertices() const;
-    [[nodiscard]] std::vector<uint32_t> getVertexIndices() const;
+    [[nodiscard]] DEF getVertices() const -> std::vector<VertexNT>;
+    [[nodiscard]] DEF getVertexIndices() const -> std::vector<uint32_t>;
 
     void loadModel();
     void createVertexBuffer();
     void createIndexBuffer();
 
-    void validate() {
+    void validate() const {
         if (getVertexBuffer() == VK_NULL_HANDLE) throw runtime_error("VertexBuffer is None!");
         if (getVertexBufferMemory() == VK_NULL_HANDLE) throw runtime_error("VertexBufferMemory is None!");
         if (getVertexIndexBuffer() == VK_NULL_HANDLE) throw runtime_error("VertexIndexBuffer is None!");
         if (getVertexIndexBufferMemory() == VK_NULL_HANDLE) throw runtime_error("VertexIndexBufferMemory is None!");
-        if (getVertices().size() == 0) throw runtime_error("Vertices are emtpy!");
-        if (getVertexIndices().size() == 0) throw runtime_error("VertexIndices are empty!");
+        if (getVertices().empty()) throw runtime_error("Vertices are emtpy!");
+        if (getVertexIndices().empty()) throw runtime_error("VertexIndices are empty!");
     }
 
 private:

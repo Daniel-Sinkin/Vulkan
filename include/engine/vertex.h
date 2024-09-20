@@ -1,16 +1,16 @@
 #include "Constants.h"
 
 struct VertexP {
-    glm::vec3 pos;
+    vec3 pos;
 
-    static VkVertexInputBindingDescription getBindingDescription() {
+    static DEF getBindingDescription() -> VkVertexInputBindingDescription {
         return VkVertexInputBindingDescription{
             .binding = 0,
             .stride = sizeof(VertexP),
             .inputRate = VK_VERTEX_INPUT_RATE_VERTEX};
     }
 
-    static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions() {
+    static DEF getAttributeDescriptions() -> std::vector<VkVertexInputAttributeDescription> {
         VkVertexInputAttributeDescription posAttribute{
             .binding = 0,
             .location = 0,
@@ -19,23 +19,23 @@ struct VertexP {
         return {posAttribute};
     }
 
-    bool operator==(const VertexP &other) const {
+    DEF operator==(const VertexP &other) const -> bool {
         return pos == other.pos;
     }
 };
 
 struct VertexN {
-    glm::vec3 pos;
-    glm::vec3 normal;
+    vec3 pos;
+    vec3 normal;
 
-    static VkVertexInputBindingDescription getBindingDescription() {
+    static DEF getBindingDescription() -> VkVertexInputBindingDescription {
         return VkVertexInputBindingDescription{
             .binding = 0,
             .stride = sizeof(VertexN),
             .inputRate = VK_VERTEX_INPUT_RATE_VERTEX};
     }
 
-    static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions() {
+    static DEF getAttributeDescriptions() -> std::vector<VkVertexInputAttributeDescription> {
         VkVertexInputAttributeDescription posAttribute{
             .binding = 0,
             .location = 0,
@@ -49,24 +49,24 @@ struct VertexN {
         return {posAttribute, normalAttribute};
     }
 
-    bool operator==(const VertexN &other) const {
+    DEF operator==(const VertexN &other) const -> bool {
         return pos == other.pos && normal == other.normal;
     }
 };
 
 struct VertexNT {
-    glm::vec3 pos;
-    glm::vec3 normal;
-    glm::vec2 texCoord;
+    vec3 pos;
+    vec3 normal;
+    vec2 texCoord;
 
-    static VkVertexInputBindingDescription getBindingDescription() {
+    static DEF getBindingDescription() -> VkVertexInputBindingDescription {
         return VkVertexInputBindingDescription{
             .binding = 0,
             .stride = sizeof(VertexNT),
             .inputRate = VK_VERTEX_INPUT_RATE_VERTEX};
     }
 
-    static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions() {
+    static DEF getAttributeDescriptions() -> std::vector<VkVertexInputAttributeDescription> {
         VkVertexInputAttributeDescription posAttribute{
             .binding = 0,
             .location = 0,
@@ -85,23 +85,23 @@ struct VertexNT {
         return {posAttribute, normalAttribute, texCoordAttribute};
     }
 
-    bool operator==(const VertexNT &other) const {
+    DEF operator==(const VertexNT &other) const -> bool {
         return pos == other.pos && normal == other.normal && texCoord == other.texCoord;
     }
 };
 
 struct VertexC {
-    glm::vec3 pos;
-    glm::vec3 color;
+    vec3 pos;
+    vec3 color;
 
-    static VkVertexInputBindingDescription getBindingDescription() {
+    static DEF getBindingDescription() -> VkVertexInputBindingDescription {
         return VkVertexInputBindingDescription{
             .binding = 0,
             .stride = sizeof(VertexC),
             .inputRate = VK_VERTEX_INPUT_RATE_VERTEX};
     }
 
-    static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions() {
+    static DEF getAttributeDescriptions() -> std::vector<VkVertexInputAttributeDescription> {
         VkVertexInputAttributeDescription posAttribute{
             .binding = 0,
             .location = 0,
@@ -115,24 +115,24 @@ struct VertexC {
         return {posAttribute, colorAttribute};
     }
 
-    bool operator==(const VertexC &other) const {
+    DEF operator==(const VertexC &other) const -> bool {
         return pos == other.pos && color == other.color;
     }
 };
 
 struct VertexCN {
-    glm::vec3 pos;
-    glm::vec3 color;
-    glm::vec3 normal;
+    vec3 pos;
+    vec3 color;
+    vec3 normal;
 
-    static VkVertexInputBindingDescription getBindingDescription() {
+    static DEF getBindingDescription() -> VkVertexInputBindingDescription {
         return VkVertexInputBindingDescription{
             .binding = 0,
             .stride = sizeof(VertexCN),
             .inputRate = VK_VERTEX_INPUT_RATE_VERTEX};
     }
 
-    static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions() {
+    static DEF getAttributeDescriptions() -> std::vector<VkVertexInputAttributeDescription> {
         VkVertexInputAttributeDescription posAttribute{
             .binding = 0,
             .location = 0,
@@ -151,7 +151,7 @@ struct VertexCN {
         return {posAttribute, colorAttribute, normalAttribute};
     }
 
-    bool operator==(const VertexCN &other) const {
+    DEF operator==(const VertexCN &other) const -> bool{
         return pos == other.pos && color == other.color && normal == other.normal;
     }
 };
@@ -159,45 +159,45 @@ struct VertexCN {
 namespace std {
 template <>
 struct hash<VertexP> {
-    size_t operator()(const VertexP &vertex) const {
-        return std::hash<glm::vec3>()(vertex.pos);
+    DEF operator()(const VertexP &vertex) const noexcept -> size_t {
+        return std::hash<vec3>()(vertex.pos);
     }
 };
 
 template <>
 struct hash<VertexN> {
-    size_t operator()(const VertexN &vertex) const {
-        size_t h1 = std::hash<glm::vec3>()(vertex.pos);
-        size_t h2 = std::hash<glm::vec3>()(vertex.normal);
+    DEF operator()(const VertexN &vertex) const noexcept -> size_t {
+        const size_t h1 = std::hash<vec3>()(vertex.pos);
+        const size_t h2 = std::hash<vec3>()(vertex.normal);
         return h1 ^ (h2 << 1);
     }
 };
 
 template <>
 struct hash<VertexNT> {
-    size_t operator()(const VertexNT &vertex) const {
-        size_t h1 = std::hash<glm::vec3>()(vertex.pos);
-        size_t h2 = std::hash<glm::vec3>()(vertex.normal);
-        size_t h3 = std::hash<glm::vec2>()(vertex.texCoord);
+    DEF operator()(const VertexNT &vertex) const noexcept -> size_t {
+        const size_t h1 = std::hash<vec3>()(vertex.pos);
+        const size_t h2 = std::hash<vec3>()(vertex.normal);
+        const size_t h3 = std::hash<vec2>()(vertex.texCoord);
         return h1 ^ ((h2 << 1) ^ (h3 << 2));
     }
 };
 
 template <>
 struct hash<VertexC> {
-    size_t operator()(const VertexC &vertex) const {
-        size_t h1 = std::hash<glm::vec3>()(vertex.pos);
-        size_t h2 = std::hash<glm::vec3>()(vertex.color);
+    DEF operator()(const VertexC &vertex) const noexcept -> size_t {
+        const size_t h1 = std::hash<vec3>()(vertex.pos);
+        const size_t h2 = std::hash<vec3>()(vertex.color);
         return h1 ^ (h2 << 1);
     }
 };
 
 template <>
 struct hash<VertexCN> {
-    size_t operator()(const VertexCN &vertex) const {
-        size_t h1 = std::hash<glm::vec3>()(vertex.pos);
-        size_t h2 = std::hash<glm::vec3>()(vertex.color);
-        size_t h3 = std::hash<glm::vec3>()(vertex.normal);
+    DEF operator()(const VertexCN &vertex) const noexcept -> size_t {
+        const size_t h1 = std::hash<vec3>()(vertex.pos);
+        const size_t h2 = std::hash<vec3>()(vertex.color);
+        const size_t h3 = std::hash<vec3>()(vertex.normal);
         return h1 ^ ((h2 << 1) ^ (h3 << 2));
     }
 };

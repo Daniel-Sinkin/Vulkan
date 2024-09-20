@@ -11,9 +11,9 @@ const vector<const char *> validationLayers = {"VK_LAYER_KHRONOS_validation"};
 const vector<const char *> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME};
 
 #ifdef NDEBUG
-const bool enableValidationLayers = false;
+constexpr bool enableValidationLayers = false;
 #else
-const bool enableValidationLayers = true;
+constexpr bool enableValidationLayers = true;
 #endif
 
 DEF CreateDebugUtilsMessengerEXT(
@@ -22,7 +22,7 @@ DEF CreateDebugUtilsMessengerEXT(
     const VkAllocationCallbacks *pAllocator,
     VkDebugUtilsMessengerEXT *pDebugMessenger) -> VkResult {
 
-    auto func = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
+    const auto func = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
         vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT"));
 
     if (func != nullptr) {
@@ -37,7 +37,7 @@ DEF DestroyDebugUtilsMessengerEXT(
     VkDebugUtilsMessengerEXT debugMessenger,
     const VkAllocationCallbacks *pAllocator) -> void {
 
-    auto func = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
+    const auto func = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
         vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT"));
 
     if (func != nullptr) {
@@ -58,7 +58,7 @@ Engine::Engine()
       m_Surface(VK_NULL_HANDLE),
       m_SwapChain(VK_NULL_HANDLE),
       m_SwapChainImageFormat(VK_FORMAT_UNDEFINED),
-      m_SwapChainExtent({0, 0}),
+      m_SwapChainExtent({.width=0, .height=0}),
       m_RenderPass(VK_NULL_HANDLE),
       m_DescriptorSetLayout(VK_NULL_HANDLE),
       m_PipelineLayout(VK_NULL_HANDLE),
@@ -83,7 +83,10 @@ Engine::Engine()
       m_CameraCenter(Settings::CAMERA_CENTER),
       m_CameraEye(Settings::CAMERA_EYE),
       m_CameraUp(Settings::CAMERA_UP),
-      m_TakeScreenshotNextFrame(false) {}
+      m_TakeScreenshotNextFrame(false),
+      m_Stage(7) {
+    m_StartTime = std::chrono::high_resolution_clock::now();
+}
 
 Engine::~Engine() {
     fprintf(stdout, "Starting Engine Cleanup\n");
@@ -100,8 +103,6 @@ DEF Engine::initialize() -> void {
 
     fprintf(stdout, "\nFinished Initializing Vulkan application.\n");
     std::cout << std::flush;
-
-    auto m_StartTime = std::chrono::high_resolution_clock::now();
 }
 
 DEF Engine::initWindow() -> void {
@@ -127,23 +128,19 @@ DEF Engine::initWindow() -> void {
 }
 
 DEF Engine::framebufferResizeCallback(GLFWwindow *window, int width, int height) -> void {
-    auto app = reinterpret_cast<Engine *>(glfwGetWindowUserPointer(window));
+    const auto app = static_cast<Engine *>(glfwGetWindowUserPointer(window));
     app->m_FramebufferResized = true;
 }
 
 DEF Engine::validateExtensions(const vector<VkExtensionProperties> &supported_extensions, vector<const char *> required_extensions) -> bool {
-    return all_of(
-        required_extensions.begin(),
-        required_extensions.end(),
-        [&](const char *required_extension) {
-            string_view required_extension_view(required_extension);
-            return any_of(
-                supported_extensions.begin(),
-                supported_extensions.end(),
-                [&](const auto &supported_extension) {
-                    return string_view(supported_extension.extensionName) == required_extension_view;
-                });
-        });
+    return std::ranges::all_of(required_extensions,
+                               [&](const char *required_extension) {
+                                   const string_view required_extension_view(required_extension);
+                                   return std::ranges::any_of(supported_extensions,
+                                                              [&](const auto &supported_extension) {
+                                                                  return string_view(supported_extension.extensionName) == required_extension_view;
+                                                              });
+                               });
 }
 
 DEF Engine::createInstance() -> void {
@@ -193,7 +190,7 @@ DEF Engine::createInstance() -> void {
 
         populateDebugMessengerCreateInfo(debugCreateInfo);
         // Note that pNext is in general a `const void*` ptr so we can't static_cast it
-        createInfo.pNext = reinterpret_cast<VkDebugUtilsMessengerCreateInfoEXT *>(&debugCreateInfo);
+        createInfo.pNext = &debugCreateInfo;
     } else {
         createInfo.enabledLayerCount = 0;
         createInfo.pNext = nullptr;
@@ -271,7 +268,7 @@ DEF Engine::initVulkan() -> void {
     PRINT_BOLD_GREEN("*    Finished setting up Vulkan   *");
     PRINT_BOLD_GREEN("* * * * * * * * * * * * * * * * * *");
 
-    auto initEnd = std::chrono::high_resolution_clock().now();
+    auto initEnd = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> totalElapsed = initEnd - initStart;
 
     fprintf(stdout, "\033[32mTotal Vulkan setup time: %.2f ms\n\033[0m", totalElapsed.count());
@@ -389,7 +386,7 @@ DEF Engine::createImage(
 }
 
 DEF Engine::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels) -> VkImageView {
-    VkImageViewCreateInfo viewInfo{
+    const VkImageViewCreateInfo viewInfo{
         .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
         .image = image,
         .viewType = VK_IMAGE_VIEW_TYPE_2D,
@@ -411,6 +408,10 @@ DEF Engine::createImageView(VkImage image, VkFormat format, VkImageAspectFlags a
 }
 
 DEF Engine::createTextureImage() -> void {
+    if (!std::filesystem::exists(FilePaths::PAINTED_PLASTER_DIFFUSE)) {
+        throw runtime_error("Texture file not found: " + std::string(FilePaths::PAINTED_PLASTER_DIFFUSE));
+    }
+
     int texWidth = 0;
     int texHeight = 0;
     int texChannels = 0;
@@ -540,10 +541,10 @@ DEF Engine::generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidt
             1,
             &barrier);
 
-        std::array<VkOffset3D, 2> srcOffsets = {
+        std::array srcOffsets = {
             VkOffset3D{0, 0, 0},
             VkOffset3D{mipWidth, mipHeight, 1}};
-        std::array<VkOffset3D, 2> dstOffsets = {
+        std::array dstOffsets = {
             VkOffset3D{0, 0, 0},
             VkOffset3D{mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1}};
         VkImageBlit blit{
@@ -661,8 +662,8 @@ void Engine::createDescriptorSets() {
     size_t numModels = m_Models.size();
     size_t totalSets = Settings::MAX_FRAMES_IN_FLIGHT * numModels;
 
-    std::vector<VkDescriptorSetLayout> layouts(totalSets, m_DescriptorSetLayout);
-    VkDescriptorSetAllocateInfo allocInfo{
+    std::vector layouts(totalSets, m_DescriptorSetLayout);
+    const VkDescriptorSetAllocateInfo allocInfo{
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
         .descriptorPool = m_DescriptorPool,
         .descriptorSetCount = static_cast<uint32_t>(totalSets),
@@ -675,7 +676,7 @@ void Engine::createDescriptorSets() {
 
     for (size_t i = 0; i < Settings::MAX_FRAMES_IN_FLIGHT; i++) {
         for (size_t j = 0; j < numModels; j++) {
-            size_t bufferIndex = i * numModels + j;
+            const size_t bufferIndex = i * numModels + j;
             VkDescriptorBufferInfo bufferInfo{
                 .buffer = m_UniformBuffers[bufferIndex],
                 .offset = 0,
@@ -686,7 +687,7 @@ void Engine::createDescriptorSets() {
                 .imageView = m_TextureImageView,
                 .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
 
-            std::array<VkWriteDescriptorSet, 2> descriptorWrites{
+            std::array descriptorWrites{
                 VkWriteDescriptorSet{
                     .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
                     .dstSet = m_DescriptorSets[bufferIndex],
@@ -706,7 +707,7 @@ void Engine::createDescriptorSets() {
 
             vkUpdateDescriptorSets(
                 m_Device,
-                static_cast<uint32_t>(descriptorWrites.size()),
+                descriptorWrites.size(),
                 descriptorWrites.data(),
                 0,
                 nullptr);
@@ -715,10 +716,10 @@ void Engine::createDescriptorSets() {
 }
 
 void Engine::createDescriptorPool() {
-    size_t numModels = m_Models.size();
-    size_t totalSets = Settings::MAX_FRAMES_IN_FLIGHT * numModels;
+    const size_t numModels = m_Models.size();
+    const size_t totalSets = Settings::MAX_FRAMES_IN_FLIGHT * numModels;
 
-    std::array<VkDescriptorPoolSize, 2> poolSizes{
+    std::array poolSizes{
         VkDescriptorPoolSize{
             .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
             .descriptorCount = static_cast<uint32_t>(totalSets)},
@@ -738,10 +739,8 @@ void Engine::createDescriptorPool() {
 }
 
 void Engine::createUniformBuffers() {
-    VkDeviceSize bufferSize = sizeof(UniformBufferObject);
-
-    size_t numModels = m_Models.size();
-    size_t totalBuffers = Settings::MAX_FRAMES_IN_FLIGHT * numModels;
+    const size_t numModels = m_Models.size();
+    const size_t totalBuffers = Settings::MAX_FRAMES_IN_FLIGHT * numModels;
 
     m_UniformBuffers.resize(totalBuffers);
     m_UniformBuffersMemory.resize(totalBuffers);
@@ -749,7 +748,8 @@ void Engine::createUniformBuffers() {
 
     for (size_t i = 0; i < Settings::MAX_FRAMES_IN_FLIGHT; i++) {
         for (size_t j = 0; j < numModels; j++) {
-            size_t bufferIndex = i * numModels + j;
+            constexpr VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+            const size_t bufferIndex = i * numModels + j;
             createBuffer(
                 bufferSize,
                 VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
@@ -771,20 +771,20 @@ void Engine::createUniformBuffers() {
 }
 
 DEF Engine::createDescriptorSetLayout() -> void {
-    VkDescriptorSetLayoutBinding uboLayoutBinding{
+    const VkDescriptorSetLayoutBinding uboLayoutBinding{
         .binding = 0,
         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
         .descriptorCount = 1,
         .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT};
 
-    VkDescriptorSetLayoutBinding samplerLayoutBinding{
+    const VkDescriptorSetLayoutBinding samplerLayoutBinding{
         .binding = 1,
         .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         .descriptorCount = 1,
         .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
         .pImmutableSamplers = nullptr};
 
-    array<VkDescriptorSetLayoutBinding, 2> bindings = {uboLayoutBinding, samplerLayoutBinding};
+    array bindings = {uboLayoutBinding, samplerLayoutBinding};
     VkDescriptorSetLayoutCreateInfo layoutInfo{
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
         .bindingCount = static_cast<uint32_t>(bindings.size()),
@@ -850,9 +850,9 @@ DEF Engine::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size
 }
 
 DEF Engine::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) -> void {
-    VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+    const VkCommandBuffer commandBuffer = beginSingleTimeCommands();
 
-    VkBufferImageCopy region{
+    const VkBufferImageCopy region{
         .bufferOffset = 0,
         .bufferRowLength = 0,
         .bufferImageHeight = 0,
@@ -876,7 +876,7 @@ DEF Engine::transitionImageLayout(
     VkFormat format,
     VkImageLayout oldLayout,
     VkImageLayout newLayout,
-    uint32_t mipLevels) -> void {
+    const uint32_t mipLevels) -> void {
 
     VkCommandBuffer commandBuffer = beginSingleTimeCommands();
     VkImageMemoryBarrier barrier{
@@ -1127,7 +1127,7 @@ DEF Engine::createRenderPass() -> void {
         .attachment = 2,
         .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
 
-    VkSubpassDescription subpass{
+    VkSubpassDescription description{
         .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
         .colorAttachmentCount = 1,
         .pColorAttachments = &colorAttachmentRef,
@@ -1148,7 +1148,7 @@ DEF Engine::createRenderPass() -> void {
         .attachmentCount = static_cast<uint32_t>(attachments.size()),
         .pAttachments = attachments.data(),
         .subpassCount = 1,
-        .pSubpasses = &subpass,
+        .pSubpasses = &description,
         .dependencyCount = 1,
         .pDependencies = &dependency};
 
@@ -1179,7 +1179,7 @@ DEF Engine::createGraphicsPipeline() -> void {
         .module = fragShaderModule,
         .pName = "main"};
 
-    array<VkPipelineShaderStageCreateInfo, 2> shaderStages = {vertShaderStageInfo, fragShaderStageInfo};
+    array shaderStages = {vertShaderStageInfo, fragShaderStageInfo};
     fprintf(stdout, "Successfully created the shader modules.\n");
 
     fprintf(stdout, "Trying to Initialize Fixed Functions.\n");
@@ -1200,7 +1200,7 @@ DEF Engine::createGraphicsPipeline() -> void {
         .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
         .primitiveRestartEnable = VK_FALSE};
 
-    vector<VkDynamicState> dynamicStates = {
+    vector dynamicStates = {
         VK_DYNAMIC_STATE_VIEWPORT,
         VK_DYNAMIC_STATE_SCISSOR};
 
@@ -1307,7 +1307,7 @@ DEF Engine::createGraphicsPipeline() -> void {
 }
 
 DEF Engine::createShaderModule(const vector<char> &code) -> VkShaderModule {
-    VkShaderModuleCreateInfo createInfo{
+    const VkShaderModuleCreateInfo createInfo{
         .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
         .codeSize = code.size(),
         .pCode = reinterpret_cast<const uint32_t *>(code.data()),
@@ -1405,12 +1405,12 @@ void Engine::cleanupSwapChain() {
     vkDestroyImage(m_Device, m_DepthImage, nullptr);
     vkFreeMemory(m_Device, m_DepthImageMemory, nullptr);
 
-    for (auto framebuffer : m_SwapChainFramebuffers) {
+    for (const auto framebuffer : m_SwapChainFramebuffers) {
         vkDestroyFramebuffer(m_Device, framebuffer, nullptr);
     }
     m_SwapChainFramebuffers.clear();
 
-    uint32_t commandBufferCount = static_cast<uint32_t>(m_CommandBuffers.size());
+    const uint32_t commandBufferCount = static_cast<uint32_t>(m_CommandBuffers.size());
     if (commandBufferCount > 0) {
         vkFreeCommandBuffers(m_Device, m_CommandPool, commandBufferCount, m_CommandBuffers.data());
         m_CommandBuffers.clear();
@@ -1425,7 +1425,7 @@ void Engine::cleanupSwapChain() {
     vkDestroyRenderPass(m_Device, m_RenderPass, nullptr);
     m_RenderPass = VK_NULL_HANDLE;
 
-    for (auto imageView : m_SwapChainImageViews) {
+    for (const auto imageView : m_SwapChainImageViews) {
         vkDestroyImageView(m_Device, imageView, nullptr);
     }
     m_SwapChainImageViews.clear();
@@ -1491,13 +1491,13 @@ DEF Engine::createSurface() -> void {
 }
 
 DEF Engine::createLogicalDevice() -> void {
-    QueueFamilyIndices indices = findQueueFamilies(m_PhysicalDevice);
+    auto [graphicsFamily, presentationFamily] = findQueueFamilies(m_PhysicalDevice);
 
     vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 
     set<uint32_t> uniqueQueueFamilies;
-    if (indices.graphicsFamily.has_value() && indices.presentationFamily.has_value()) {
-        uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentationFamily.value()};
+    if (graphicsFamily.has_value() && presentationFamily.has_value()) {
+        uniqueQueueFamilies = {graphicsFamily.value(), presentationFamily.value()};
     } else {
         throw runtime_error("QueueFamilyIndices are not fully defined.");
     }
@@ -1534,8 +1534,8 @@ DEF Engine::createLogicalDevice() -> void {
         throw runtime_error("failed to create logical device!");
     }
 
-    vkGetDeviceQueue(m_Device, indices.graphicsFamily.value(), 0, &m_GraphicsQueue);
-    vkGetDeviceQueue(m_Device, indices.presentationFamily.value(), 0, &m_PresentQueue);
+    vkGetDeviceQueue(m_Device, graphicsFamily.value(), 0, &m_GraphicsQueue);
+    vkGetDeviceQueue(m_Device, presentationFamily.value(), 0, &m_PresentQueue);
 }
 
 DEF Engine::pickPhysicalDevice() -> void {
@@ -1546,13 +1546,11 @@ DEF Engine::pickPhysicalDevice() -> void {
     vkEnumeratePhysicalDevices(m_Instance, &deviceCount, devices.data());
 
     size_t i = 0;
-    auto found = find_if(
-        devices.begin(),
-        devices.end(),
-        [&](const auto &device) {
-            fprintf(stdout, "Checking %zu. device", ++i);
-            return isDeviceSuitable(device);
-        });
+    auto found = std::ranges::find_if(devices,
+                                      [&](const auto &device) {
+                                          fprintf(stdout, "Checking %zu. device", ++i);
+                                          return isDeviceSuitable(device);
+                                      });
     if (found == devices.end()) throw runtime_error("failed to find a suitable GPU!");
 
     m_PhysicalDevice = *found;
@@ -1565,7 +1563,7 @@ DEF Engine::isDeviceSuitable(VkPhysicalDevice device) -> bool {
     vkGetPhysicalDeviceProperties(device, &deviceProperties);
     vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
 
-    if (!Settings::ALLOW_DEVICE_WITHOUT_INTEGRATED_GPU) {
+    if constexpr (!Settings::ALLOW_DEVICE_WITHOUT_INTEGRATED_GPU) {
         if (deviceProperties.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
             fprintf(stdout, "Device is unsuitable because it's not a discrete GPU!.");
         } else {
@@ -1575,7 +1573,7 @@ DEF Engine::isDeviceSuitable(VkPhysicalDevice device) -> bool {
         fprintf(stdout, "'%s' flag is set so we don't check if it's a discrete GPU.\n", "Settings::ALLOW_DEVICE_WITHOUT_INTEGRATED_GPU");
     }
 
-    if (!Settings::ALLOW_DEVICE_WITHOUT_GEOMETRY_SHADER) {
+    if constexpr (!Settings::ALLOW_DEVICE_WITHOUT_GEOMETRY_SHADER) {
         if (!deviceFeatures.geometryShader) {
             fprintf(stdout, "Device is unsuitable because it does not support Geometry Shaders!.\n");
             return false;
@@ -1590,20 +1588,17 @@ DEF Engine::isDeviceSuitable(VkPhysicalDevice device) -> bool {
     if (!indices.isComplete()) {
         fprintf(stdout, "Device is unsuitable because its QueueFamily is incomplete!\n");
         return false;
-    } else {
-        fprintf(stdout, "QueueFamily of the Device is complete.\n");
     }
+    fprintf(stdout, "QueueFamily of the Device is complete.\n");
 
-    bool extensionsSupported = checkDeviceExtensionSupport(device);
-    if (!extensionsSupported) {
+    if (!checkDeviceExtensionSupport(device)) {
         fprintf(stdout, "Device is unsuitable because it does not support the necessary extensions!\n");
         return false;
-    } else {
-        fprintf(stdout, "Device supports the necessary extensions.\n");
     }
+    fprintf(stdout, "Device supports the necessary extensions.\n");
 
-    SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device);
-    if (swapChainSupport.formats.empty() || swapChainSupport.presentModes.empty()) {
+    auto [capabilities, formats, presentModes] = querySwapChainSupport(device);
+    if (formats.empty() || presentModes.empty()) {
         fprintf(stdout, "Device is unsuitable because its swapChain is not adequate!\n");
         return false;
     }
@@ -1686,9 +1681,8 @@ void Engine::drawFrame() {
     if (resultNextImage == VK_ERROR_OUT_OF_DATE_KHR) {
         recreateSwapChain();
         return;
-    } else if (resultNextImage != VK_SUCCESS && resultNextImage != VK_SUBOPTIMAL_KHR) {
-        throw std::runtime_error("failed to acquire swap chain image!");
     }
+    if (resultNextImage != VK_SUCCESS && resultNextImage != VK_SUBOPTIMAL_KHR) throw std::runtime_error("failed to acquire swap chain image!");
 
     vkResetFences(m_Device, 1, &m_InFlightFences[m_CurrentFrameIdx]);
 
@@ -1697,33 +1691,33 @@ void Engine::drawFrame() {
 
     for (size_t i = 0; i < m_Models.size(); i++) {
         UniformBufferObject ubo = m_Models[i]->getUBO();
-        size_t bufferIndex = getCurrentFrameIdx() * m_Models.size() + i;
+        const size_t bufferIndex = getCurrentFrameIdx() * m_Models.size() + i;
         memcpy(m_UniformBuffersMapped[bufferIndex], &ubo, sizeof(ubo));
     }
 
-    VkSemaphore waitSemaphores[] = {m_ImageAvailableSemaphores[m_CurrentFrameIdx]};
-    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-    VkSemaphore signalSemaphores[] = {m_RenderFinishedSemaphores[m_CurrentFrameIdx]};
+    array waitSemaphores = {m_ImageAvailableSemaphores[m_CurrentFrameIdx]};
+    array waitStages = {static_cast<VkPipelineStageFlags>(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT)};
+    array signalSemaphores = {m_RenderFinishedSemaphores[m_CurrentFrameIdx]};
 
     VkSubmitInfo submitInfo{
         .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
         .waitSemaphoreCount = 1,
-        .pWaitSemaphores = waitSemaphores,
-        .pWaitDstStageMask = waitStages,
+        .pWaitSemaphores = waitSemaphores.data(),
+        .pWaitDstStageMask = waitStages.data(),
         .commandBufferCount = 1,
         .pCommandBuffers = &m_CommandBuffers[m_CurrentFrameIdx],
         .signalSemaphoreCount = 1,
-        .pSignalSemaphores = signalSemaphores};
+        .pSignalSemaphores = signalSemaphores.data()};
 
     if (vkQueueSubmit(m_GraphicsQueue, 1, &submitInfo, m_InFlightFences[m_CurrentFrameIdx]) != VK_SUCCESS) {
         throw std::runtime_error("failed to submit draw command buffer!");
     }
 
     VkSwapchainKHR swapChains[] = {m_SwapChain};
-    VkPresentInfoKHR presentInfo{
+    const VkPresentInfoKHR presentInfo{
         .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
         .waitSemaphoreCount = 1,
-        .pWaitSemaphores = signalSemaphores,
+        .pWaitSemaphores = signalSemaphores.data(),
         .swapchainCount = 1,
         .pSwapchains = swapChains,
         .pImageIndices = &imageIndex,

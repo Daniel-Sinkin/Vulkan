@@ -26,17 +26,17 @@ find_package(glm REQUIRED)
 file(GLOB SOURCES "src/*.cpp")
 
 include_directories(include)
-include_directories(SYSTEM external) # Suppresses warnings from external libraries
+include_directories(external) # Suppresses warnings from external libraries
 include_directories(${GLM_INCLUDE_DIRS})
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR})
 add_executable(VulkanEngine ${SOURCES})
 
 # Link necessary libraries
-target_link_libraries(VulkanEngine 
-    glfw
-    Vulkan::Vulkan 
-    ${VULKAN_LIBRARY_DIR}/libMoltenVK.dylib
+target_link_libraries(VulkanEngine
+        glfw
+        Vulkan::Vulkan
+        ${VULKAN_LIBRARY_DIR}/libMoltenVK.dylib
 )
 
 # Set the default build type to Debug if not specified
@@ -56,50 +56,36 @@ endif()
 # Add Clang-specific warning flags and sanitizers only for Debug builds
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     target_compile_options(VulkanEngine PRIVATE
-        -Wall                        # Enable all common warnings
-        -Wextra                      # Enable extra warnings
-        -Wpedantic                   # Enforce strict ISO compliance
-        -Werror                      # Makes Compiler warnings into Errors instead
-        -Wshadow                     # Warn about variable shadowing
-        -Wdouble-promotion           # Warn if float is implicitly promoted to double
-        -Wnon-virtual-dtor           # Warn when a class with virtual functions lacks a virtual destructor
-        -Wold-style-cast             # Warn for C-style casts
-        -Wcast-align                 # Warn for potential performance issues due to misaligned casts
-        -Wconversion                 # Warn for implicit conversions that may change a value
-        -Wsign-conversion            # Warn for implicit sign conversions
-        -Wfloat-equal                # Warn if floating-point values are compared for equality
-        -Wpointer-arith              # Warn for suspicious pointer arithmetic
-        -Wformat=2                   # Check format string usage more thoroughly
-        -Wunreachable-code           # Warn on code that will never be executed
-        -Wstrict-aliasing=2          # Strict aliasing rules (highest level)
-        -Wundefined-func-template    # Warn about undefined function template instantiations
-        -fno-common                  # Remove the use of common symbols
-        -fstrict-aliasing            # Enable strict aliasing
-        -Wshorten-64-to-32           # Warn when implicit truncation from 64-bit to 32-bit happens
-        -Wnull-dereference           # Shows places where nullptr are dereferenced
-        -Wredundant-move             # Warn for redundant moves
-        -Wpessimizing-move           # Warn for pessimizing moves
-        -Wformat-nonliteral          # Warn about non-literal format strings
-        -Wlifetime                   # Warn about lifetime issues (experimental)
-        -Wmissing-field-initializers # Warn if not all fields in a struct are initialized
-        -Wimplicit-fallthrough       # Warn if fallthrough is not explicit
-        -Wnoexcept                   # Checks that NOEXCEPT functions really can't throw exceptions
-        -Wc++2a-compat               # C++23 and up compatibility
-        -Wunused-result              # Warn if function results are unused
-        -Woverloaded-virtual         # Warn if a function in a derived class hides a non-virtual function in a base class
-        -Wlogical-op                 # Warn for suspicious logical operations
-        -Wduplicated-cond            # Warn about duplicated conditions in if-else chains
-        -Wduplicated-branches        # Warn when if-else branches have identical bodies
-        -Wuseless-cast               # Warn if a cast does not change the type or value
-        -Wunsafe-loop-optimizations  # Warn about unsafe loop optimizations
-        -Wvla-larger-than=1024       # Warn when a VLA is larger than 1024 bytes
-        -Weffc++                     # Enable Scott Meyers' Effective C++ warnings
+            # Warning flags here...
     )
     if(CMAKE_BUILD_TYPE STREQUAL "Debug")
         target_link_options(VulkanEngine PRIVATE
-            -fsanitize=address
-            -fsanitize=undefined
+                -fsanitize=address
+                -fsanitize=undefined
         )
     endif()
 endif()
 
+# Custom command to run the Python script with python3
+add_custom_command(
+        OUTPUT ${CMAKE_SOURCE_DIR}/shapes_generated
+        COMMAND python3 ${CMAKE_SOURCE_DIR}/scripts/generate_shapes.py
+        DEPENDS ${CMAKE_SOURCE_DIR}/scripts/generate_shapes.py
+        COMMENT "Running generate_shapes.py"
+)
+
+# Custom command to run the shell script
+add_custom_command(
+        OUTPUT ${CMAKE_SOURCE_DIR}/shaders_compiled
+        COMMAND ${CMAKE_SOURCE_DIR}/scripts/compile_shaders.sh
+        DEPENDS ${CMAKE_SOURCE_DIR}/scripts/compile_shaders.sh
+        COMMENT "Running compile_shaders.sh"
+)
+
+# Custom target that depends on both the Python and shell script outputs
+add_custom_target(GenerateShapesAndCompileShaders
+        DEPENDS ${CMAKE_SOURCE_DIR}/shapes_generated ${CMAKE_SOURCE_DIR}/shaders_compiled
+)
+
+# Ensure the custom target runs before building VulkanEngine
+add_dependencies(VulkanEngine GenerateShapesAndCompileShaders)

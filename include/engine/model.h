@@ -13,9 +13,9 @@ public:
 
     DEF validate() -> void;
 
-    DEF translate(const glm::vec3 &deltaPosition) -> void;
-    DEF rotate(const glm::vec3 &deltaRotation) -> void;
-    DEF scaleBy(const glm::vec3 &scaleFactor) -> void;
+    DEF translate(const vec3 &deltaPosition) -> void;
+    DEF rotate(const vec3 &deltaRotation) -> void;
+    DEF scaleBy(const vec3 &scaleFactor) -> void;
 
     DEF resetTransform() -> void;
 
@@ -25,9 +25,9 @@ public:
     DEF enqueueIntoCommandBuffer(VkCommandBuffer commandBuffer, VkDescriptorSet descriptorSet) -> void;
     [[nodiscard]] DEF getUBO() -> UniformBufferObject;
 
-    DEF setRotationAnimationVector(vec3 rotationAnimationVector) -> void { m_RotationAnimationVector = rotationAnimationVector; }
+    DEF setRotationAnimationVector(const vec3 rotationAnimationVector) -> void { m_RotationAnimationVector = rotationAnimationVector; }
 
-    DEF update(float frameTime) -> void { rotate(m_RotationAnimationVector * frameTime); }
+    DEF update(const float frameTime) -> void { rotate(m_RotationAnimationVector * frameTime); }
 
     Transform m_CurrentTransform;
 

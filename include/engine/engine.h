@@ -47,8 +47,8 @@ public:
 
     DEF getUniformBuffersMapped() -> auto { return m_UniformBuffersMapped; }
 
-    DEF setStage(int stage) -> void { m_Stage = stage; }
-    DEF getStage() -> int { return m_Stage; }
+    DEF setStage(const int stage) -> void { m_Stage = stage; }
+    DEF getStage() const -> int { return m_Stage; }
 
     DEF update(float frameTime) -> void;
 
@@ -143,7 +143,7 @@ private:
     vector<VkFence> m_InFlightFences;
 
     uint32_t m_CurrentFrameIdx; // 0 <= m_CurrentFrameIdx < Max Frames in Flight
-    uint32_t m_FrameCounter;    // How many frames have been rendered
+    uint32_t m_FrameCounter;    // How many frames have been rendered in total
     bool m_FramebufferResized;
 
     vector<VkBuffer> m_UniformBuffers;

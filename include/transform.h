@@ -20,5 +20,5 @@ struct Transform {
 
     [[nodiscard]] vec3 getEulerAngles() const;
 
-    void setRotationFromEuler(const glm::vec3 &eulerAngles);
+    void setRotationFromEuler(const vec3 &eulerAngles);
 };

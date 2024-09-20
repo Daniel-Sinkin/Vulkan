@@ -8,9 +8,7 @@
 
 MeshNT::MeshNT(Engine *engine, const char *assetFilepath) : m_Engine(engine), m_Filepath(assetFilepath) {
     m_Device = m_Engine->getDevice();
-    if (m_Device == VK_NULL_HANDLE) {
-        throw std::runtime_error("Initializing mesh before engine device got initialized!");
-    }
+    if (m_Device == VK_NULL_HANDLE) throw std::runtime_error("Initializing mesh before engine device got initialized!");
     loadModel();
     createVertexBuffer();
     createIndexBuffer();
@@ -27,16 +25,18 @@ MeshNT::~MeshNT() {
     std::cout << "Finished cleaning up Mesh.\n";
 }
 
-// clang-format off
 VkBuffer              MeshNT::getVertexBuffer()            const { return m_VertexBuffer;       }
 VkBuffer              MeshNT::getVertexIndexBuffer()       const { return m_IndexBuffer;        }
 VkDeviceMemory        MeshNT::getVertexBufferMemory()      const { return m_VertexBufferMemory; }
 VkDeviceMemory        MeshNT::getVertexIndexBufferMemory() const { return m_IndexBufferMemory;  }
 std::vector<VertexNT> MeshNT::getVertices()                const { return m_Vertices;           }
 std::vector<uint32_t> MeshNT::getVertexIndices()           const { return m_VertexIndices;      }
-// clang-format on 
 
 void MeshNT::loadModel() {
+    if (!std::filesystem::exists(m_Filepath)) {
+        throw runtime_error("Texture file not found: " + std::string(m_Filepath));
+    }
+
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
