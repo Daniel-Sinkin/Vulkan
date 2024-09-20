@@ -3,12 +3,14 @@
 #include "engine/engine.h"
 #include "engine/model.h"
 
+#include "Util.h"
+
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-const vector<const char *> validationLayers = {"VK_LAYER_KHRONOS_validation"};
+const vector validationLayers = {"VK_LAYER_KHRONOS_validation"};
 // VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME is a MacOS specific workaround
-const vector<const char *> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME};
+const vector deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME};
 
 #ifdef NDEBUG
 constexpr bool enableValidationLayers = false;
@@ -46,9 +48,10 @@ DEF DestroyDebugUtilsMessengerEXT(
 }
 
 Engine::Engine()
-    : m_Window(nullptr),
-      m_ApplicationVersion(VK_MAKE_VERSION(1, 0, 0)),
-      m_EngineVersion(VK_MAKE_VERSION(1, 0, 0)),
+    : m_CameraEye(Settings::CAMERA_EYE),
+      m_CameraCenter(Settings::CAMERA_CENTER),
+      m_CameraUp(Settings::CAMERA_UP),
+      m_Window(nullptr),
       m_Instance(VK_NULL_HANDLE),
       m_DebugMessenger(VK_NULL_HANDLE),
       m_PhysicalDevice(VK_NULL_HANDLE),
@@ -58,13 +61,13 @@ Engine::Engine()
       m_Surface(VK_NULL_HANDLE),
       m_SwapChain(VK_NULL_HANDLE),
       m_SwapChainImageFormat(VK_FORMAT_UNDEFINED),
-      m_SwapChainExtent({.width=0, .height=0}),
+      m_SwapChainExtent({.width = 0, .height = 0}),
       m_RenderPass(VK_NULL_HANDLE),
       m_DescriptorSetLayout(VK_NULL_HANDLE),
       m_PipelineLayout(VK_NULL_HANDLE),
       m_GraphicsPipeline(VK_NULL_HANDLE),
-      m_CommandPool(VK_NULL_HANDLE),
-      m_CurrentFrameIdx(0), // Not the total frames, 0 <= m_CurrentFrameIdx < Settings::MAX_FRAMES_IN_FLIGHT
+      m_CommandPool(VK_NULL_HANDLE), // Not the total frames, 0 <= m_CurrentFrameIdx < Settings::MAX_FRAMES_IN_FLIGHT
+      m_CurrentFrameIdx(0),
       m_FrameCounter(0),
       m_FramebufferResized(false),
       m_DescriptorPool(VK_NULL_HANDLE),
@@ -80,11 +83,11 @@ Engine::Engine()
       m_DepthImage(VK_NULL_HANDLE),
       m_DepthImageMemory(VK_NULL_HANDLE),
       m_DepthImageView(VK_NULL_HANDLE),
-      m_CameraCenter(Settings::CAMERA_CENTER),
-      m_CameraEye(Settings::CAMERA_EYE),
-      m_CameraUp(Settings::CAMERA_UP),
       m_TakeScreenshotNextFrame(false),
-      m_Stage(7) {
+      m_EngineVersion(VK_MAKE_VERSION(1, 0, 0)),
+      m_ApplicationVersion(VK_MAKE_VERSION(1, 0, 0)),
+      m_Stage(Settings::STARTING_STAGE),
+      m_PushConstants() {
     m_StartTime = std::chrono::high_resolution_clock::now();
 }
 
@@ -144,8 +147,10 @@ DEF Engine::validateExtensions(const vector<VkExtensionProperties> &supported_ex
 }
 
 DEF Engine::createInstance() -> void {
-    if (enableValidationLayers && !checkValidationLayerSupport()) {
-        throw runtime_error("Validation layers requested, but not available!");
+    if constexpr(enableValidationLayers) {
+        if (!checkValidationLayerSupport()) {
+            throw runtime_error("Validation layers requested, but not available!");
+        }
     }
 
     uint32_t apiVersion = 0;
@@ -184,7 +189,7 @@ DEF Engine::createInstance() -> void {
     if (!validateExtensions(extensions, requiredExtensions)) throw runtime_error("Required extensions are not supported!");
 
     VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
-    if (enableValidationLayers) {
+    if constexpr (enableValidationLayers) {
         createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
         createInfo.ppEnabledLayerNames = validationLayers.data();
 
@@ -240,17 +245,17 @@ DEF Engine::initVulkan() -> void {
 
     cout << "Instantiating Models!\n";
     Transform torusTransform{
-        glm::vec3(0.0f, 0.0f, 0.0f),
-        glm::vec3(90.0f, 0.0f, 0.0f),
-        glm::vec3(1.0f, 1.0f, 1.0f)};
+        vec3(0.0f, 0.0f, 0.0f),
+        vec3(PI_DEG, 0.0f, 0.0f),
+        vec3(1.0f, 1.0f, 1.0f)};
     auto torusModel = std::make_unique<ModelNT>(this, FilePaths::MODEL_BASIC_TORUS, m_Models.size(), torusTransform);
     torusModel->setRotationAnimationVector(vec3(1.0f, 0.5f, 0.0f));
     m_Models.push_back(std::move(torusModel));
 
     Transform sphereTransform{
-        glm::vec3(3.0f, 0.0f, 0.0f),
-        glm::vec3(0.0f, 0.0f, 0.0f),
-        glm::vec3(1.0f, 1.0f, 1.0f)};
+        vec3(3.0f, 0.0f, 0.0f),
+        vec3(0.0f, 0.0f, 0.0f),
+        vec3(1.0f, 1.0f, 1.0f)};
     m_Models.push_back(std::make_unique<ModelNT>(this, FilePaths::MODEL_BASIC_SPHERE, m_Models.size(), sphereTransform));
     cout << "Successfully instantiated Models!\n";
 
@@ -342,18 +347,18 @@ DEF Engine::createColorResources() -> void {
 }
 
 DEF Engine::createImage(
-    uint32_t width,
-    uint32_t height,
-    uint32_t mipLevels,
+    const uint32_t width,
+    const uint32_t height,
+    const uint32_t mipLevels,
     VkSampleCountFlagBits numSamples,
     VkFormat format,
     VkImageTiling tiling,
     VkImageUsageFlags usage,
     VkMemoryPropertyFlags properties,
     VkImage &image,
-    VkDeviceMemory &imageMemory) -> void {
-
-    VkImageCreateInfo imageInfo{
+    VkDeviceMemory &imageMemory
+) -> void {
+    const VkImageCreateInfo imageInfo{
         .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
         .imageType = VK_IMAGE_TYPE_2D,
         .format = format,
@@ -385,7 +390,7 @@ DEF Engine::createImage(
     vkBindImageMemory(m_Device, image, imageMemory, 0);
 }
 
-DEF Engine::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels) -> VkImageView {
+DEF Engine::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, const uint32_t mipLevels) const -> VkImageView {
     const VkImageViewCreateInfo viewInfo{
         .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
         .image = image,
@@ -433,7 +438,7 @@ DEF Engine::createTextureImage() -> void {
 
     void *data = nullptr;
     vkMapMemory(m_Device, stagingBufferMemory, 0, imageSize, 0, &data);
-    memcpy(data, pixels, static_cast<size_t>(imageSize));
+    memcpy(data, pixels, imageSize);
     vkUnmapMemory(m_Device, stagingBufferMemory);
 
     stbi_image_free(pixels);
@@ -475,7 +480,7 @@ DEF Engine::createTextureSampler() -> void {
     VkPhysicalDeviceProperties properties{};
     vkGetPhysicalDeviceProperties(m_PhysicalDevice, &properties);
 
-    VkSamplerCreateInfo samplerInfo{
+    const VkSamplerCreateInfo samplerInfo{
         .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
         .magFilter = VK_FILTER_LINEAR,
         .minFilter = VK_FILTER_LINEAR,
@@ -498,7 +503,7 @@ DEF Engine::createTextureSampler() -> void {
     }
 }
 
-DEF Engine::generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels) -> void {
+DEF Engine::generateMipmaps(VkImage image, VkFormat imageFormat, const int32_t texWidth, const int32_t texHeight, const uint32_t mipLevels) -> void {
     VkFormatProperties formatProperties;
     vkGetPhysicalDeviceFormatProperties(m_PhysicalDevice, imageFormat, &formatProperties);
 
@@ -610,7 +615,7 @@ DEF Engine::generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidt
     endSingleTimeCommands(commandBuffer);
 }
 
-DEF Engine::getMaxUsableSampleCount() -> VkSampleCountFlagBits {
+DEF Engine::getMaxUsableSampleCount() const -> VkSampleCountFlagBits {
     VkPhysicalDeviceProperties physicalDeviceProperties;
     vkGetPhysicalDeviceProperties(m_PhysicalDevice, &physicalDeviceProperties);
 
@@ -624,7 +629,7 @@ DEF Engine::getMaxUsableSampleCount() -> VkSampleCountFlagBits {
     return VK_SAMPLE_COUNT_1_BIT;
 }
 
-DEF Engine::beginSingleTimeCommands() -> VkCommandBuffer {
+DEF Engine::beginSingleTimeCommands() const -> VkCommandBuffer {
     VkCommandBufferAllocateInfo allocInfo{
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
         .commandPool = m_CommandPool,
@@ -644,7 +649,7 @@ DEF Engine::beginSingleTimeCommands() -> VkCommandBuffer {
     return commandBuffer;
 }
 
-DEF Engine::endSingleTimeCommands(VkCommandBuffer commandBuffer) -> void {
+DEF Engine::endSingleTimeCommands(VkCommandBuffer commandBuffer) const -> void {
     vkEndCommandBuffer(commandBuffer);
 
     VkSubmitInfo submitInfo{};
@@ -659,8 +664,8 @@ DEF Engine::endSingleTimeCommands(VkCommandBuffer commandBuffer) -> void {
 }
 
 void Engine::createDescriptorSets() {
-    size_t numModels = m_Models.size();
-    size_t totalSets = Settings::MAX_FRAMES_IN_FLIGHT * numModels;
+    const size_t numModels = m_Models.size();
+    const size_t totalSets = Settings::MAX_FRAMES_IN_FLIGHT * numModels;
 
     std::vector layouts(totalSets, m_DescriptorSetLayout);
     const VkDescriptorSetAllocateInfo allocInfo{
@@ -771,13 +776,13 @@ void Engine::createUniformBuffers() {
 }
 
 DEF Engine::createDescriptorSetLayout() -> void {
-    const VkDescriptorSetLayoutBinding uboLayoutBinding{
+    constexpr VkDescriptorSetLayoutBinding uboLayoutBinding{
         .binding = 0,
         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
         .descriptorCount = 1,
         .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT};
 
-    const VkDescriptorSetLayoutBinding samplerLayoutBinding{
+    constexpr VkDescriptorSetLayoutBinding samplerLayoutBinding{
         .binding = 1,
         .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         .descriptorCount = 1,
@@ -785,7 +790,7 @@ DEF Engine::createDescriptorSetLayout() -> void {
         .pImmutableSamplers = nullptr};
 
     array bindings = {uboLayoutBinding, samplerLayoutBinding};
-    VkDescriptorSetLayoutCreateInfo layoutInfo{
+    const VkDescriptorSetLayoutCreateInfo layoutInfo{
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
         .bindingCount = static_cast<uint32_t>(bindings.size()),
         .pBindings = bindings.data()};
@@ -795,7 +800,7 @@ DEF Engine::createDescriptorSetLayout() -> void {
     }
 }
 
-DEF Engine::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) -> uint32_t {
+DEF Engine::findMemoryType(const uint32_t typeFilter, VkMemoryPropertyFlags properties) const -> uint32_t {
     VkPhysicalDeviceMemoryProperties memProperties;
     vkGetPhysicalDeviceMemoryProperties(m_PhysicalDevice, &memProperties);
 
@@ -808,13 +813,13 @@ DEF Engine::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties
 }
 
 DEF Engine::createBuffer(
-    VkDeviceSize size,
-    VkBufferUsageFlags usage,
-    VkMemoryPropertyFlags properties,
+    const VkDeviceSize size,
+    const VkBufferUsageFlags usage,
+    const VkMemoryPropertyFlags properties,
     VkBuffer &buffer,
-    VkDeviceMemory &bufferMemory) -> void {
-
-    VkBufferCreateInfo bufferInfo{
+    VkDeviceMemory &bufferMemory
+) const -> void {
+    const VkBufferCreateInfo bufferInfo{
         .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
         .size = size,
         .usage = usage,
@@ -827,7 +832,7 @@ DEF Engine::createBuffer(
     VkMemoryRequirements memRequirements;
     vkGetBufferMemoryRequirements(m_Device, buffer, &memRequirements);
 
-    VkMemoryAllocateInfo allocInfo{
+    const VkMemoryAllocateInfo allocInfo{
         .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
         .allocationSize = memRequirements.size,
         .memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties)};
@@ -839,7 +844,7 @@ DEF Engine::createBuffer(
     vkBindBufferMemory(m_Device, buffer, bufferMemory, 0);
 }
 
-DEF Engine::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) -> void {
+DEF Engine::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, const VkDeviceSize size) const -> void {
     VkCommandBuffer commandBuffer = beginSingleTimeCommands();
 
     VkBufferCopy copyRegion{};
@@ -849,7 +854,7 @@ DEF Engine::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size
     endSingleTimeCommands(commandBuffer);
 }
 
-DEF Engine::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) -> void {
+DEF Engine::copyBufferToImage(VkBuffer buffer, VkImage image, const uint32_t width, const uint32_t height) const -> void {
     const VkCommandBuffer commandBuffer = beginSingleTimeCommands();
 
     const VkBufferImageCopy region{
@@ -876,7 +881,7 @@ DEF Engine::transitionImageLayout(
     VkFormat format,
     VkImageLayout oldLayout,
     VkImageLayout newLayout,
-    const uint32_t mipLevels) -> void {
+    const uint32_t mipLevels) const -> void {
 
     VkCommandBuffer commandBuffer = beginSingleTimeCommands();
     VkImageMemoryBarrier barrier{
@@ -951,18 +956,18 @@ DEF Engine::createSyncObjects() -> void {
     m_RenderFinishedSemaphores.resize(Settings::MAX_FRAMES_IN_FLIGHT);
     m_InFlightFences.resize(Settings::MAX_FRAMES_IN_FLIGHT);
 
-    VkSemaphoreCreateInfo semaphoreInfo{.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
-    VkFenceCreateInfo fenceInfo{
+    const VkSemaphoreCreateInfo semaphoreInfo{.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
+    const VkFenceCreateInfo fenceInfo{
         .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
         .flags = VK_FENCE_CREATE_SIGNALED_BIT};
 
     for (size_t i = 0; i < Settings::MAX_FRAMES_IN_FLIGHT; i++) {
         fprintf(stdout, "\t%zu. frame\n", i + 1);
-        VkResult result_1 = vkCreateSemaphore(m_Device, &semaphoreInfo, nullptr, &m_ImageAvailableSemaphores[i]);
+        const VkResult result_1 = vkCreateSemaphore(m_Device, &semaphoreInfo, nullptr, &m_ImageAvailableSemaphores[i]);
         if (result_1 != VK_SUCCESS) throw runtime_error("failed to create ImageAvailable semaphore!");
-        VkResult result_2 = vkCreateSemaphore(m_Device, &semaphoreInfo, nullptr, &m_RenderFinishedSemaphores[i]);
+        const VkResult result_2 = vkCreateSemaphore(m_Device, &semaphoreInfo, nullptr, &m_RenderFinishedSemaphores[i]);
         if (result_2 != VK_SUCCESS) throw runtime_error("failed to create RenderFinished semaphore!");
-        VkResult result_3 = vkCreateFence(m_Device, &fenceInfo, nullptr, &m_InFlightFences[i]);
+        const VkResult result_3 = vkCreateFence(m_Device, &fenceInfo, nullptr, &m_InFlightFences[i]);
         if (result_3 != VK_SUCCESS) throw runtime_error("failed to create InFlight fence!");
     }
 }
@@ -970,7 +975,7 @@ DEF Engine::createSyncObjects() -> void {
 DEF Engine::createCommandBuffers() -> void {
     m_CommandBuffers.resize(Settings::MAX_FRAMES_IN_FLIGHT);
 
-    VkCommandBufferAllocateInfo allocInfo{
+    const VkCommandBufferAllocateInfo allocInfo{
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
         .commandPool = m_CommandPool,
         .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
@@ -993,7 +998,7 @@ void Engine::recordCommandBuffers(VkCommandBuffer commandBuffer, uint32_t imageI
     clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
     clearValues[1].depthStencil = {1.0f, 0};
 
-    VkRenderPassBeginInfo renderPassInfo{
+    const VkRenderPassBeginInfo renderPassInfo{
         .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
         .renderPass = m_RenderPass,
         .framebuffer = m_SwapChainFramebuffers[imageIndex],
@@ -1067,7 +1072,7 @@ DEF Engine::createFramebuffers() -> void {
     m_SwapChainFramebuffers.resize(m_SwapChainImageViews.size());
     for (size_t i = 0; i < m_SwapChainImageViews.size(); i++) {
         fprintf(stdout, "\t%zu. Framebuffers.\n", i + 1);
-        array<VkImageView, 3> attachments = {m_ColorImageView, m_DepthImageView, m_SwapChainImageViews[i]};
+        array attachments = {m_ColorImageView, m_DepthImageView, m_SwapChainImageViews[i]};
 
         VkFramebufferCreateInfo framebufferInfo{
             .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
@@ -1085,7 +1090,7 @@ DEF Engine::createFramebuffers() -> void {
 }
 
 DEF Engine::createRenderPass() -> void {
-    VkAttachmentDescription colorAttachment{
+    const VkAttachmentDescription colorAttachment{
         .format = m_SwapChainImageFormat,
         .samples = m_MSAASamples,
         .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
@@ -1095,7 +1100,7 @@ DEF Engine::createRenderPass() -> void {
         .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
         .finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
 
-    VkAttachmentDescription depthAttachment{
+    const VkAttachmentDescription depthAttachment{
         .format = findDepthFormat(),
         .samples = m_MSAASamples,
         .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
@@ -1105,7 +1110,7 @@ DEF Engine::createRenderPass() -> void {
         .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
         .finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
 
-    VkAttachmentDescription colorAttachmentResolve{
+    const VkAttachmentDescription colorAttachmentResolve{
         .format = m_SwapChainImageFormat,
         .samples = VK_SAMPLE_COUNT_1_BIT,
         .loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
@@ -1115,15 +1120,15 @@ DEF Engine::createRenderPass() -> void {
         .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
         .finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR};
 
-    VkAttachmentReference colorAttachmentRef{
+    constexpr VkAttachmentReference colorAttachmentRef{
         .attachment = 0,
         .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
 
-    VkAttachmentReference depthAttachmentRef{
+    constexpr VkAttachmentReference depthAttachmentRef{
         .attachment = 1,
         .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
 
-    VkAttachmentReference colorAttachmentResolveRef{
+    constexpr VkAttachmentReference colorAttachmentResolveRef{
         .attachment = 2,
         .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
 
@@ -1142,8 +1147,8 @@ DEF Engine::createRenderPass() -> void {
         .srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
         .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT};
 
-    array<VkAttachmentDescription, 3> attachments = {colorAttachment, depthAttachment, colorAttachmentResolve};
-    VkRenderPassCreateInfo renderPassInfo{
+    array attachments = {colorAttachment, depthAttachment, colorAttachmentResolve};
+    const VkRenderPassCreateInfo renderPassInfo{
         .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
         .attachmentCount = static_cast<uint32_t>(attachments.size()),
         .pAttachments = attachments.data(),
@@ -1306,7 +1311,7 @@ DEF Engine::createGraphicsPipeline() -> void {
     vkDestroyShaderModule(m_Device, vertShaderModule, nullptr);
 }
 
-DEF Engine::createShaderModule(const vector<char> &code) -> VkShaderModule {
+DEF Engine::createShaderModule(const vector<char> &code) const -> VkShaderModule {
     const VkShaderModuleCreateInfo createInfo{
         .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
         .codeSize = code.size(),
@@ -1410,7 +1415,7 @@ void Engine::cleanupSwapChain() {
     }
     m_SwapChainFramebuffers.clear();
 
-    const uint32_t commandBufferCount = static_cast<uint32_t>(m_CommandBuffers.size());
+    const auto commandBufferCount = static_cast<uint32_t>(m_CommandBuffers.size());
     if (commandBufferCount > 0) {
         vkFreeCommandBuffers(m_Device, m_CommandPool, commandBufferCount, m_CommandBuffers.data());
         m_CommandBuffers.clear();
@@ -1523,11 +1528,10 @@ DEF Engine::createLogicalDevice() -> void {
         .ppEnabledExtensionNames = deviceExtensions.data(),
         .pEnabledFeatures = &deviceFeatures};
 
-    if (enableValidationLayers) {
+    createInfo.enabledLayerCount = 0;
+    if constexpr (enableValidationLayers) {
         createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
         createInfo.ppEnabledLayerNames = validationLayers.data();
-    } else {
-        createInfo.enabledLayerCount = 0;
     }
 
     if (vkCreateDevice(m_PhysicalDevice, &createInfo, nullptr, &m_Device) != VK_SUCCESS) {
@@ -1546,42 +1550,42 @@ DEF Engine::pickPhysicalDevice() -> void {
     vkEnumeratePhysicalDevices(m_Instance, &deviceCount, devices.data());
 
     size_t i = 0;
-    auto found = std::ranges::find_if(devices,
-                                      [&](const auto &device) {
-                                          fprintf(stdout, "Checking %zu. device", ++i);
-                                          return isDeviceSuitable(device);
-                                      });
+    const auto found = std::ranges::find_if(devices,
+                                            [&](const auto &device) {
+                                                fprintf(stdout, "Checking %zu. device", ++i);
+                                                return isDeviceSuitable(device);
+                                            });
     if (found == devices.end()) throw runtime_error("failed to find a suitable GPU!");
 
     m_PhysicalDevice = *found;
     m_MSAASamples = getMaxUsableSampleCount();
 }
 
-DEF Engine::isDeviceSuitable(VkPhysicalDevice device) -> bool {
+DEF Engine::isDeviceSuitable(VkPhysicalDevice device) const -> bool {
     VkPhysicalDeviceProperties deviceProperties;
     VkPhysicalDeviceFeatures deviceFeatures;
     vkGetPhysicalDeviceProperties(device, &deviceProperties);
     vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
 
-    if constexpr (!Settings::ALLOW_DEVICE_WITHOUT_INTEGRATED_GPU) {
+    if constexpr (Settings::ALLOW_DEVICE_WITHOUT_INTEGRATED_GPU) {
+        fprintf(stdout, "'%s' flag is set so we don't check if it's a discrete GPU.\n", "Settings::ALLOW_DEVICE_WITHOUT_INTEGRATED_GPU");
+    } else {
         if (deviceProperties.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
-            fprintf(stdout, "Device is unsuitable because it's not a discrete GPU!.");
+            fprintf(stderr, "Device is unsuitable because it's not a discrete GPU!.");
         } else {
             fprintf(stdout, "Device is a discrete GPU!.");
         }
-    } else {
-        fprintf(stdout, "'%s' flag is set so we don't check if it's a discrete GPU.\n", "Settings::ALLOW_DEVICE_WITHOUT_INTEGRATED_GPU");
     }
 
-    if constexpr (!Settings::ALLOW_DEVICE_WITHOUT_GEOMETRY_SHADER) {
+    if constexpr (Settings::ALLOW_DEVICE_WITHOUT_GEOMETRY_SHADER) {
+        fprintf(stdout, "'%s' flag is set so we don't check if it supports geometry shaders.\n", "Settings::ALLOW_DEVICE_WITHOUT_GEOMETRY_SHADER");
+    } else {
         if (!deviceFeatures.geometryShader) {
-            fprintf(stdout, "Device is unsuitable because it does not support Geometry Shaders!.\n");
+            fprintf(stderr, "Device is unsuitable because it does not support Geometry Shaders!.\n");
             return false;
         } else {
             fprintf(stdout, "Device supports Geometry Shaders.\n");
         }
-    } else {
-        fprintf(stdout, "'%s' flag is set so we don't check if it supports geometry shaders.\n", "Settings::ALLOW_DEVICE_WITHOUT_GEOMETRY_SHADER");
     }
 
     QueueFamilyIndices indices = findQueueFamilies(device);
@@ -1621,14 +1625,14 @@ DEF Engine::checkDeviceExtensionSupport(VkPhysicalDevice device) -> bool {
 
     set<string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
 
-    for (const auto &extension : availiableExtensions) {
-        requiredExtensions.erase(extension.extensionName);
+    for (const auto &[extensionName, specVersion] : availiableExtensions) {
+        requiredExtensions.erase(extensionName);
     }
 
     return requiredExtensions.empty();
 }
 
-DEF Engine::findQueueFamilies(VkPhysicalDevice device) -> QueueFamilyIndices {
+DEF Engine::findQueueFamilies(VkPhysicalDevice device) const -> QueueFamilyIndices {
     QueueFamilyIndices indices;
 
     uint32_t queueFamilyCount = 0;
@@ -1654,7 +1658,7 @@ DEF Engine::findQueueFamilies(VkPhysicalDevice device) -> QueueFamilyIndices {
         }
         i++;
     }
-    if (!indices.isComplete()) throw runtime_error("findQUeueFamilies couldn't find the necessary values!\n");
+    if (!indices.isComplete()) throw runtime_error("findQueueFamilies couldn't find the necessary values!\n");
     return indices;
 }
 
@@ -1670,7 +1674,7 @@ void Engine::drawFrame() {
     vkWaitForFences(m_Device, 1, &m_InFlightFences[m_CurrentFrameIdx], VK_TRUE, NO_TIMEOUT);
 
     uint32_t imageIndex = 0;
-    VkResult resultNextImage = vkAcquireNextImageKHR(
+    const VkResult resultNextImage = vkAcquireNextImageKHR(
         m_Device,
         m_SwapChain,
         NO_TIMEOUT,
@@ -1713,18 +1717,17 @@ void Engine::drawFrame() {
         throw std::runtime_error("failed to submit draw command buffer!");
     }
 
-    VkSwapchainKHR swapChains[] = {m_SwapChain};
+    array swapChains = {m_SwapChain};
     const VkPresentInfoKHR presentInfo{
         .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
         .waitSemaphoreCount = 1,
         .pWaitSemaphores = signalSemaphores.data(),
         .swapchainCount = 1,
-        .pSwapchains = swapChains,
+        .pSwapchains = swapChains.data(),
         .pImageIndices = &imageIndex,
         .pResults = nullptr};
 
-    VkResult resultQueue = vkQueuePresentKHR(m_PresentQueue, &presentInfo);
-
+    const VkResult resultQueue = vkQueuePresentKHR(m_PresentQueue, &presentInfo);
     if (resultQueue == VK_ERROR_OUT_OF_DATE_KHR || resultQueue == VK_SUBOPTIMAL_KHR || m_FramebufferResized) {
         m_FramebufferResized = false;
         recreateSwapChain();
@@ -1736,7 +1739,7 @@ void Engine::drawFrame() {
     m_FrameCounter += 1;
 }
 
-DEF Engine::captureFramebuffer(uint32_t imageIndex) -> void {
+DEF Engine::captureFramebuffer(uint32_t imageIndex) const -> void {
     VkBuffer stagingBuffer = VK_NULL_HANDLE;
     VkDeviceMemory stagingBufferMemory = VK_NULL_HANDLE;
 
@@ -1903,8 +1906,7 @@ DEF Engine::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT 
 }
 
 DEF Engine::setupDebugMessenger() -> void {
-    if (!enableValidationLayers)
-        return;
+    if constexpr (!enableValidationLayers) return;
 
     VkDebugUtilsMessengerCreateInfoEXT createInfo;
     populateDebugMessengerCreateInfo(createInfo);
@@ -1918,9 +1920,9 @@ DEF Engine::setupDebugMessenger() -> void {
 DEF Engine::getRequiredExtensions() -> vector<const char *> {
     uint32_t glfwExtensionCount = 0;
     const char **glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-    std::span<const char *> glfwExtensionSpan(glfwExtensions, glfwExtensionCount);
+    std::span glfwExtensionSpan(glfwExtensions, glfwExtensionCount);
 
-    vector<const char *> extensions(glfwExtensionSpan.begin(), glfwExtensionSpan.end());
+    vector extensions(glfwExtensionSpan.begin(), glfwExtensionSpan.end());
     if (enableValidationLayers) {
         extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     }
@@ -1937,33 +1939,28 @@ DEF Engine::checkValidationLayerSupport() -> bool {
 
     for (const char *layerName : validationLayers) {
         string_view layerNameView(layerName);
+        const bool layerFound = std::ranges::any_of(availableLayers,
+                                                    [&](const auto &layerProperties) {
+                                                        return layerNameView == string_view(layerProperties.layerName);
+                                                    });
 
-        bool layerFound = any_of(
-            availableLayers.begin(),
-            availableLayers.end(),
-            [&](const auto &layerProperties) {
-                return layerNameView == string_view(layerProperties.layerName);
-            });
-
-        if (!layerFound) {
-            return false;
-        }
+        if (!layerFound) return false;
     }
 
     return true;
 }
 
 VKAPI_ATTR DEF VKAPI_CALL Engine::debugCallback(
-    VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-    VkDebugUtilsMessageTypeFlagsEXT messageType,
+    [[maybe_unused]] VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+    [[maybe_unused]] VkDebugUtilsMessageTypeFlagsEXT messageType,
     const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
-    void *pUserData) -> VkBool32 {
+    [[maybe_unused]] void *pUserData) -> VkBool32 {
 
     std::cerr << "validation layer: " << pCallbackData->pMessage << "";
     return VK_FALSE;
 }
 
-DEF Engine::querySwapChainSupport(VkPhysicalDevice device) -> SwapChainSupportDetails {
+DEF Engine::querySwapChainSupport(VkPhysicalDevice device) const -> SwapChainSupportDetails {
     SwapChainSupportDetails details;
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
         device,
@@ -2003,38 +2000,36 @@ DEF Engine::querySwapChainSupport(VkPhysicalDevice device) -> SwapChainSupportDe
 }
 
 DEF Engine::chooseSwapSurfaceFormat(const vector<VkSurfaceFormatKHR> &availableFormats) -> VkSurfaceFormatKHR {
-    if (availableFormats.empty()) fprintf(stderr, "No surface formats availiable!");
+    if (availableFormats.empty()) fprintf(stderr, "No surface formats available!");
 
-    auto found = find_if(
-        availableFormats.begin(),
-        availableFormats.end(),
-        [](const VkSurfaceFormatKHR &availableFormat) {
-            return availableFormat.format == Settings::PREFERRED_SURFACE_FORMAT.format &&
-                   availableFormat.colorSpace == Settings::PREFERRED_SURFACE_FORMAT.colorSpace;
-        });
-    return (found != availableFormats.end()) ? *found : availableFormats[0];
+    const auto found = std::ranges::find_if(availableFormats,
+                                            [](const VkSurfaceFormatKHR &availableFormat) {
+                                                return availableFormat.format == Settings::PREFERRED_SURFACE_FORMAT.format &&
+                                                       availableFormat.colorSpace == Settings::PREFERRED_SURFACE_FORMAT.colorSpace;
+                                            });
+    if ((found != availableFormats.end())) return *found;
+    return availableFormats[0];
 }
 
 DEF Engine::chooseSwapPresentMode(const vector<VkPresentModeKHR> &availablePresentModes) -> VkPresentModeKHR {
-    if (availablePresentModes.empty()) throw std::runtime_error("No presentation modes availiable!");
+    if (availablePresentModes.empty()) throw std::runtime_error("No presentation modes available!");
 
-    auto found = find_if(
-        availablePresentModes.begin(),
-        availablePresentModes.end(),
-        [](const VkPresentModeKHR &availablePresentMode) {
-            return availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR; // Render as quickly as possible
-        });
-    return (found != availablePresentModes.end()) ? *found : availablePresentModes[0];
+    const auto found = std::ranges::find_if(availablePresentModes,
+                                            [](const VkPresentModeKHR &availablePresentMode) {
+                                                return availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR; // Render as quickly as possible
+                                            });
+    if ((found != availablePresentModes.end())) return *found;
+    return availablePresentModes[0];
 }
 
-DEF Engine::chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities) -> VkExtent2D {
-    bool isExtentUndefined = capabilities.currentExtent.width == std::numeric_limits<uint32_t>::max();
+DEF Engine::chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities) const -> VkExtent2D {
+    const bool isExtentUndefined = capabilities.currentExtent.width == std::numeric_limits<uint32_t>::max();
     if (!isExtentUndefined) return capabilities.currentExtent;
 
     int width = 0;
     int height = 0;
     glfwGetFramebufferSize(m_Window, &width, &height);
-    VkExtent2D actualExtent = {
+    const VkExtent2D actualExtent = {
         .width = std::clamp(static_cast<uint32_t>(width), capabilities.minImageExtent.width, capabilities.maxImageExtent.width),
         .height = std::clamp(static_cast<uint32_t>(height), capabilities.minImageExtent.height, capabilities.maxImageExtent.height),
     };
@@ -2042,44 +2037,44 @@ DEF Engine::chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities) -> Vk
     return actualExtent;
 }
 
-DEF Engine::setCameraPosition(vec3 position) -> void { m_CameraEye = position; }
-DEF Engine::moveCamera(vec3 direction) -> void { setCameraPosition(m_CameraEye + direction); }
-DEF Engine::getCameraLookDirection() const -> vec3 { return glm::normalize(m_CameraCenter - m_CameraEye); }
-DEF Engine::moveCameraForward(float amount) -> void { moveCamera(getCameraLookDirection() * amount); }
+DEF Engine::setCameraPosition(const vec3 position) -> void { m_CameraEye = position; }
+DEF Engine::moveCamera(const vec3 direction) -> void { setCameraPosition(m_CameraEye + direction); }
+DEF Engine::getCameraLookDirection() const -> vec3 { return normalize(m_CameraCenter - m_CameraEye); }
+DEF Engine::moveCameraForward(const float amount) -> void { moveCamera(getCameraLookDirection() * amount); }
 
-DEF Engine::moveCameraRight(float amount) -> void {
-    vec3 rightDirection = glm::normalize(glm::cross(getCameraLookDirection(), m_CameraUp));
-    vec3 movement = rightDirection * amount;
+DEF Engine::moveCameraRight(const float amount) -> void {
+    const vec3 rightDirection = normalize(cross(getCameraLookDirection(), m_CameraUp));
+    const vec3 movement = rightDirection * amount;
     m_CameraEye += movement;
     m_CameraCenter += movement;
 }
 
-DEF Engine::lookAround(float yawOffset, float pitchOffset) -> void {
+DEF Engine::lookAround(const float yawOffset, const float pitchOffset) -> void {
     // Calculate the current look direction
     vec3 lookDirection = getCameraLookDirection();
 
     // Calculate the right direction (for pitch calculation)
-    vec3 rightDirection = glm::normalize(glm::cross(lookDirection, m_CameraUp));
+    const vec3 rightDirection = normalize(cross(lookDirection, m_CameraUp));
 
     // Apply yaw rotation (around the up vector)
     // Rotate the look direction around the up vector for left/right movement
-    mat4 yawRotation = glm::rotate(mat4(1.0f), glm::radians(yawOffset), m_CameraUp);
+    const mat4 yawRotation = rotate(mat4(1.0f), glm::radians(yawOffset), m_CameraUp);
     lookDirection = vec3(yawRotation * vec4(lookDirection, 0.0f));
 
     // Apply pitch rotation (around the right direction)
     // Rotate the look direction around the right vector for up/down movement
-    mat4 pitchRotation = glm::rotate(mat4(1.0f), glm::radians(pitchOffset), rightDirection);
+    const mat4 pitchRotation = rotate(mat4(1.0f), glm::radians(pitchOffset), rightDirection);
     lookDirection = vec3(pitchRotation * vec4(lookDirection, 0.0f));
 
-    float currentPitch = asin(lookDirection.y);
+    const float currentPitch = asin(lookDirection.y);
     if (currentPitch > Settings::CAMERA_MAX_PITCH) {
         lookDirection.y = sin(Settings::CAMERA_MAX_PITCH);
     } else if (currentPitch < -Settings::CAMERA_MAX_PITCH) {
         lookDirection.y = -sin(Settings::CAMERA_MAX_PITCH);
     }
 
-    // Update the camera center based on the new look direction
-    m_CameraCenter = m_CameraEye + glm::normalize(lookDirection);
+    // Update the camera center based on the new look-direction
+    m_CameraCenter = m_CameraEye + normalize(lookDirection);
 }
 
 DEF Engine::updatePushConstants() -> void {
@@ -2088,13 +2083,13 @@ DEF Engine::updatePushConstants() -> void {
     m_PushConstants.cameraUp = m_CameraUp;
     m_PushConstants.stage = m_Stage;
 
-    std::chrono::time_point currentTime = std::chrono::high_resolution_clock::now();
-    float deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - m_StartTime).count();
+    const std::chrono::time_point currentTime = std::chrono::high_resolution_clock::now();
+    const float deltaTime = std::chrono::duration<float>(currentTime - m_StartTime).count();
 
     m_PushConstants.time = deltaTime;
 }
 
-DEF Engine::update(float frameTime) -> void {
+DEF Engine::update(const float frameTime) const -> void {
     for (auto &model : m_Models) {
         model->update(frameTime);
     }

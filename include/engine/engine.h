@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Constants.h"
-#include "Util.h"
 #include "engine/model.h"
 
 DEF CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkDebugUtilsMessengerEXT *pDebugMessenger) -> VkResult;
@@ -11,6 +10,14 @@ class Engine {
 public:
     Engine();
     ~Engine();
+
+    // Delete copy constructor and copy assignment operator
+    Engine(const Engine&) = delete;
+    Engine& operator=(const Engine&) = delete;
+
+    // Delete move constructor and move assignment operator
+    Engine(Engine&&) = delete;
+    Engine& operator=(Engine&&) = delete;
 
     DEF initialize() -> void;
 
@@ -35,8 +42,8 @@ public:
 
     DEF takeScreenshot() -> void { m_TakeScreenshotNextFrame = true; }
 
-    DEF createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer, VkDeviceMemory &bufferMemory) -> void;
-    DEF copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) -> void;
+    DEF createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer, VkDeviceMemory &bufferMemory) const -> void;
+    DEF copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) const -> void;
 
     vec3 m_CameraEye;
     vec3 m_CameraCenter;
@@ -45,12 +52,12 @@ public:
     [[nodiscard]] DEF getSwapchainExtent() const -> VkExtent2D { return m_SwapChainExtent; }
     [[nodiscard]] DEF getNumModels() const -> size_t { return m_Models.size(); }
 
-    DEF getUniformBuffersMapped() -> auto { return m_UniformBuffersMapped; }
+    DEF getUniformBuffersMapped() -> vector<void*> { return m_UniformBuffersMapped; }
 
     DEF setStage(const int stage) -> void { m_Stage = stage; }
     DEF getStage() const -> int { return m_Stage; }
 
-    DEF update(float frameTime) -> void;
+    DEF update(float frameTime) const -> void;
 
 private:
     DEF
@@ -58,14 +65,14 @@ private:
     DEF initVulkan() -> void;
     DEF cleanup() -> void;
 
-    DEF captureFramebuffer(uint32_t imageIndex) -> void;
+    DEF captureFramebuffer(uint32_t imageIndex) const -> void;
     DEF createInstance() -> void;
     DEF setupDebugMessenger() -> void;
     DEF createSurface() -> void;
     DEF pickPhysicalDevice() -> void;
-    DEF isDeviceSuitable(VkPhysicalDevice device) -> bool;
-    DEF findQueueFamilies(VkPhysicalDevice device) -> QueueFamilyIndices;
-    DEF querySwapChainSupport(VkPhysicalDevice device) -> SwapChainSupportDetails;
+    DEF isDeviceSuitable(VkPhysicalDevice device) const -> bool;
+    DEF findQueueFamilies(VkPhysicalDevice device) const -> QueueFamilyIndices;
+    DEF querySwapChainSupport(VkPhysicalDevice device) const -> SwapChainSupportDetails;
     DEF createLogicalDevice() -> void;
     DEF createSwapChain() -> void;
     DEF createRenderPass() -> void;
@@ -82,20 +89,20 @@ private:
     DEF createTextureImageView() -> void;
     DEF createTextureSampler() -> void;
     DEF createColorResources() -> void;
-    DEF getMaxUsableSampleCount() -> VkSampleCountFlagBits;
+    DEF getMaxUsableSampleCount() const -> VkSampleCountFlagBits;
     DEF createCommandBuffers() -> void;
-    DEF copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) -> void;
-    DEF transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels) -> void;
+    DEF copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) const -> void;
+    DEF transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels) const -> void;
     DEF recreateSwapChain() -> void;
     DEF cleanupSwapChain() -> void;
-    DEF beginSingleTimeCommands() -> VkCommandBuffer;
-    DEF endSingleTimeCommands(VkCommandBuffer commandBuffer) -> void;
+    DEF beginSingleTimeCommands() const -> VkCommandBuffer;
+    DEF endSingleTimeCommands(VkCommandBuffer commandBuffer) const -> void;
     DEF createImageViews() -> void;
-    DEF createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels) -> VkImageView;
+    DEF createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels) const -> VkImageView;
     DEF createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits numSamples, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage &image, VkDeviceMemory &imageMemory) -> void;
-    DEF createShaderModule(const vector<char> &code) -> VkShaderModule;
-    DEF findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) -> uint32_t;
-    DEF chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities) -> VkExtent2D;
+    DEF createShaderModule(const vector<char> &code) const -> VkShaderModule;
+    DEF findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const -> uint32_t;
+    DEF chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities) const -> VkExtent2D;
     DEF recordCommandBuffers(VkCommandBuffer commandBuffer, uint32_t imageIndex) -> void;
     DEF findSupportedFormat(const vector<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features) -> VkFormat;
     DEF createDepthResources() -> void;

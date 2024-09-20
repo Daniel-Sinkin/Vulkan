@@ -22,12 +22,12 @@ struct MeshNT {
     void createIndexBuffer();
 
     void validate() const {
-        if (getVertexBuffer() == VK_NULL_HANDLE) throw runtime_error("VertexBuffer is None!");
-        if (getVertexBufferMemory() == VK_NULL_HANDLE) throw runtime_error("VertexBufferMemory is None!");
-        if (getVertexIndexBuffer() == VK_NULL_HANDLE) throw runtime_error("VertexIndexBuffer is None!");
-        if (getVertexIndexBufferMemory() == VK_NULL_HANDLE) throw runtime_error("VertexIndexBufferMemory is None!");
-        if (getVertices().empty()) throw runtime_error("Vertices are emtpy!");
-        if (getVertexIndices().empty()) throw runtime_error("VertexIndices are empty!");
+        if (getVertexBuffer() == VK_NULL_HANDLE            ) throw runtime_error("VertexBuffer is None!");
+        if (getVertexBufferMemory() == VK_NULL_HANDLE      ) throw runtime_error("VertexBufferMemory is None!");
+        if (getVertexIndexBuffer() == VK_NULL_HANDLE       ) throw runtime_error("VertexIndexBuffer is None!");
+        if (getVertexIndexBufferMemory() == VK_NULL_HANDLE ) throw runtime_error("VertexIndexBufferMemory is None!");
+        if (getVertices().empty()                          ) throw runtime_error("Vertices are emtpy!");
+        if (getVertexIndices().empty()                     ) throw runtime_error("VertexIndices are empty!");
     }
 
 private:

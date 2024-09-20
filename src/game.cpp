@@ -1,5 +1,7 @@
 #include "game.h"
 
+#include "Util.h"
+
 Game::Game(Engine *engine)
     : m_Engine(engine),
       m_LastMouseX(0.0),

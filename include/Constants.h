@@ -84,6 +84,8 @@ constexpr float PI_2 = 2.0 * std::numbers::pi;
 constexpr float PI_HALF = std::numbers::pi / 2.0;
 constexpr float PI_QUARTER = std::numbers::pi / 4.0;
 
+constexpr float PI_DEG = 90.0f;
+
 constexpr float WINDOW_CENTER_FACTOR = 0.5f;
 
 using Bitmask8 = uint8_t;
@@ -217,37 +219,39 @@ static DEF readFile(const string &filename) -> vector<char> {
 } // namespace Util
 
 namespace Settings {
-constexpr uint32_t DEFAULT_WINDOW_WIDTH = 1920;
-constexpr uint32_t DEFAULT_WINDOW_HEIGHT = 1080;
+    constexpr uint32_t DEFAULT_WINDOW_WIDTH = 1920;
+    constexpr uint32_t DEFAULT_WINDOW_HEIGHT = 1080;
 
-constexpr auto PROJECT_NAME = "Daniel's 3D Engine";
+    constexpr auto PROJECT_NAME = "Daniel's 3D Engine";
 
-constexpr float MOUSE_SENSITIVITY = 5.0f;
+    constexpr int STARTING_STAGE = 7;
 
-constexpr float CAMERA_FLOATING_SPEED = 2.5f;
-constexpr float CAMERA_FLOATING_SPEED_BOOSTED = 3.75f;
+    constexpr float MOUSE_SENSITIVITY = 5.0f;
 
-// For example MacBooks have integrated graphics cards, so they would be filtered by this
-constexpr bool ALLOW_DEVICE_WITHOUT_INTEGRATED_GPU = true;
-constexpr bool ALLOW_DEVICE_WITHOUT_GEOMETRY_SHADER = true;
+    constexpr float CAMERA_FLOATING_SPEED = 2.5f;
+    constexpr float CAMERA_FLOATING_SPEED_BOOSTED = 3.75f;
 
-constexpr int MAX_FRAMES_IN_FLIGHT = 2;
+    // For example MacBooks have integrated graphics cards, so they would be filtered by this
+    constexpr bool ALLOW_DEVICE_WITHOUT_INTEGRATED_GPU = true;
+    constexpr bool ALLOW_DEVICE_WITHOUT_GEOMETRY_SHADER = true;
 
-constexpr vec3 CAMERA_EYE(2.0f, 4.0f, 2.0f);
-constexpr vec3 CAMERA_CENTER(0.0f, 0.0f, 0.0f);
-constexpr vec3 CAMERA_UP(0.0f, 0.0f, 1.0f);
+    constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 
-constexpr float CAMERA_MAX_PITCH = 50.0f;
+    constexpr vec3 CAMERA_EYE(2.0f, 4.0f, 2.0f);
+    constexpr vec3 CAMERA_CENTER(0.0f, 0.0f, 0.0f);
+    constexpr vec3 CAMERA_UP(0.0f, 0.0f, 1.0f);
 
-constexpr float CLIPPING_PLANE_NEAR = 0.1f;
-constexpr float CLIPPING_PLANE_FAR = 100.0f;
+    constexpr float CAMERA_MAX_PITCH = 50.0f;
 
-constexpr VkSurfaceFormatKHR PREFERRED_SURFACE_FORMAT = {
-    .format = VK_FORMAT_B8G8R8A8_SRGB,
-    .colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
+    constexpr float CLIPPING_PLANE_NEAR = 0.1f;
+    constexpr float CLIPPING_PLANE_FAR = 100.0f;
 
-constexpr size_t FONT_ATLAS_WIDTH = 512;
-constexpr size_t FONT_ATLAS_HEIGHT = 512;
-constexpr size_t FONT_FONT_SIZE = 32;
+    constexpr VkSurfaceFormatKHR PREFERRED_SURFACE_FORMAT = {
+        .format = VK_FORMAT_B8G8R8A8_SRGB,
+        .colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
+
+    constexpr size_t FONT_ATLAS_WIDTH = 512;
+    constexpr size_t FONT_ATLAS_HEIGHT = 512;
+    constexpr size_t FONT_FONT_SIZE = 32;
 
 } // namespace Settings
