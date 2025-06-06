@@ -4,6 +4,16 @@ https://www.youtube.com/watch?v=OyaxprJn2Hs
 
 https://www.youtube.com/watch?v=mOSf8ziy5gs
 
+![Screenshot](Screencaps/Screenshots/Progress%20Pictures/Screenshot%202024-09-10%20at%2003.24.14.png)
+
+![Screenshot](Screencaps/Screenshots/Progress%20Pictures/Screenshot%202024-09-10%20at%2008.34.15.png)
+
+![Screenshot](Screencaps/Screenshots/Layering%20Steps/1243.png)
+
+![Screenshot](Screencaps/Screenshots/Progress%20Pictures/Screenshot%202024-09-17%20at%2020.07.03.png)
+
+![Screenshot](Screencaps/Screenshots/Progress%20Pictures/Screenshot%202024-09-17%20at%2016.40.40.png)
+
 # Vulcan 3D Engine from scratch
 This Repo is my attempt to build a 3D game engine written in C++, using Vulkan as a Low Level graphics card API and GLFW as a window manager.
 
